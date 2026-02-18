@@ -1,0 +1,5 @@
+# Supabase local config - gerado para deploy de Edge Functions
+# Para deploy: supabase functions deploy make-server-46b247d8
+
+[project]
+id = "dtcklkhvrsyxjjjmuquw"

@@ -22,6 +22,7 @@ export function useDashboardNav(
   }, [title, subtitle, setTitle]);
 
   // Selecionar primeira seção quando: não há seção ativa, ou a atual não existe nas novas seções
+  // Não incluir state.activeSection nas deps - senão ao clicar em outra aba o effect re-roda e pode resetar
   useEffect(() => {
     const sectionToUse = defaultSection || sections[0]?.id;
     if (!sectionToUse) return;
@@ -29,7 +30,7 @@ export function useDashboardNav(
     if (!state.activeSection || !currentExists) {
       setActiveSection(sectionToUse);
     }
-  }, [sections, defaultSection, state.activeSection, setActiveSection]);
+  }, [sections, defaultSection, setActiveSection]);
 
   return {
     activeSection: state.activeSection,

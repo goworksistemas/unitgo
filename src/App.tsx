@@ -54,35 +54,46 @@ function AppContent() {
     }
   );
 
-  // Initialize database on first load
+  // Initialize database on first load - não bloqueia o app
   useEffect(() => {
-    const initializeDatabase = async () => {
-      const hasInitialized = localStorage.getItem('gowork_db_initialized');
-      if (!hasInitialized) {
-        try {
-          const response = await fetch(
-            `https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/seed`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${publicAnonKey}`,
-              },
-            }
-          );
-
-          if (response.ok) {
-            const data = await response.json();
-            localStorage.setItem('gowork_db_initialized', 'true');
-          }
-        } catch (error) {
-          console.error('❌ Error initializing database:', error);
-        }
-      }
+    const hasInitialized = localStorage.getItem('gowork_db_initialized');
+    if (hasInitialized) {
       setIsInitializing(false);
-    };
+      return;
+    }
 
-    initializeDatabase();
+    // Rodar seed em background com timeout - não travar a tela
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    fetch(
+      `https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/seed`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publicAnonKey}`,
+        },
+        signal: controller.signal,
+      }
+    )
+      .then((response) => {
+        if (response.ok) {
+          localStorage.setItem('gowork_db_initialized', 'true');
+        } else {
+          // 404 ou outro erro - marcar como inicializado para não ficar tentando
+          localStorage.setItem('gowork_db_initialized', 'true');
+        }
+      })
+      .catch(() => {
+        // Timeout ou rede - marcar para não bloquear em próximas cargas
+        localStorage.setItem('gowork_db_initialized', 'true');
+      })
+      .finally(() => {
+        clearTimeout(timeoutId);
+      });
+
+    setIsInitializing(false);
   }, []);
 
   // Mostrar loading durante inicialização ou carregamento de dados
