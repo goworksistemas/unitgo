@@ -26,18 +26,10 @@ export function WarehouseStockPanel({ onAddFurniture, onAddStock }: WarehouseSto
   const centralWarehouse = units.find(u => u.name === 'Almoxarifado Central');
   const warehouseUnitId = centralWarehouse?.id;
 
-  console.log('🏢 WarehouseStockPanel - Almoxarifado Central:', centralWarehouse);
-  console.log('🏢 ID do Almoxarifado Central:', warehouseUnitId);
-  console.log('📦 WarehouseStockPanel - Total stocks no sistema:', unitStocks.length);
-  console.log('📦 WarehouseStockPanel - Todos os stocks:', unitStocks);
-  
   // Filtrar APENAS stocks do Almoxarifado Central
   const warehouseStock = warehouseUnitId 
     ? unitStocks.filter(s => s.unitId === warehouseUnitId)
     : [];
-    
-  console.log('📦 Stocks filtrados do Almoxarifado Central:', warehouseStock.length);
-  console.log('📦 Stocks do Almoxarifado Central:', warehouseStock);
 
   // Filtrar APENAS materiais regulares (SEM móveis)
   const regularStock = warehouseStock.filter(s => {

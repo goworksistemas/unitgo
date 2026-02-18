@@ -159,18 +159,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         setAppUsers(usersData || []);
         
-        console.log('🏢 [AppContext] Units recebidas do backend:', JSON.stringify(unitsData, null, 2));
-        
         // Ensure units always have floors as array
-        const unitsWithFloors = (unitsData || []).map((unit: Unit) => {
-          console.log(`🏢 [AppContext] Unit "${unit.name}" - floors:`, unit.floors, 'Type:', typeof unit.floors, 'isArray:', Array.isArray(unit.floors));
-          return {
-            ...unit,
-            floors: Array.isArray(unit.floors) ? unit.floors : []
-          };
-        });
-        
-        console.log('🏢 [AppContext] Units PROCESSADAS:', JSON.stringify(unitsWithFloors, null, 2));
+        const unitsWithFloors = (unitsData || []).map((unit: Unit) => ({
+          ...unit,
+          floors: Array.isArray(unit.floors) ? unit.floors : []
+        }));
         setAppUnits(unitsWithFloors);
         
         setAppCategories(categoriesData || []);

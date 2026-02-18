@@ -20,14 +20,6 @@ export function ControllerDashboard() {
     deliveryBatches, getConfirmationsForBatch,
   } = useApp();
 
-  React.useEffect(() => {
-    if (currentUnit) {
-      console.log('🏢 ControllerDashboard - currentUnit:', currentUnit);
-      console.log('📊 ControllerDashboard - floors:', currentUnit.floors);
-      console.log('📊 ControllerDashboard - floors type:', typeof currentUnit.floors, Array.isArray(currentUnit.floors));
-    }
-  }, [currentUnit]);
-
   const [addFurnitureDialogOpen, setAddFurnitureDialogOpen] = useState(false);
   const [requestFurnitureDialogOpen, setRequestFurnitureDialogOpen] = useState(false);
   const [removalDialogOpen, setRemovalDialogOpen] = useState(false);
@@ -87,7 +79,8 @@ export function ControllerDashboard() {
 
   const { activeSection } = useDashboardNav(
     navigationSections, 'Painel do Controlador',
-    currentUnit ? `Gestão de ${currentUnit.name}` : 'Selecione uma unidade no sidebar'
+    currentUnit ? `Gestão de ${currentUnit.name}` : 'Selecione uma unidade no sidebar',
+    'furniture'
   );
 
   if (!currentUnit) {

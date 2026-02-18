@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { Users, Building2, Package, List, TestTube2, Eye } from 'lucide-react';
 import { ProductsListPanel } from '../panels/ProductsListPanel';
 import { TestFlowPanel } from '../panels/TestFlowPanel';
 import { AdminResetPasswordDialog } from '../auth/AdminResetPasswordDialog';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
+import { useNavigation } from '@/hooks/useNavigation';
 import type { NavigationSection } from '@/hooks/useNavigation';
 
 import { useDeveloperState } from '../developer/useDeveloperState';
@@ -27,12 +28,25 @@ export function DeveloperDashboard() {
     { id: 'view-as', label: 'Visualizar Como', icon: Eye },
   ], []);
 
+  const { setSections, setActiveSection } = useNavigation();
   const { activeSection: activeTab } = useDashboardNav(
     navigationSections,
     'Painel do Desenvolvedor',
     'Gestão do Sistema',
     'users'
   );
+
+  // Ao voltar do modo "Visualizar Como", restaurar seções e aba do sidebar
+  const prevViewAsRoleRef = useRef(state.viewAsRole);
+  useEffect(() => {
+    const wasViewing = prevViewAsRoleRef.current != null;
+    const nowNotViewing = state.viewAsRole == null;
+    prevViewAsRoleRef.current = state.viewAsRole;
+    if (wasViewing && nowNotViewing) {
+      setSections(navigationSections);
+      setActiveSection('view-as');
+    }
+  }, [state.viewAsRole, navigationSections, setSections, setActiveSection]);
 
   if (state.viewAsRole) {
     return <ViewAsPanel viewAsRole={state.viewAsRole} setViewAsRole={state.setViewAsRole} />;

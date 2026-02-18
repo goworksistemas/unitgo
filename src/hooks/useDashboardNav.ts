@@ -21,11 +21,15 @@ export function useDashboardNav(
     setTitle(title, subtitle);
   }, [title, subtitle, setTitle]);
 
+  // Selecionar primeira seção quando: não há seção ativa, ou a atual não existe nas novas seções
   useEffect(() => {
-    if (defaultSection && !state.activeSection) {
-      setActiveSection(defaultSection);
+    const sectionToUse = defaultSection || sections[0]?.id;
+    if (!sectionToUse) return;
+    const currentExists = sections.some(s => s.id === state.activeSection);
+    if (!state.activeSection || !currentExists) {
+      setActiveSection(sectionToUse);
     }
-  }, [defaultSection, state.activeSection, setActiveSection]);
+  }, [sections, defaultSection, state.activeSection, setActiveSection]);
 
   return {
     activeSection: state.activeSection,

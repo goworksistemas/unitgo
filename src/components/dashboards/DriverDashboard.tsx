@@ -32,6 +32,7 @@ import { FurnitureQRCodeScannerDialog } from '../dialogs/FurnitureQRCodeScannerD
 import { DeliveryTimeline } from '../delivery/DeliveryTimeline';
 import { MarkDeliveryPendingDialog } from '../dialogs/MarkDeliveryPendingDialog';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
+import { useIsMobile } from '@/components/ui/use-mobile';
 import type { NavigationSection } from '@/hooks/useNavigation';
 
 interface DriverDashboardProps {
@@ -67,7 +68,14 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
     return !hasSeenTutorial;
   });
 
-  const navigationSections: NavigationSection[] = useMemo(() => [
+  const isMobile = useIsMobile();
+
+  // No mobile: uma única seção "Visão Geral" com tudo
+  const navigationSections: NavigationSection[] = useMemo(() => {
+    if (isMobile) {
+      return [{ id: 'overview', label: 'Visão Geral', icon: LayoutDashboard }];
+    }
+    return [
     {
       id: 'overview',
       label: 'Visão Geral',
@@ -88,7 +96,8 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
       label: 'Coletas',
       icon: Armchair,
     },
-  ], []);
+  ];
+  }, [isMobile]);
 
   const { activeSection, setActiveSection } = useDashboardNav(
     navigationSections,
@@ -343,35 +352,151 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
               </Card>
             </div>
 
-            {/* Resumo rápido se houver tarefas */}
-            {(totalToPickup > 0 || totalInTransit > 0) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Resumo de Atividades</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {totalToPickup > 0 && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Armchair className="h-4 w-4 text-primary" />
-                        <span>{totalToPickup} móveis aguardando coleta</span>
-                      </div>
-                    )}
-                    {furnitureInTransit.length > 0 && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Truck className="h-4 w-4 text-purple-600" />
-                        <span>{furnitureInTransit.length} coletas em trânsito para almoxarifado</span>
-                      </div>
-                    )}
-                    {furnitureDeliveryInTransit.length > 0 && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Truck className="h-4 w-4 text-green-600" />
-                        <span>{furnitureDeliveryInTransit.length} entregas em trânsito para unidades</span>
-                      </div>
-                    )}
+            {/* Mobile: tudo em uma tela - Coletas, Entregas, Em Trânsito */}
+            {isMobile ? (
+              <div className="space-y-6">
+                {totalToPickup > 0 && (
+                  <div>
+                    <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                      <Armchair className="h-5 w-5 text-primary" />
+                      Coletas para Retirar
+                    </h2>
+                    <div className="space-y-3">
+                      {furnitureToCollect.map(renderFurnitureCollectionCard)}
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                )}
+                {currentUser && deliveryBatches.filter(b => 
+                  b.driverUserId === currentUser.id && 
+                  (b.status === 'in_transit' || b.status === 'delivery_confirmed')
+                ).length > 0 && (
+                  <div>
+                    <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                      <Package className="h-5 w-5 text-primary" />
+                      Lotes de Entrega
+                    </h2>
+                    <div className="space-y-3">
+                      {deliveryBatches
+                        .filter(b => b.driverUserId === currentUser!.id && (b.status === 'in_transit' || b.status === 'delivery_confirmed'))
+                        .map(batch => {
+                          const unit = getUnitById(batch.targetUnitId);
+                          const totalItems = batch.requestIds.length + (batch.furnitureRequestIds?.length || 0);
+                          const hasDeliveryConfirmation = deliveryConfirmations.some(
+                            c => c.batchId === batch.id && c.type === 'delivery'
+                          );
+                          return (
+                            <Card key={batch.id} className="border-2 border-primary">
+                              <CardContent className="p-3 md:p-4">
+                                <div className="flex items-start gap-2 md:gap-3 mb-3 md:mb-4">
+                                  <div className="p-2 md:p-3 rounded-lg bg-blue-50">
+                                    <Package className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-semibold text-base md:text-lg mb-1">Lote {batch.qrCode}</h3>
+                                    <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600 mb-2">
+                                      <Building2 className="h-3 w-3 md:h-4 md:w-4" />
+                                      <span className="truncate">{unit?.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <Badge className="bg-primary text-sm md:text-base px-2 md:px-3 py-0.5 md:py-1">
+                                        {totalItems} {totalItems === 1 ? 'item' : 'itens'}
+                                      </Badge>
+                                      {batch.status === 'delivery_confirmed' && (
+                                        <Badge className="bg-green-600 text-xs md:text-sm px-2 md:px-3 py-0.5 md:py-1">
+                                          ✓ Confirmada
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                {batch.status === 'in_transit' && !hasDeliveryConfirmation && (
+                                  <div className="space-y-2">
+                                    <Button 
+                                      className="w-full h-12 md:h-14 text-base md:text-lg bg-primary hover:bg-primary/90"
+                                      onClick={() => setSelectedBatchForConfirmation(batch.id)}
+                                    >
+                                      <QrCode className="h-5 w-5 md:h-6 md:w-6 mr-2" />
+                                      Confirmar Entrega c/ QR Code
+                                    </Button>
+                                    <Button 
+                                      variant="outline"
+                                      className="w-full h-10 md:h-12 text-xs md:text-sm border-2"
+                                      onClick={() => setSelectedBatchForPending(batch.id)}
+                                    >
+                                      Marcar como Entregue (Confirmar Depois)
+                                    </Button>
+                                  </div>
+                                )}
+                                {(batch.status === 'delivery_confirmed' || hasDeliveryConfirmation) && (
+                                  <div className="space-y-2">
+                                    <div className="text-xs md:text-sm text-center p-2 md:p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                      ✓ Aguardando confirmação do recebedor
+                                    </div>
+                                    <Button 
+                                      variant="outline"
+                                      className="w-full h-10 md:h-12 text-xs md:text-sm"
+                                      onClick={() => setSelectedBatchForTimeline(batch.id)}
+                                    >
+                                      Ver Timeline
+                                    </Button>
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+                {(furnitureInTransit.length > 0 || furnitureDeliveryInTransit.length > 0) && (
+                  <div>
+                    <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                      <Truck className="h-5 w-5 text-purple-600" />
+                      Em Trânsito
+                    </h2>
+                    <div className="space-y-3">
+                      {furnitureDeliveryInTransit.map(renderFurnitureDeliveryCard)}
+                      {furnitureInTransit.map(renderInTransitFurniture)}
+                    </div>
+                  </div>
+                )}
+                {totalToPickup === 0 && totalInTransit === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Package className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                    <p>Nenhuma tarefa no momento</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              (totalToPickup > 0 || totalInTransit > 0) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Resumo de Atividades</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {totalToPickup > 0 && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Armchair className="h-4 w-4 text-primary" />
+                          <span>{totalToPickup} móveis aguardando coleta</span>
+                        </div>
+                      )}
+                      {furnitureInTransit.length > 0 && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Truck className="h-4 w-4 text-purple-600" />
+                          <span>{furnitureInTransit.length} coletas em trânsito para almoxarifado</span>
+                        </div>
+                      )}
+                      {furnitureDeliveryInTransit.length > 0 && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Truck className="h-4 w-4 text-green-600" />
+                          <span>{furnitureDeliveryInTransit.length} entregas em trânsito para unidades</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
             )}
           </div>
         );
