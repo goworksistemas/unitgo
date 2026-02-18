@@ -13,7 +13,7 @@
  * - developer: Developer (gerencia catálogo de itens e categorias)
  * - requester: Solicitante (faz pedidos de materiais)
  */
-export type UserRole = 'controller' | 'admin' | 'warehouse' | 'designer' | 'developer' | 'requester';
+export type UserRole = 'controller' | 'admin' | 'warehouse' | 'designer' | 'developer' | 'requester' | 'executor' | 'driver';
 
 export type MovementType = 'entrada' | 'saida' | 'emprestimo' | 'devolucao' | 'ajuste';
 
@@ -24,7 +24,7 @@ export type MovementType = 'entrada' | 'saida' | 'emprestimo' | 'devolucao' | 'a
  * - loan: Empréstimo (diminui estoque)
  * - return: Devolução (aumenta estoque)
  */
-export type SimpleMovementType = 'entry' | 'consumption' | 'loan' | 'return';
+export type SimpleMovementType = 'entry' | 'consumption' | 'loan' | 'return' | 'adjustment' | 'devolucao' | 'in' | 'out';
 
 /**
  * Fluxo de status de pedidos:
@@ -39,6 +39,7 @@ export interface Unit {
   name: string;
   address: string;
   status: 'active' | 'inactive';
+  type?: string; // Tipo da unidade (ex: warehouse, office)
   floors?: string[]; // Andares disponíveis na unidade (JSONB)
 }
 
@@ -65,6 +66,8 @@ export interface Item {
   brand?: string;
   model?: string;
   isFurniture?: boolean; // Móveis de unidade (não passam pelo almoxarifado)
+  isUniqueProduct?: boolean; // Produto com serial único
+  minQuantity?: number; // Alias para defaultMinimumQuantity
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -103,6 +106,8 @@ export interface SimpleMovement {
   quantity: number;
   timestamp: Date;
   createdAt: Date; // For compatibility
+  movementDate?: Date; // Alias/legacy
+  reason?: string; // Legacy/consumption reason
   workOrder?: string; // For consumptions
   borrowerUnitId?: string; // For loans
   notes?: string;
@@ -157,6 +162,8 @@ export interface Request {
   completedByUserId?: string;
   completedAt?: Date;
   rejectedReason?: string;
+  rejectionReason?: string; // Alias
+  deliveredAt?: Date; // Quando foi entregue
   observations?: string;
   urgency: 'low' | 'medium' | 'high';
 }
@@ -168,8 +175,10 @@ export interface FurnitureTransfer {
   toUnitId: string;
   requestedByUserId: string;
   approvedByUserId?: string;
+  quantity?: number;
   status: 'pending' | 'approved' | 'completed' | 'rejected';
   createdAt: Date;
+  approvedAt?: Date;
   completedAt?: Date;
   observations?: string;
 }
@@ -216,6 +225,7 @@ export interface FurnitureRequestToDesigner {
   assignedAt?: Date;
   deliveredByUserId?: string; // Motorista que entregou
   deliveredAt?: Date;
+  receivedByUserId?: string; // Quem recebeu no destino
   completedAt?: Date;
   rejectionReason?: string;
   observations?: string;
@@ -229,7 +239,8 @@ export interface DeliveryBatch {
   targetUnitId: string; // Unidade de destino
   driverUserId: string; // Motorista responsável
   qrCode: string; // Código único para confirmação
-  status: 'pending' | 'in_transit' | 'delivery_confirmed' | 'received_confirmed' | 'completed' | 'pending_confirmation' | 'confirmed_by_requester';
+  status: 'pending' | 'in_transit' | 'delivery_confirmed' | 'received_confirmed' | 'completed' | 'pending_confirmation' | 'confirmed_by_requester' | 'delivered';
+  driverId?: string; // Alias para driverUserId
   createdAt: Date;
   dispatchedAt?: Date;
   deliveryConfirmedAt?: Date;
@@ -246,13 +257,17 @@ export interface DeliveryConfirmation {
   furnitureRequestId?: string; // Referência à solicitação individual de móvel
   type: 'delivery' | 'receipt' | 'requester'; // Entrega (motorista), Recebimento (recebedor), ou Confirmação do Solicitante
   confirmedByUserId: string;
+  userId?: string; // Alias para confirmedByUserId
+  userName?: string; // Nome de quem confirmou
   receivedByUserId?: string; // Quem recebeu (validado por código diário)
-  photoUrl: string; // Base64 ou URL da foto
+  photoUrl?: string; // Base64 ou URL da foto (opcional para confirmação por código)
   timestamp: Date;
+  confirmedAt?: Date; // Alias para timestamp
   location?: { // Geolocalização opcional
     latitude: number;
     longitude: number;
   };
   signature?: string; // Assinatura digital opcional (base64)
   notes?: string;
+  dailyCode?: string; // Código diário para confirmação (não persistido)
 }

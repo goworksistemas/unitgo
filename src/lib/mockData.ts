@@ -192,6 +192,7 @@ export const mockItems: Item[] = [
     isConsumable: true,
     requiresResponsibilityTerm: false,
     defaultMinimumQuantity: 10,
+    defaultLoanDays: 0,
     brand: 'Pilão',
     model: 'Tradicional',
     active: true,

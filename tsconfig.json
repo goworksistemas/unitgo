@@ -16,11 +16,9 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src"],
+  "exclude": ["src/supabase", "node_modules"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
-

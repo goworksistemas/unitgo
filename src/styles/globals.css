@@ -240,3 +240,80 @@ html {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
 }
+
+/* ========== Sidebar Utility Classes ========== */
+.bg-sidebar {
+  background-color: var(--sidebar);
+}
+
+.text-sidebar-foreground {
+  color: var(--sidebar-foreground);
+}
+
+.bg-sidebar-accent {
+  background-color: var(--sidebar-accent);
+}
+
+.text-sidebar-accent-foreground {
+  color: var(--sidebar-accent-foreground);
+}
+
+.border-sidebar-border {
+  border-color: var(--sidebar-border);
+}
+
+.ring-sidebar-ring {
+  --tw-ring-color: var(--sidebar-ring);
+}
+
+.text-sidebar-foreground\/70 {
+  color: color-mix(in srgb, var(--sidebar-foreground) 70%, transparent);
+}
+
+.hover\:bg-sidebar-accent:hover {
+  background-color: var(--sidebar-accent);
+}
+
+.hover\:text-sidebar-accent-foreground:hover {
+  color: var(--sidebar-accent-foreground);
+}
+
+.active\:bg-sidebar-accent:active {
+  background-color: var(--sidebar-accent);
+}
+
+.active\:text-sidebar-accent-foreground:active {
+  color: var(--sidebar-accent-foreground);
+}
+
+.data-\[active\=true\]\:bg-sidebar-accent[data-active="true"] {
+  background-color: var(--sidebar-accent);
+}
+
+.data-\[active\=true\]\:text-sidebar-accent-foreground[data-active="true"] {
+  color: var(--sidebar-accent-foreground);
+}
+
+.group-data-\[variant\=floating\]\:border-sidebar-border:is([data-variant="floating"] *) {
+  border-color: var(--sidebar-border);
+}
+
+.\[data-sidebar\=menu-sub-button\]\:text-sidebar-accent-foreground [data-sidebar="menu-sub-button"] {
+  color: var(--sidebar-accent-foreground);
+}
+
+.\[\&\>svg\]\:text-sidebar-accent-foreground > svg {
+  color: var(--sidebar-accent-foreground);
+}
+
+.peer-hover\/menu-button\:text-sidebar-accent-foreground:is(.peer\/menu-button:hover ~ *) {
+  color: var(--sidebar-accent-foreground);
+}
+
+.peer-data-\[active\=true\]\/menu-button\:text-sidebar-accent-foreground:is(.peer\/menu-button[data-active="true"] ~ *) {
+  color: var(--sidebar-accent-foreground);
+}
+
+.has-\[\[data-variant\=inset\]\]\:bg-sidebar:has([data-variant="inset"]) {
+  background-color: var(--sidebar);
+}

@@ -34,7 +34,7 @@ interface AppContextType {
   addMovement: (movement: Omit<SimpleMovement, 'id' | 'timestamp' | 'createdAt'>) => Promise<void>;
   addLoan: (loan: Omit<Loan, 'id' | 'withdrawalDate'>) => Promise<void>;
   updateLoan: (loanId: string, updates: Partial<Loan>) => Promise<void>;
-  updateStock: (stockId: string, quantity: number) => Promise<void>;
+  updateStock: (stockId: string, quantity: number, location?: string, minimumQuantity?: number) => Promise<void>;
   updateStockWithLocation: (stockId: string, quantity: number, location: string) => void;
   addItemWithStock: (item: Omit<Item, 'id'> & { createdAt?: Date; updatedAt?: Date }, unitId: string, quantity: number, location: string) => Promise<string>;
   addItem: (item: Omit<Item, 'id'> & { createdAt?: Date; updatedAt?: Date }) => void;
@@ -48,7 +48,7 @@ interface AppContextType {
   updateFurnitureRemovalRequest: (requestId: string, updates: Partial<FurnitureRemovalRequest>) => void;
   addFurnitureRequestToDesigner: (request: Omit<FurnitureRequestToDesigner, 'id' | 'createdAt'>) => void;
   updateFurnitureRequestToDesigner: (requestId: string, updates: Partial<FurnitureRequestToDesigner>) => void;
-  addUser: (user: Omit<User, 'id'>) => void;
+  addUser: (user: Omit<User, 'id'> & { password?: string }) => void;
   updateUser: (userId: string, updates: Partial<User>) => void;
   deleteUser: (userId: string) => void;
   addUnit: (unit: Omit<Unit, 'id'>) => void;
@@ -162,7 +162,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.log('🏢 [AppContext] Units recebidas do backend:', JSON.stringify(unitsData, null, 2));
         
         // Ensure units always have floors as array
-        const unitsWithFloors = (unitsData || []).map(unit => {
+        const unitsWithFloors = (unitsData || []).map((unit: Unit) => {
           console.log(`🏢 [AppContext] Unit "${unit.name}" - floors:`, unit.floors, 'Type:', typeof unit.floors, 'isArray:', Array.isArray(unit.floors));
           return {
             ...unit,
@@ -783,7 +783,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addUser = async (userData: Omit<User, 'id'>) => {
+  const addUser = async (userData: Omit<User, 'id'> & { password?: string }) => {
     // Create temporary user in frontend
     const tempId = `user-temp-${Date.now()}`;
     const newUser: User = {
@@ -802,7 +802,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({
           email: userData.email,
-          password: userData.password || 'senha123', // Default password if not provided
+          password: (userData as { password?: string }).password || 'senha123', // Default password if not provided
           name: userData.name,
           role: userData.role,
           primaryUnitId: userData.primaryUnitId,
@@ -1067,8 +1067,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   ) => {
     console.log('🔍 confirmReceipt chamado:', { batchId, confirmationData });
     
+    const confirmedBy = confirmationData.confirmedByUserId ?? (confirmationData as { userId?: string }).userId ?? '';
     const newConfirmation: DeliveryConfirmation = {
       ...confirmationData,
+      confirmedByUserId: confirmedBy,
+      type: confirmationData.type ?? 'receipt',
+      photoUrl: confirmationData.photoUrl ?? '',
       id: `conf-${Date.now()}`,
       batchId,
       timestamp: new Date(),
@@ -1097,7 +1101,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       batch.requestIds.forEach(reqId => {
         updateRequest(reqId, { 
           status: 'completed',
-          completedByUserId: confirmationData.confirmedByUserId,
+          completedByUserId: confirmedBy,
           completedAt: new Date()
         });
       });
@@ -1179,7 +1183,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         status: 'completed',
         deliveredByUserId: confirmationData.confirmedByUserId,
         deliveredAt: new Date(),
-        receivedByUserId: receiver.id,
         completedAt: new Date(),
       });
 

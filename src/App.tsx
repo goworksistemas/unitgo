@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './contexts/AppContext';
-import { LoginPage } from './components/LoginPage';
-import { ResetPasswordPage } from './components/ResetPasswordPage';
-import { AppHeader } from './components/AppHeader';
-import { ControllerDashboard } from './components/ControllerDashboard';
-import { AdminDashboard } from './components/AdminDashboard';
-import { WarehouseDashboard } from './components/WarehouseDashboard';
-import { DriverDashboard } from './components/DriverDashboard';
-import { DesignerDashboard } from './components/DesignerDashboard';
-import { DeveloperDashboard } from './components/DeveloperDashboard';
-import { RequesterDashboard } from './components/RequesterDashboard';
+import { LoginPage } from './components/auth/LoginPage';
+import { ResetPasswordPage } from './components/auth/ResetPasswordPage';
+import { AppLayout } from './components/layout/AppLayout';
+import { ControllerDashboard } from './components/dashboards/ControllerDashboard';
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import { WarehouseDashboard } from './components/dashboards/WarehouseDashboard';
+import { DriverDashboard } from './components/dashboards/DriverDashboard';
+import { DesignerDashboard } from './components/dashboards/DesignerDashboard';
+import { DeveloperDashboard } from './components/dashboards/DeveloperDashboard';
+import { RequesterDashboard } from './components/dashboards/RequesterDashboard';
 import { Toaster } from './components/ui/sonner';
 import { projectId, publicAnonKey } from './utils/supabase/info';
 import { useInactivityLogout } from './hooks/useInactivityLogout';
@@ -129,10 +129,9 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      <AppHeader />
-      <main className="container mx-auto px-3 md:px-4 py-4 md:py-6 max-w-full">
+      <AppLayout>
         {renderDashboard()}
-      </main>
+      </AppLayout>
       <Toaster />
     </div>
   );
