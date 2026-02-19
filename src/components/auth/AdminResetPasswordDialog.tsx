@@ -12,7 +12,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { Lock, Loader2, Eye, EyeOff, User } from 'lucide-react';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
+import { projectId, publicAnonKey, functionSlug } from '../../utils/supabase/info';
 
 interface AdminResetPasswordDialogProps {
   open: boolean;
@@ -76,7 +76,7 @@ export function AdminResetPasswordDialog({
     try {
       console.log('🔐 Enviando requisição para redefinir senha...');
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/auth/admin-reset-password`,
+        `https://${projectId}.supabase.co/functions/v1/${functionSlug}/auth/admin-reset-password`,
         {
           method: 'POST',
           headers: {

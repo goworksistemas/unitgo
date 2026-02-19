@@ -1,6 +1,6 @@
-import { projectId, publicAnonKey } from './supabase/info';
+import { projectId, publicAnonKey, functionSlug } from './supabase/info';
 
-const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-46b247d8`;
+const API_URL = `https://${projectId}.supabase.co/functions/v1/${functionSlug}`;
 
 // Helper to get auth token
 // NOTA: Por enquanto, usar sempre publicAnonKey pois o backend não valida JWT customizado

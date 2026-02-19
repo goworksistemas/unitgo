@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
-import { projectId, publicAnonKey } from '@/utils/supabase/info';
+import { projectId, publicAnonKey, functionSlug } from '@/utils/supabase/info';
 import type { ItemFormState } from './types';
 
 const INITIAL_ITEM_FORM: ItemFormState = {
@@ -106,7 +106,7 @@ export function useItemHandlers() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/upload-image`, {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/${functionSlug}/upload-image`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${publicAnonKey}` },
         body: formData,

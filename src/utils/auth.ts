@@ -1,6 +1,6 @@
-import { projectId, publicAnonKey } from './supabase/info';
+import { projectId, publicAnonKey, functionSlug } from './supabase/info';
 
-const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-46b247d8`;
+const API_URL = `https://${projectId}.supabase.co/functions/v1/${functionSlug}`;
 
 const STORAGE_KEYS = {
   ACCESS_TOKEN: 'gowork_auth_token',

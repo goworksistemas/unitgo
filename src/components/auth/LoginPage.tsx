@@ -10,7 +10,7 @@ import { authService } from '../../utils/auth';
 import { toast } from 'sonner';
 import { ForgotPasswordDialog } from './ForgotPasswordDialog';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
+import { projectId, publicAnonKey, functionSlug } from '../../utils/supabase/info';
 import { User } from '../../types';
 
 export function LoginPage() {
@@ -119,7 +119,7 @@ export function LoginPage() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/auth/signup`,
+        `https://${projectId}.supabase.co/functions/v1/${functionSlug}/auth/signup`,
         {
           method: 'POST',
           headers: {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
-import { projectId, publicAnonKey } from '@/utils/supabase/info';
+import { projectId, publicAnonKey, functionSlug } from '@/utils/supabase/info';
 import type { User, UserRole } from '@/types';
 import type { UserFormState } from './types';
 
@@ -44,7 +44,7 @@ export function useUserHandlers() {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/auth/signup`,
+        `https://${projectId}.supabase.co/functions/v1/${functionSlug}/auth/signup`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${publicAnonKey}` },
@@ -104,7 +104,7 @@ export function useUserHandlers() {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/users/${selectedUser.id}`,
+        `https://${projectId}.supabase.co/functions/v1/${functionSlug}/users/${selectedUser.id}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${publicAnonKey}` },

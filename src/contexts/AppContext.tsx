@@ -9,7 +9,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useRe
 import { User, Unit, Item, UnitStock, Movement, SimpleMovement, Loan, Category, Request, FurnitureTransfer, FurnitureRemovalRequest, FurnitureRequestToDesigner, DeliveryBatch, DeliveryConfirmation } from '../types';
 import { api } from '../utils/api';
 import { generateRandomDailyCode, isDailyCodeExpired } from '../utils/dailyCode';
-import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { projectId, publicAnonKey, functionSlug } from '../utils/supabase/info';
 import { authService } from '../utils/auth';
 
 interface AppContextType {
@@ -526,7 +526,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Save to backend
     try {
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/items`, {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/${functionSlug}/items`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${publicAnonKey}`,
@@ -579,7 +579,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Save to backend
     try {
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/items/${itemId}`, {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/${functionSlug}/items/${itemId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${publicAnonKey}`,
@@ -822,7 +822,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Save to backend using signup endpoint (creates in auth.users and public.users)
     try {
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/auth/signup`, {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/${functionSlug}/auth/signup`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${publicAnonKey}`,
@@ -870,7 +870,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAppUsers(prev => prev.filter(user => user.id !== userId));
     
     // Call API to delete user from backend
-    fetch(`https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/users/${userId}`, {
+    fetch(`https://${projectId}.supabase.co/functions/v1/${functionSlug}/users/${userId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${publicAnonKey}`,
@@ -905,7 +905,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     // Save to backend (backend will generate UUID)
     try {
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/units`, {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/${functionSlug}/units`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${publicAnonKey}`,
@@ -946,7 +946,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Save to backend
     try {
       console.log('📤 [AppContext.updateUnit] Enviando para backend...');
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/units/${unitId}`, {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/${functionSlug}/units/${unitId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${publicAnonKey}`,

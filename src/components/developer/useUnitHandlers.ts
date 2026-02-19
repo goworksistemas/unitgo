@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
-import { projectId, publicAnonKey } from '@/utils/supabase/info';
+import { projectId, publicAnonKey, functionSlug } from '@/utils/supabase/info';
 import type { Unit } from '@/types';
 import type { UnitFormState } from './types';
 
@@ -87,7 +87,7 @@ export function useUnitHandlers() {
 
   const handleInitSchema = async () => {
     try {
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/init-schema`, {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/${functionSlug}/init-schema`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${publicAnonKey}`, 'Content-Type': 'application/json' },
       });

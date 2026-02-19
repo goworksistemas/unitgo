@@ -12,7 +12,7 @@ import { DesignerDashboard } from './components/dashboards/DesignerDashboard';
 import { DeveloperDashboard } from './components/dashboards/DeveloperDashboard';
 import { RequesterDashboard } from './components/dashboards/RequesterDashboard';
 import { Toaster } from './components/ui/sonner';
-import { projectId, publicAnonKey } from './utils/supabase/info';
+import { projectId, publicAnonKey, functionSlug } from './utils/supabase/info';
 import { useInactivityLogout } from './hooks/useInactivityLogout';
 import { toast } from 'sonner';
 import type { UserRole } from './types';
@@ -67,7 +67,7 @@ function AppContent() {
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     fetch(
-      `https://${projectId}.supabase.co/functions/v1/make-server-46b247d8/seed`,
+      `https://${projectId}.supabase.co/functions/v1/${functionSlug}/seed`,
       {
         method: 'POST',
         headers: {
