@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -60,6 +60,14 @@ export function AppSidebar() {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set([activeSection]));
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [appVersion, setAppVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/version.json')
+      .then(res => res.ok ? res.json() : null)
+      .then((data: { version?: string } | null) => data?.version && setAppVersion(data.version))
+      .catch(() => {});
+  }, []);
 
   const availableUnits = getAvailableUnits();
 
@@ -219,10 +227,17 @@ export function AppSidebar() {
       {/* Footer: user info + actions */}
       <SidebarFooter>
         <SidebarSeparator />
+        {appVersion && (
+          <div className="px-4 pt-3">
+            <p className="text-xs text-sidebar-foreground/50">v{appVersion}</p>
+          </div>
+        )}
         <div className="p-3">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-3 w-full rounded-lg p-2 hover:bg-sidebar-accent transition-colors text-left">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-3 w-full rounded-lg p-2 hover:bg-sidebar-accent transition-colors text-left">
                 <Avatar className="h-8 w-8 shrink-0">
                   <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                     {currentUser ? getInitials(currentUser.name) : '??'}
@@ -237,8 +252,13 @@ export function AppSidebar() {
                   </p>
                 </div>
                 <ChevronsUpDown className="h-4 w-4 text-sidebar-foreground/40 shrink-0" />
-              </button>
-            </DropdownMenuTrigger>
+                  </button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                {appVersion ? `v${appVersion}` : 'Usuário'}
+              </TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="start" side="top" className="w-56">
               <DropdownMenuLabel>
                 <p className="text-sm">{currentUser?.name}</p>
