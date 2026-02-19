@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, Clock, AlertTriangle, ArrowRightLeft, Package, Users, TrendingUp, BarChart3, Layers } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, LabelList } from 'recharts';
+import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 
 interface OverviewPanelProps {
   stats: {
@@ -16,6 +17,10 @@ interface OverviewPanelProps {
   requestsCount: number;
   requestsByItem: { name: string; count: number }[];
 }
+
+const chartConfig: ChartConfig = {
+  count: { label: 'Pedidos', color: 'hsl(var(--primary))' },
+};
 
 export function OverviewPanel({ stats, operationalUnitsCount, requestsCount, requestsByItem }: OverviewPanelProps) {
   return (
@@ -76,13 +81,13 @@ export function OverviewPanel({ stats, operationalUnitsCount, requestsCount, req
                 <p className="text-sm">Nenhum pedido registrado</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={requestsByItem} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis type="number" stroke="var(--muted-foreground)" />
-                  <YAxis type="category" dataKey="name" width={120} stroke="var(--muted-foreground)" tick={{ fontSize: 12 }} />
-                  <Tooltip />
+              <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                <BarChart data={requestsByItem} layout="vertical" margin={{ top: 5, right: 40, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} />
+                  <YAxis type="category" dataKey="name" width={120} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} tickMargin={8} />
                   <Bar dataKey="count" radius={[0, 8, 8, 0]}>
+                    <LabelList dataKey="count" position="right" offset={8} className="fill-foreground text-xs font-medium" />
                     {requestsByItem.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={`url(#colorGradient-${index})`} />
                     ))}
@@ -96,7 +101,7 @@ export function OverviewPanel({ stats, operationalUnitsCount, requestsCount, req
                     ))}
                   </defs>
                 </BarChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             )}
           </CardContent>
         </Card>

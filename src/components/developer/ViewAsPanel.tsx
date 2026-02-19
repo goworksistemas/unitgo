@@ -17,12 +17,7 @@ export function ViewAsPanel({ viewAsRole, setViewAsRole }: ViewAsPanelProps) {
     return <DeveloperModeSelector currentViewRole={viewAsRole} onSelectRole={setViewAsRole} />;
   }
 
-  return (
-    <div className="space-y-4">
-      <DeveloperModeSelector currentViewRole={viewAsRole} onSelectRole={setViewAsRole} />
-      <RoleDashboard role={viewAsRole} />
-    </div>
-  );
+  return <RoleDashboard role={viewAsRole} />;
 }
 
 function RoleDashboard({ role }: { role: string }) {

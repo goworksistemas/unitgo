@@ -3,7 +3,7 @@ import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { 
-  Shield, 
+  ShieldCheck, 
   UserCog, 
   Package, 
   Truck, 
@@ -23,7 +23,7 @@ interface DeveloperModeSelectorProps {
 const roleConfig: Partial<Record<UserRole, { label: string; icon: React.ReactNode; color: string; description: string }>> = {
   controller: {
     label: 'Controlador',
-    icon: <Shield className="w-4 h-4" />,
+    icon: <ShieldCheck className="w-4 h-4" />,
     color: 'bg-purple-500',
     description: 'Controle total de estoque e movimentações'
   },

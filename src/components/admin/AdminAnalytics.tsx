@@ -20,17 +20,8 @@ import {
   Clock,
   MapPin
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend,
-  ResponsiveContainer,
-  Cell
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, LabelList } from 'recharts';
+import { ChartContainer, type ChartConfig } from '../ui/chart';
 import {
   Table,
   TableBody,
@@ -45,10 +36,11 @@ import { toast } from 'sonner';
 const COLORS = {
   primary: 'var(--primary)',
   secondary: 'var(--secondary)',
-  success: '#10b981',
-  warning: '#f59e0b',
-  danger: '#ef4444',
-  gray: '#606060',
+  success: 'var(--success)',
+  warning: 'var(--warning)',
+  danger: 'var(--destructive)',
+  gray: 'var(--muted-foreground)',
+  purple: 'var(--accent-2)',
 };
 
 type LogEntry = {
@@ -403,18 +395,33 @@ export function AdminAnalytics() {
     };
   }, [filteredLogs]);
 
+  // Cores do sistema para o gráfico
+  const chartColors = [
+    COLORS.primary,
+    COLORS.secondary,
+    COLORS.warning,
+    COLORS.danger,
+    COLORS.purple,
+    COLORS.success,
+    COLORS.danger,
+  ];
+
   // Dados para gráfico de tipos de ação
   const actionTypeData = useMemo(() => {
     return [
-      { name: 'Movimentações', value: stats.movements, color: COLORS.primary },
-      { name: 'Solicitações', value: stats.requests, color: COLORS.secondary },
-      { name: 'Transferências', value: stats.transfers, color: COLORS.warning },
-      { name: 'Retiradas', value: stats.removals, color: COLORS.danger },
-      { name: 'Entregas', value: stats.deliveries, color: '#8b5cf6' },
-      { name: 'Aprovações', value: stats.approvals, color: '#10b981' },
-      { name: 'Rejeições', value: stats.rejections, color: '#ef4444' },
+      { name: 'Movimentações', value: stats.movements },
+      { name: 'Solicitações', value: stats.requests },
+      { name: 'Transferências', value: stats.transfers },
+      { name: 'Retiradas', value: stats.removals },
+      { name: 'Entregas', value: stats.deliveries },
+      { name: 'Aprovações', value: stats.approvals },
+      { name: 'Rejeições', value: stats.rejections },
     ].filter(item => item.value > 0);
   }, [stats]);
+
+  const chartConfig: ChartConfig = {
+    value: { label: 'Quantidade', color: COLORS.primary },
+  };
 
   // Gerar relatório CSV
   const generateCSVReport = () => {
@@ -674,19 +681,19 @@ export function AdminAnalytics() {
             <CardDescription>Visualização por tipo de ação</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={actionTypeData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <BarChart data={actionTypeData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
                 <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  <LabelList dataKey="value" position="top" offset={8} className="fill-foreground text-xs font-medium" />
                   {actionTypeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
                   ))}
                 </Bar>
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       )}
