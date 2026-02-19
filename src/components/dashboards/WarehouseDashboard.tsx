@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
-import { LayoutDashboard, ClipboardList, Truck, Package, Scan } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Truck, Scan } from 'lucide-react';
 import { toast } from 'sonner';
 import { AddFurnitureDialog } from '../dialogs/AddFurnitureDialog';
 import { SelectItemForStockDialog } from '../dialogs/SelectItemForStockDialog';
@@ -33,10 +33,9 @@ export function WarehouseDashboard() {
   const isStorageWorker = currentUser?.warehouseType === 'storage';
 
   const navigationSections: NavigationSection[] = useMemo(() => [
-    { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
+    { id: 'overview', label: 'Visão Geral e Estoque', icon: LayoutDashboard },
     { id: 'requests', label: 'Solicitações', icon: ClipboardList },
     { id: 'logistics', label: 'Logística', icon: Truck },
-    { id: 'stock', label: 'Estoque', icon: Package },
   ], []);
 
   const { activeSection } = useDashboardNav(
@@ -78,9 +77,12 @@ export function WarehouseDashboard() {
     switch (activeSection) {
       case 'overview':
         return (
-          <OverviewPanel pendingCount={pendingRequests.length} approvedCount={approvedRequests.length}
-            awaitingPickupCount={awaitingPickupRequests.length} outForDeliveryCount={outForDeliveryRequests.length}
-            lowStockItems={lowStockItems} getItemById={getItemById} />
+          <div className="space-y-6">
+            <OverviewPanel pendingCount={pendingRequests.length} approvedCount={approvedRequests.length}
+              awaitingPickupCount={awaitingPickupRequests.length} outForDeliveryCount={outForDeliveryRequests.length}
+              lowStockItems={lowStockItems} getItemById={getItemById} />
+            <StockPanel onAddFurniture={() => setShowAddFurniture(true)} onAddStock={() => setShowAddStock(true)} />
+          </div>
         );
       case 'requests':
         return (
@@ -104,8 +106,6 @@ export function WarehouseDashboard() {
             onCreateBatch={() => setShowCreateBatch(true)} onFinalizeBatch={actions.handleFinalizeBatch}
             onPickupFurniture={actions.handlePickupFurniture} onReceiveFurniture={actions.handleReceiveFurniture} />
         );
-      case 'stock':
-        return <StockPanel onAddFurniture={() => setShowAddFurniture(true)} onAddStock={() => setShowAddStock(true)} />;
       default: return null;
     }
   };

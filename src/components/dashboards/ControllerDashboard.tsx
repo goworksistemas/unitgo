@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
-import { Package, Calendar, Armchair, ShoppingCart, Scan } from 'lucide-react';
+import { Package, Calendar, Armchair, Scan } from 'lucide-react';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
 import { ControllerKPIs } from '../controller/ControllerKPIs';
@@ -70,17 +70,16 @@ export function ControllerDashboard() {
       b => b.targetUnitId === currentUnit.id && b.status === 'pending_confirmation'
     ).length;
     return [
-      { id: 'furniture', label: 'Móveis', icon: Armchair },
+      { id: 'furniture-almoxarifado', label: 'Móveis e Almoxarifado', icon: Armchair },
       { id: 'loans', label: 'Empréstimos', icon: Calendar },
       { id: 'deliveries', label: 'Recebimentos', icon: Package, badge: pendingDeliveries > 0 ? pendingDeliveries : undefined },
-      { id: 'almoxarifado', label: 'Almoxarifado', icon: ShoppingCart },
     ];
   }, [currentUnit, deliveryBatches]);
 
   const { activeSection } = useDashboardNav(
     navigationSections, 'Painel do Controlador',
     currentUnit ? `Gestão de ${currentUnit.name}` : 'Selecione uma unidade no sidebar',
-    'furniture'
+    'furniture-almoxarifado'
   );
 
   if (!currentUnit) {
@@ -107,18 +106,20 @@ export function ControllerDashboard() {
             onShowQRScanner={() => setShowQRScanner(true)}
           />
         );
-      case 'almoxarifado': return <AlmoxarifadoPanel />;
-      case 'furniture':
+      case 'furniture-almoxarifado':
       default:
         return (
-          <FurniturePanel
-            currentUnit={currentUnit} items={items} unitStocks={unitStocks}
-            getItemById={getItemById} furnitureRemovalRequests={furnitureRemovalRequests}
-            selectedFloor={selectedFloor} onFloorChange={setSelectedFloor}
-            onAddFurniture={() => setAddFurnitureDialogOpen(true)}
-            onRequestFurniture={() => setRequestFurnitureDialogOpen(true)}
-            onRemoval={() => setRemovalDialogOpen(true)}
-          />
+          <div className="space-y-6">
+            <FurniturePanel
+              currentUnit={currentUnit} items={items} unitStocks={unitStocks}
+              getItemById={getItemById} furnitureRemovalRequests={furnitureRemovalRequests}
+              selectedFloor={selectedFloor} onFloorChange={setSelectedFloor}
+              onAddFurniture={() => setAddFurnitureDialogOpen(true)}
+              onRequestFurniture={() => setRequestFurnitureDialogOpen(true)}
+              onRemoval={() => setRemovalDialogOpen(true)}
+            />
+            <AlmoxarifadoPanel />
+          </div>
         );
     }
   };

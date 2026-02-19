@@ -122,26 +122,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Fetch all data from backend on mount
+  // Usa Promise.allSettled para que falhas individuais (ex: 500 em delivery-confirmations)
+  // não bloqueiem o carregamento do app - dados disponíveis são usados, falhas retornam []
   useEffect(() => {
     const fetchData = async () => {
       try {
         console.log('🔄 Carregando dados do backend...');
         
-        const [
-          usersData,
-          unitsData,
-          categoriesData,
-          itemsData,
-          unitStocksData,
-          movementsData,
-          loansData,
-          requestsData,
-          furnitureTransfersData,
-          furnitureRemovalRequestsData,
-          furnitureRequestsToDesignerData,
-          deliveryBatchesData,
-          deliveryConfirmationsData,
-        ] = await Promise.all([
+        const results = await Promise.allSettled([
           api.users.getAll(),
           api.units.getAll(),
           api.categories.getAll(),
@@ -156,6 +144,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
           api.deliveryBatches.getAll(),
           api.deliveryConfirmations.getAll(),
         ]);
+
+        const unwrap = <T,>(r: PromiseSettledResult<T>, fallback: T): T => 
+          r.status === 'fulfilled' ? (r.value ?? fallback) : fallback;
+
+        const usersData = unwrap(results[0], []);
+        const unitsData = unwrap(results[1], []);
+        const categoriesData = unwrap(results[2], []);
+        const itemsData = unwrap(results[3], []);
+        const unitStocksData = unwrap(results[4], []);
+        const movementsData = unwrap(results[5], []);
+        const loansData = unwrap(results[6], []);
+        const requestsData = unwrap(results[7], []);
+        const furnitureTransfersData = unwrap(results[8], []);
+        const furnitureRemovalRequestsData = unwrap(results[9], []);
+        const furnitureRequestsToDesignerData = unwrap(results[10], []);
+        const deliveryBatchesData = unwrap(results[11], []);
+        const deliveryConfirmationsData = unwrap(results[12], []);
+
+        // Log falhas individuais para debug
+        results.forEach((r, i) => {
+          if (r.status === 'rejected') {
+            const names = ['users','units','categories','items','unitStocks','movements','loans','requests','furnitureTransfers','furnitureRemovalRequests','furnitureRequestsToDesigner','deliveryBatches','deliveryConfirmations'];
+            console.warn(`⚠️ Falha ao carregar ${names[i]}:`, r.reason?.message ?? r.reason);
+          }
+        });
 
         setAppUsers(usersData || []);
         

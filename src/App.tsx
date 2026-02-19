@@ -178,7 +178,7 @@ export default function App() {
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AppProvider>
           <Routes>
             <Route path="/reset-password" element={<ResetPasswordPage />} />

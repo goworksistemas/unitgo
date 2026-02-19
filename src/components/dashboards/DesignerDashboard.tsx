@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Armchair, CheckCircle, LayoutDashboard, Palette, User } from 'lucide-react';
+import { LayoutDashboard, Palette } from 'lucide-react';
 import { AddFurnitureDialog } from '../dialogs/AddFurnitureDialog';
 import { FurnitureRequestsPanel } from '../panels/FurnitureRequestsPanel';
 import { FurnitureRemovalDialog } from '../dialogs/FurnitureRemovalDialog';
@@ -19,9 +19,6 @@ export function DesignerDashboard() {
   const navigationSections: NavigationSection[] = useMemo(() => [
     { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
     { id: 'requests', label: 'Projetos', icon: Palette },
-    { id: 'inventory', label: 'Inventário', icon: Armchair },
-    { id: 'my-requests', label: 'Minhas Solicitações', icon: User },
-    { id: 'approvals', label: 'Aprovações', icon: CheckCircle },
   ], []);
 
   const { activeSection } = useDashboardNav(
@@ -35,51 +32,44 @@ export function DesignerDashboard() {
     switch (activeSection) {
       case 'overview':
         return (
-          <OverviewPanel
-            pendingCount={ds.pendingTransfers.length}
-            approvedCount={ds.approvedTransfers.length}
-            completedCount={ds.completedTransfers.length}
-          />
+          <div className="space-y-8">
+            <OverviewPanel
+              pendingCount={ds.pendingTransfers.length}
+              approvedCount={ds.approvedTransfers.length}
+              completedCount={ds.completedTransfers.length}
+            />
+            <InventoryPanel
+              furnitureStock={ds.furnitureStock}
+              viewingUnit={ds.viewingUnit}
+              viewableUnits={ds.viewableUnits}
+              availableUnitsCount={ds.availableUnits.length}
+              onViewingUnitChange={ds.setViewingUnit}
+              onAddFurniture={() => ds.setAddFurnitureDialogOpen(true)}
+              onRequestTransfer={ds.handleRequestTransfer}
+              getItemById={ds.getItemById}
+            />
+            <MyRequestsPanel
+              myRemovalRequests={ds.myRemovalRequests}
+              pendingTransfers={ds.pendingTransfers}
+              approvedTransfers={ds.approvedTransfers}
+              completedTransfers={ds.completedTransfers}
+              onRequestRemoval={() => ds.setRequestRemovalDialogOpen(true)}
+              getItemById={ds.getItemById}
+              getUnitById={ds.getUnitById}
+            />
+            <ApprovalsPanel
+              pendingRemovalRequests={ds.pendingRemovalRequests}
+              approvedRemovalRequests={ds.approvedRemovalRequests}
+              onEvaluate={ds.handleEvaluateRemoval}
+              onReject={ds.handleRejectRemoval}
+              getItemById={ds.getItemById}
+              getUnitById={ds.getUnitById}
+              getUserById={ds.getUserById}
+            />
+          </div>
         );
       case 'requests':
         return <FurnitureRequestsPanel />;
-      case 'inventory':
-        return (
-          <InventoryPanel
-            furnitureStock={ds.furnitureStock}
-            viewingUnit={ds.viewingUnit}
-            viewableUnits={ds.viewableUnits}
-            availableUnitsCount={ds.availableUnits.length}
-            onViewingUnitChange={ds.setViewingUnit}
-            onAddFurniture={() => ds.setAddFurnitureDialogOpen(true)}
-            onRequestTransfer={ds.handleRequestTransfer}
-            getItemById={ds.getItemById}
-          />
-        );
-      case 'my-requests':
-        return (
-          <MyRequestsPanel
-            myRemovalRequests={ds.myRemovalRequests}
-            pendingTransfers={ds.pendingTransfers}
-            approvedTransfers={ds.approvedTransfers}
-            completedTransfers={ds.completedTransfers}
-            onRequestRemoval={() => ds.setRequestRemovalDialogOpen(true)}
-            getItemById={ds.getItemById}
-            getUnitById={ds.getUnitById}
-          />
-        );
-      case 'approvals':
-        return (
-          <ApprovalsPanel
-            pendingRemovalRequests={ds.pendingRemovalRequests}
-            approvedRemovalRequests={ds.approvedRemovalRequests}
-            onEvaluate={ds.handleEvaluateRemoval}
-            onReject={ds.handleRejectRemoval}
-            getItemById={ds.getItemById}
-            getUnitById={ds.getUnitById}
-            getUserById={ds.getUserById}
-          />
-        );
       default:
         return null;
     }
