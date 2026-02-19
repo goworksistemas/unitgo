@@ -94,7 +94,7 @@ export function StockTable({ lowStockItems }: StockTableProps) {
                   <TableCell><span className={stock.quantity === 0 ? 'text-red-600 font-bold' : 'text-yellow-600'}>{stock.quantity}</span></TableCell>
                   <TableCell>{stock.minimumQuantity}</TableCell>
                   <TableCell>
-                    {stock.quantity === 0 ? <Badge variant="destructive">Esgotado</Badge> : <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Baixo</Badge>}
+                    {stock.quantity === 0 ? <Badge variant="destructive">Esgotado</Badge> : <Badge variant="outline" className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700">Baixo</Badge>}
                   </TableCell>
                 </TableRow>
               ))}

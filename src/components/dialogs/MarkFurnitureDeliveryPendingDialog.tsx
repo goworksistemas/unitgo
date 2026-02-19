@@ -101,7 +101,7 @@ export function MarkFurnitureDeliveryPendingDialog({ request, open, onClose }: M
           </Alert>
 
           {/* Aviso */}
-          <Alert className="border-orange-200 bg-orange-50">
+          <Alert className="border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20">
             <AlertCircle className="h-4 w-4 text-orange-600" />
             <AlertDescription className="text-orange-800">
               O controlador da unidade receberá notificação para confirmar o recebimento do móvel.

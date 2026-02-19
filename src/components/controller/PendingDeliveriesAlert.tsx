@@ -24,7 +24,7 @@ export function PendingDeliveriesAlert({
   if (pendingBatches.length === 0) return null;
 
   return (
-    <Card className="border-2 border-secondary bg-cyan-50">
+    <Card className="border-2 border-secondary bg-secondary/10">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -41,11 +41,11 @@ export function PendingDeliveriesAlert({
         {pendingBatches.map(batch => {
           const totalItems = batch.requestIds.length + (batch.furnitureRequestIds?.length || 0);
           return (
-            <div key={batch.id} className="bg-white rounded-lg p-3 border border-cyan-200">
+            <div key={batch.id} className="bg-card rounded-lg p-3 border border-border">
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <p className="font-semibold text-sm">Lote {batch.qrCode}</p>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-muted-foreground">
                     {totalItems} {totalItems === 1 ? 'item' : 'itens'}
                   </p>
                 </div>

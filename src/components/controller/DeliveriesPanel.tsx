@@ -79,8 +79,8 @@ export function DeliveriesPanel({
       </CardHeader>
       <CardContent>
         {hasNoDeliveries ? (
-          <div className="text-center py-12 text-slate-500">
-            <Package className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+          <div className="text-center py-12 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p>Nenhum lote recebido nesta unidade</p>
           </div>
         ) : (

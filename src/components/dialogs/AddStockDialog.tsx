@@ -137,7 +137,7 @@ export function AddStockDialog({
               onChange={(e) => setQuantity(e.target.value)}
               placeholder="Digite a quantidade"
             />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               Novo total: {currentQuantity + parseInt(quantity || '0')}
             </p>
           </div>

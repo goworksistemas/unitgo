@@ -157,7 +157,7 @@ export function SelectItemForStockDialog({
           <div className="space-y-2">
             <Label htmlFor="search">Buscar Item *</Label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="search"
                 value={searchQuery}
@@ -173,7 +173,7 @@ export function SelectItemForStockDialog({
             <Label>Itens Disponíveis</Label>
             <div className="space-y-2 max-h-72 overflow-y-auto border rounded-lg p-2">
               {filteredItems.length === 0 ? (
-                <div className="text-center py-4 text-gray-500 text-sm">
+                <div className="text-center py-4 text-muted-foreground text-sm">
                   {searchQuery ? 'Nenhum item encontrado' : 'Nenhum item disponível'}
                 </div>
               ) : (
@@ -190,19 +190,19 @@ export function SelectItemForStockDialog({
                       onClick={() => setSelectedItemId(item.id)}
                       className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
                         isSelected 
-                          ? 'border-primary bg-blue-50' 
+                          ? 'border-primary bg-primary/10' 
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <div className="font-medium text-sm">{item.name}</div>
-                          <div className="text-xs text-gray-500 line-clamp-1">
+                          <div className="text-xs text-muted-foreground line-clamp-1">
                             {item.description}
                           </div>
                           <div className="flex items-center gap-2 mt-1">
                             {stock && (
-                              <span className="text-xs text-gray-600">
+                              <span className="text-xs text-muted-foreground">
                                 Estoque atual: {stock.quantity}
                               </span>
                             )}
@@ -229,10 +229,10 @@ export function SelectItemForStockDialog({
           {selectedItem && (
             <div className="space-y-2">
               <Label>Item Selecionado</Label>
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border-2 border-primary">
+              <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border-2 border-primary">
                 <div className="flex-1">
                   <span className="text-sm font-medium">{selectedItem.name}</span>
-                  <div className="text-xs text-gray-600">{selectedItem.description}</div>
+                  <div className="text-xs text-muted-foreground">{selectedItem.description}</div>
                 </div>
                 {warehouseStock && (
                   <Badge variant="outline">Atual: {warehouseStock.quantity}</Badge>

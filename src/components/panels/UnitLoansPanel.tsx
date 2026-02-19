@@ -122,7 +122,7 @@ export function UnitLoansPanel() {
                   >
                     <div className="flex gap-3 flex-1 min-w-0">
                       <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Package className="w-6 h-6 text-slate-400" />
+                        <Package className="w-6 h-6 text-muted-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-foreground mb-1 text-sm sm:text-base">{item.name}</h4>
@@ -149,7 +149,7 @@ export function UnitLoansPanel() {
                           )}
                         </div>
 
-                        <div className="text-xs sm:text-sm text-slate-600 space-y-1">
+                        <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
                           <p>
                             Retirada: {new Date(loan.withdrawalDate).toLocaleDateString('pt-BR')} às {new Date(loan.withdrawalDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                           </p>
@@ -157,7 +157,7 @@ export function UnitLoansPanel() {
                             Devolução: {loan.returnDate ? new Date(loan.returnDate).toLocaleDateString('pt-BR') : 'N/A'} {loan.returnDate ? `às ${new Date(loan.returnDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : ''}
                           </p>
                           {loan.observations && (
-                            <p className="text-xs italic text-slate-500 break-words">{loan.observations}</p>
+                            <p className="text-xs italic text-muted-foreground break-words">{loan.observations}</p>
                           )}
                         </div>
                       </div>
@@ -230,7 +230,7 @@ export function UnitLoansPanel() {
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
                   <div className="flex gap-3 flex-1 min-w-0">
                     <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Package className="w-6 h-6 text-slate-400" />
+                      <Package className="w-6 h-6 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-foreground mb-1 text-sm sm:text-base">{item.name}</h4>
@@ -257,7 +257,7 @@ export function UnitLoansPanel() {
                         )}
                       </div>
 
-                      <div className="text-xs sm:text-sm text-slate-600 space-y-1">
+                      <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
                         <p>
                           Retirada: {new Date(loan.withdrawalDate).toLocaleDateString('pt-BR')} às {new Date(loan.withdrawalDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </p>
@@ -265,7 +265,7 @@ export function UnitLoansPanel() {
                           Devolução prevista: {new Date(loan.expectedReturnDate).toLocaleDateString('pt-BR')}
                         </p>
                         {loan.observations && (
-                          <p className="text-xs italic text-slate-500 break-words">{loan.observations}</p>
+                          <p className="text-xs italic text-muted-foreground break-words">{loan.observations}</p>
                         )}
                       </div>
                     </div>
@@ -315,7 +315,7 @@ export function UnitLoansPanel() {
                 >
                   <div className="flex gap-3 flex-1 min-w-0">
                     <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Package className="w-6 h-6 text-slate-400" />
+                      <Package className="w-6 h-6 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-foreground mb-1 text-sm sm:text-base">{item.name}</h4>
@@ -342,7 +342,7 @@ export function UnitLoansPanel() {
                         )}
                       </div>
 
-                      <div className="text-xs sm:text-sm text-slate-600 space-y-1">
+                      <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
                         <p>
                           Retirada: {new Date(loan.withdrawalDate).toLocaleDateString('pt-BR')} às {new Date(loan.withdrawalDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </p>
@@ -350,7 +350,7 @@ export function UnitLoansPanel() {
                           Devolução: {loan.returnDate ? new Date(loan.returnDate).toLocaleDateString('pt-BR') : 'N/A'} {loan.returnDate ? `às ${new Date(loan.returnDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : ''}
                         </p>
                         {loan.observations && (
-                          <p className="text-xs italic text-slate-500 break-words">{loan.observations}</p>
+                          <p className="text-xs italic text-muted-foreground break-words">{loan.observations}</p>
                         )}
                       </div>
                     </div>

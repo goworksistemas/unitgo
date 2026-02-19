@@ -19,7 +19,7 @@ export function DeliveryConfirmedCard({
   if (batches.length === 0) return null;
 
   return (
-    <Card className="border-2 border-green-500 bg-gradient-to-br from-green-50 to-emerald-50">
+    <Card className="border-2 border-green-500 dark:border-green-600 bg-green-50 dark:bg-green-900/10">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -42,14 +42,14 @@ export function DeliveryConfirmedCard({
           const totalItems = batchRequests.length + (batch.furnitureRequestIds?.length || 0);
 
           return (
-            <div key={batch.id} className="bg-white rounded-lg p-4 border-2 border-green-200">
+            <div key={batch.id} className="bg-card rounded-lg p-4 border-2 border-green-200 dark:border-green-700">
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <p className="font-semibold">Lote {batch.qrCode}</p>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-muted-foreground">
                     Destino: {targetUnit?.name} • {totalItems} {totalItems === 1 ? 'item' : 'itens'}
                   </p>
-                  <p className="text-xs text-gray-500">Motorista: {driver?.name}</p>
+                  <p className="text-xs text-muted-foreground">Motorista: {driver?.name}</p>
                 </div>
                 <Badge className="bg-green-600">Confirmado</Badge>
               </div>
@@ -57,7 +57,7 @@ export function DeliveryConfirmedCard({
                 {batchRequests.map(req => {
                   const item = getItemById(req.itemId);
                   return (
-                    <div key={req.id} className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs">
+                    <div key={req.id} className="flex items-center justify-between p-2 bg-muted rounded text-xs">
                       <span className="truncate flex-1">{item?.name}</span>
                       <Badge variant="outline" className="ml-2">Qtd: {req.quantity}</Badge>
                     </div>

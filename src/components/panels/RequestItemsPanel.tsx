@@ -172,7 +172,7 @@ export function RequestItemsPanel() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl">{pendingCount}</div>
-            <p className="text-xs text-gray-600">Aguardando aprovação</p>
+            <p className="text-xs text-muted-foreground">Aguardando aprovação</p>
           </CardContent>
         </Card>
 
@@ -183,7 +183,7 @@ export function RequestItemsPanel() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl">{approvedCount}</div>
-            <p className="text-xs text-gray-600">Aprovadas/Processando</p>
+            <p className="text-xs text-muted-foreground">Aprovadas/Processando</p>
           </CardContent>
         </Card>
 
@@ -194,7 +194,7 @@ export function RequestItemsPanel() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl">{completedCount}</div>
-            <p className="text-xs text-gray-600">Total recebidas</p>
+            <p className="text-xs text-muted-foreground">Total recebidas</p>
           </CardContent>
         </Card>
       </div>
@@ -234,7 +234,7 @@ export function RequestItemsPanel() {
                       <TableCell>
                         <div>
                           <div>{item?.name}</div>
-                          <div className="text-xs text-gray-500">{item?.description}</div>
+                          <div className="text-xs text-muted-foreground">{item?.description}</div>
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
@@ -245,7 +245,7 @@ export function RequestItemsPanel() {
                         <div className="text-sm">
                           {new Date(request.createdAt).toLocaleDateString('pt-BR')}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted-foreground">
                           {new Date(request.createdAt).toLocaleTimeString('pt-BR', {
                             hour: '2-digit',
                             minute: '2-digit'
@@ -254,7 +254,7 @@ export function RequestItemsPanel() {
                       </TableCell>
                       <TableCell>{getStatusBadge(request.status)}</TableCell>
                       <TableCell>
-                        <div className="text-sm text-gray-600 max-w-xs truncate">
+                        <div className="text-sm text-muted-foreground max-w-xs truncate">
                           {request.observations || '-'}
                         </div>
                         {request.status === 'rejected' && request.rejectedReason && (
@@ -269,8 +269,8 @@ export function RequestItemsPanel() {
               </TableBody>
             </Table>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              <Package className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
               <p>Nenhuma solicitação realizada ainda</p>
               <p className="text-sm">Clique em "Nova Solicitação" para começar</p>
             </div>
@@ -349,7 +349,7 @@ export function RequestItemsPanel() {
                 </PopoverContent>
               </Popover>
               {selectedItem && (
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {getItemById(selectedItem)?.description}
                 </p>
               )}

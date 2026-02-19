@@ -84,7 +84,7 @@ export function ControllerDashboard() {
 
   if (!currentUnit) {
     return (
-      <div className="text-center py-12 text-slate-500">
+      <div className="text-center py-12 text-muted-foreground">
         <p className="text-sm">Selecione uma unidade para visualizar</p>
       </div>
     );
@@ -126,23 +126,25 @@ export function ControllerDashboard() {
 
   return (
     <>
-      <ControllerKPIs
-        totalFurniture={unitKPIs.totalFurniture}
-        activeLoans={unitKPIs.activeLoans}
-        overdueLoans={unitKPIs.overdueLoans}
-      />
+      <div className="space-y-4 md:space-y-6">
+        <ControllerKPIs
+          totalFurniture={unitKPIs.totalFurniture}
+          activeLoans={unitKPIs.activeLoans}
+          overdueLoans={unitKPIs.overdueLoans}
+        />
 
-      <PendingDeliveriesAlert
-        currentUnit={currentUnit} deliveryBatches={deliveryBatches}
-        onConfirmReceipt={setScannedBatchId} onViewDetails={setSelectedBatchForTimeline}
-      />
+        <PendingDeliveriesAlert
+          currentUnit={currentUnit} deliveryBatches={deliveryBatches}
+          onConfirmReceipt={setScannedBatchId} onViewDetails={setSelectedBatchForTimeline}
+        />
 
-      <div className="space-y-4">{renderSection()}</div>
+        <div className="space-y-4">{renderSection()}</div>
 
-      <LoanAlerts
-        overdueLoans={unitKPIs.overdueLoans} soonLoans={unitKPIs.soonLoans}
-        overdueLoansData={unitKPIs.overdueLoansData} getItemById={getItemById}
-      />
+        <LoanAlerts
+          overdueLoans={unitKPIs.overdueLoans} soonLoans={unitKPIs.soonLoans}
+          overdueLoansData={unitKPIs.overdueLoansData} getItemById={getItemById}
+        />
+      </div>
 
       <ControllerDialogs
         removalDialogOpen={removalDialogOpen} onRemovalDialogChange={setRemovalDialogOpen}

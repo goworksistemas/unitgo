@@ -83,7 +83,7 @@ export function ItemDetailConsumeForm({
         </div>
 
         {willBeBelowMinimum && (
-          <div className="flex items-center gap-2 text-orange-600 bg-orange-50 p-2 rounded text-sm">
+          <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 p-2 rounded text-sm">
             <AlertTriangle className="w-4 h-4" />
             <span>Esta ação deixará o estoque abaixo do mínimo</span>
           </div>

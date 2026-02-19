@@ -50,8 +50,8 @@ export function RemovalApprovalDialog({
 
         {selectedRequestId && (
           <div className="space-y-4">
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm text-gray-600">Item</div>
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="text-sm text-muted-foreground">Item</div>
               <div>
                 {getItemById(selectedRequest?.itemId || '')?.name}
               </div>
@@ -69,7 +69,7 @@ export function RemovalApprovalDialog({
                 placeholder="Ex: Móvel danificado irreparavelmente, fora dos padrões da empresa..."
                 className="min-h-[100px]"
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Obrigatório apenas para descarte. Deixe em branco para armazenagem.
               </p>
             </div>

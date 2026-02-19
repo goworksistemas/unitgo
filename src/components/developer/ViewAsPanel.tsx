@@ -27,7 +27,7 @@ function RoleDashboard({ role }: { role: string }) {
     case 'admin':
       return <AdminDashboard />;
     case 'warehouse':
-      return <WarehouseDashboard />;
+      return <WarehouseDashboard isDeveloperMode={true} />;
     case 'driver':
       return <DriverDashboard isDeveloperMode={true} />;
     case 'designer':

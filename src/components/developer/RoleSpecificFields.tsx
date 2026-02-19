@@ -64,7 +64,7 @@ export function RoleSpecificFields({ userForm, setUserForm, units, idPrefix = ''
               </div>
             ))}
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             💡 O controlador poderá alternar entre a unidade primária e as unidades adicionais
           </p>
         </div>
@@ -102,18 +102,18 @@ export function RoleSpecificFields({ userForm, setUserForm, units, idPrefix = ''
               <SelectItem value="units">
                 <div className="flex flex-col items-start">
                   <span className="font-medium">Admin Controlador</span>
-                  <span className="text-xs text-slate-500">Gestão de estoque e materiais</span>
+                  <span className="text-xs text-muted-foreground">Gestão de estoque e materiais</span>
                 </div>
               </SelectItem>
               <SelectItem value="warehouse">
                 <div className="flex flex-col items-start">
                   <span className="font-medium">Admin Designer</span>
-                  <span className="text-xs text-slate-500">Gestão de móveis e design</span>
+                  <span className="text-xs text-muted-foreground">Gestão de móveis e design</span>
                 </div>
               </SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             💡 Admin Controlador pode visualizar como Controlador. Admin Designer pode visualizar como Designer.
           </p>
         </div>

@@ -76,7 +76,7 @@ export function DeliveryConfirmationDialog({ batch, open, onClose }: DeliveryCon
               return (
                 <div key={request.id} className="flex items-center justify-between text-sm py-1 border-b last:border-0">
                   <div className="flex items-center gap-2">
-                    <Package className="h-4 w-4 text-gray-500" />
+                    <Package className="h-4 w-4 text-muted-foreground" />
                     <span>{item?.name}</span>
                   </div>
                   <Badge variant="secondary">{request.quantity}x</Badge>
@@ -89,7 +89,7 @@ export function DeliveryConfirmationDialog({ batch, open, onClose }: DeliveryCon
               return (
                 <div key={request.id} className="flex items-center justify-between text-sm py-1 border-b last:border-0">
                   <div className="flex items-center gap-2">
-                    <Armchair className="h-4 w-4 text-gray-500" />
+                    <Armchair className="h-4 w-4 text-muted-foreground" />
                     <span>{item?.name}</span>
                   </div>
                   <Badge variant="secondary">{request.quantity}x</Badge>

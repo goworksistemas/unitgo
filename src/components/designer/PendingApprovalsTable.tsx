@@ -28,7 +28,7 @@ export function PendingApprovalsTable({
 }: PendingApprovalsTableProps) {
   if (requests.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-muted-foreground">
         Nenhuma solicitação pendente
       </div>
     );
@@ -59,14 +59,14 @@ export function PendingApprovalsTable({
                 <TableCell>
                   <div>
                     <div>{item?.name}</div>
-                    <div className="text-xs text-gray-500">{item?.description}</div>
+                    <div className="text-xs text-muted-foreground">{item?.description}</div>
                   </div>
                 </TableCell>
                 <TableCell>{unit?.name}</TableCell>
                 <TableCell>{request.quantity}</TableCell>
                 <TableCell>{requester?.name}</TableCell>
                 <TableCell>
-                  <div className="text-sm text-gray-600 max-w-xs">{request.reason}</div>
+                  <div className="text-sm text-muted-foreground max-w-xs">{request.reason}</div>
                 </TableCell>
                 <TableCell>
                   {new Date(request.createdAt).toLocaleDateString('pt-BR')}

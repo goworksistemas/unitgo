@@ -5,11 +5,12 @@
  * sistema de códigos diários e confirmação de entregas
  */
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { User, Unit, Item, UnitStock, Movement, SimpleMovement, Loan, Category, Request, FurnitureTransfer, FurnitureRemovalRequest, FurnitureRequestToDesigner, DeliveryBatch, DeliveryConfirmation } from '../types';
 import { api } from '../utils/api';
 import { generateRandomDailyCode, isDailyCodeExpired } from '../utils/dailyCode';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { authService } from '../utils/auth';
 
 interface AppContextType {
   currentUser: User | null;
@@ -97,38 +98,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [appDeliveryBatches, setAppDeliveryBatches] = useState<DeliveryBatch[]>([]);
   const [appDeliveryConfirmations, setAppDeliveryConfirmations] = useState<DeliveryConfirmation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const sessionValidated = useRef(false);
 
-  // Restore session from localStorage on mount
+  // Fluxo unificado: validar sessão -> carregar dados -> restaurar usuário
   useEffect(() => {
-    const restoreSession = () => {
-      const token = localStorage.getItem('gowork_auth_token');
-      const userStr = localStorage.getItem('gowork_current_user');
-      
-      if (token && userStr) {
+    if (sessionValidated.current) return;
+    sessionValidated.current = true;
+
+    const initApp = async () => {
+      let validatedUserId: string | null = null;
+
+      // 1. Se há sessão salva, valida com o backend antes de restaurar
+      if (authService.hasStoredSession()) {
+        const storedUserId = authService.getStoredUserId();
+        console.log('🔄 Sessão encontrada no localStorage, validando...');
+
         try {
-          const storedUser = JSON.parse(userStr);
-          console.log('🔄 Restaurando sessão do localStorage:', storedUser.name);
-          // Will set currentUser after data is loaded
-          localStorage.setItem('gowork_pending_user_id', storedUser.id);
-        } catch (error) {
-          console.error('❌ Erro ao restaurar sessão:', error);
-          localStorage.removeItem('gowork_auth_token');
-          localStorage.removeItem('gowork_current_user');
+          const sessionData = await authService.getSession();
+
+          if (sessionData) {
+            console.log('✅ Sessão válida no backend');
+            validatedUserId = storedUserId;
+          } else {
+            console.log('⚠️ Sessão inválida, limpando dados locais');
+            authService.clearStorage();
+          }
+        } catch {
+          // Erro de rede: mantém a sessão local (pode ser offline temporário)
+          console.log('⚠️ Erro de rede ao validar sessão, mantendo sessão local');
+          validatedUserId = storedUserId;
         }
       }
-    };
 
-    restoreSession();
-  }, []);
-
-  // Fetch all data from backend on mount
-  // Usa Promise.allSettled para que falhas individuais (ex: 500 em delivery-confirmations)
-  // não bloqueiem o carregamento do app - dados disponíveis são usados, falhas retornam []
-  useEffect(() => {
-    const fetchData = async () => {
+      // 2. Carregar dados do backend
       try {
         console.log('🔄 Carregando dados do backend...');
-        
+
         const results = await Promise.allSettled([
           api.users.getAll(),
           api.units.getAll(),
@@ -145,7 +150,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           api.deliveryConfirmations.getAll(),
         ]);
 
-        const unwrap = <T,>(r: PromiseSettledResult<T>, fallback: T): T => 
+        const unwrap = <T,>(r: PromiseSettledResult<T>, fallback: T): T =>
           r.status === 'fulfilled' ? (r.value ?? fallback) : fallback;
 
         const usersData = unwrap(results[0], []);
@@ -162,29 +167,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const deliveryBatchesData = unwrap(results[11], []);
         const deliveryConfirmationsData = unwrap(results[12], []);
 
-        // Log falhas individuais para debug
         results.forEach((r, i) => {
           if (r.status === 'rejected') {
-            const names = ['users','units','categories','items','unitStocks','movements','loans','requests','furnitureTransfers','furnitureRemovalRequests','furnitureRequestsToDesigner','deliveryBatches','deliveryConfirmations'];
+            const names = ['users', 'units', 'categories', 'items', 'unitStocks', 'movements', 'loans', 'requests', 'furnitureTransfers', 'furnitureRemovalRequests', 'furnitureRequestsToDesigner', 'deliveryBatches', 'deliveryConfirmations'];
             console.warn(`⚠️ Falha ao carregar ${names[i]}:`, r.reason?.message ?? r.reason);
           }
         });
 
         setAppUsers(usersData || []);
-        
-        // Ensure units always have floors as array
+
         const unitsWithFloors = (unitsData || []).map((unit: Unit) => ({
           ...unit,
           floors: Array.isArray(unit.floors) ? unit.floors : []
         }));
         setAppUnits(unitsWithFloors);
-        
+
         setAppCategories(categoriesData || []);
         setAppItems(itemsData || []);
         setAppUnitStocks(unitStocksData || []);
         setAppMovements(movementsData || []);
-        
-        // Convert loan dates from ISO strings to Date objects
+
         const loansWithDates = (loansData || []).map((loan: any) => ({
           ...loan,
           withdrawalDate: loan.withdrawalDate ? new Date(loan.withdrawalDate) : new Date(),
@@ -192,7 +194,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           returnDate: loan.returnDate ? new Date(loan.returnDate) : undefined,
         }));
         setAppLoans(loansWithDates);
-        
+
         setAppRequests(requestsData || []);
         setAppFurnitureTransfers(furnitureTransfersData || []);
         setAppFurnitureRemovalRequests(furnitureRemovalRequestsData || []);
@@ -200,12 +202,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setAppDeliveryBatches(deliveryBatchesData || []);
         setAppDeliveryConfirmations(deliveryConfirmationsData || []);
 
-        // Data loaded successfully
-        
-        // Restore user session after data is loaded
-        const pendingUserId = localStorage.getItem('gowork_pending_user_id');
-        if (pendingUserId && usersData) {
-          const userToRestore = usersData.find((u: User) => u.id === pendingUserId);
+        // 3. Restaurar usuário somente se a sessão foi validada
+        if (validatedUserId && usersData) {
+          const userToRestore = usersData.find((u: User) => u.id === validatedUserId);
           if (userToRestore) {
             console.log('✅ Sessão restaurada:', userToRestore.name);
             setCurrentUser(userToRestore);
@@ -226,21 +225,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
               }
             }
 
-            // Set primary unit if exists
             if (userToRestore.role !== 'designer' && userToRestore.primaryUnitId && unitsData) {
               const primaryUnit = unitsData.find((u: Unit) => u.id === userToRestore.primaryUnitId);
               if (primaryUnit) {
                 setCurrentUnitState(primaryUnit);
               }
             }
-            
-            // Clean up pending flag
-            localStorage.removeItem('gowork_pending_user_id');
           } else {
             console.log('⚠️ Usuário não encontrado no banco, limpando sessão');
-            localStorage.removeItem('gowork_auth_token');
-            localStorage.removeItem('gowork_current_user');
-            localStorage.removeItem('gowork_pending_user_id');
+            authService.clearStorage();
           }
         }
       } catch (error) {
@@ -249,8 +242,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     };
-    
-    fetchData();
+
+    initApp();
   }, []);
 
   const login = (userId: string) => {
@@ -286,11 +279,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setCurrentUser(null);
     setCurrentUnitState(null);
-    
-    // Clear localStorage
-    localStorage.removeItem('gowork_auth_token');
-    localStorage.removeItem('gowork_current_user');
-    localStorage.removeItem('gowork_pending_user_id');
+
+    authService.signOut().catch(() => {});
   };
 
   const setCurrentUnit = (unitId: string) => {

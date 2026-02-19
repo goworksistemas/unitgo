@@ -246,7 +246,7 @@ export function RequesterConfirmationPanel() {
                         {totalMyItems} {totalMyItems === 1 ? 'item seu' : 'itens seus'}
                       </p>
                     </div>
-                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
+                    <Badge variant="outline" className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700">
                       <Clock className="h-3 w-3 mr-1" />
                       Aguardando
                     </Badge>

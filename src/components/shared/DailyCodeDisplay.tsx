@@ -33,7 +33,7 @@ export function DailyCodeDisplay() {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-cyan-50 border border-primary/30 rounded-lg cursor-help">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded-lg cursor-help">
             <KeyRound className="h-4 w-4 text-primary" />
             <span className="text-sm font-mono tracking-wider text-primary">{formattedCode}</span>
           </div>

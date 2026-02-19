@@ -256,13 +256,13 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Package className="w-8 h-8 sm:w-12 sm:h-12 text-slate-400" />
+                <Package className="w-8 h-8 sm:w-12 sm:h-12 text-muted-foreground" />
               )}
             </div>
 
             <div className="flex-1 min-w-0">
-              <h2 className="text-slate-900 mb-1 sm:mb-2 text-sm sm:text-base">{item.name}</h2>
-              <p className="text-slate-600 mb-2 sm:mb-3 text-xs sm:text-sm">{item.description}</p>
+              <h2 className="text-foreground mb-1 sm:mb-2 text-sm sm:text-base">{item.name}</h2>
+              <p className="text-muted-foreground mb-2 sm:mb-3 text-xs sm:text-sm">{item.description}</p>
               
               <div className="flex flex-wrap gap-2">
                 {category && (
@@ -284,11 +284,11 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
           {/* Stock Info */}
           {stock && (
             <div className="bg-muted rounded-lg p-3 sm:p-4 space-y-3">
-              <h3 className="text-slate-900 text-sm sm:text-base">Estoque na Unidade</h3>
+              <h3 className="text-foreground text-sm sm:text-base">Estoque na Unidade</h3>
               
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <p className="text-xs sm:text-sm text-slate-600 mb-1">Quantidade Disponível</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">Quantidade Disponível</p>
                   <p className={`text-xl sm:text-2xl ${
                     isOutOfStock ? 'text-red-600' : 
                     isBelowMinimum ? 'text-orange-600' : 
@@ -298,20 +298,20 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm text-slate-600 mb-1">Estoque Mínimo</p>
-                  <p className="text-xl sm:text-2xl text-slate-900">{stock.minimumQuantity} {item.unitOfMeasure}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1">Estoque Mínimo</p>
+              <p className="text-xl sm:text-2xl text-foreground">{stock.minimumQuantity} {item.unitOfMeasure}</p>
                 </div>
               </div>
 
               {stock.location && (
-                <div className="flex items-center gap-2 text-slate-600">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span className="text-xs sm:text-sm">{stock.location}</span>
                 </div>
               )}
 
               {isBelowMinimum && (
-                <div className="flex items-center gap-2 text-orange-600 bg-orange-50 p-2 rounded">
+                <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 p-2 rounded">
                   <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span className="text-xs sm:text-sm">Estoque abaixo do mínimo recomendado</span>
                 </div>
@@ -321,12 +321,12 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
 
           {/* Loan Rules */}
           {!item.isConsumable && item.defaultLoanDays > 0 && (
-            <div className="bg-blue-50 rounded-lg p-3 sm:p-4">
+            <div className="bg-primary/10 rounded-lg p-3 sm:p-4">
               <div className="flex items-start gap-2">
-                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 mt-0.5" />
+                <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-primary mt-0.5" />
                 <div>
-                  <p className="text-xs sm:text-sm text-blue-900">Prazo padrão de empréstimo</p>
-                  <p className="text-xs sm:text-sm text-blue-700">{item.defaultLoanDays} dias</p>
+                  <p className="text-xs sm:text-sm text-primary">Prazo padrão de empréstimo</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{item.defaultLoanDays} dias</p>
                 </div>
               </div>
             </div>
@@ -335,7 +335,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
           {/* Actions */}
           {stock && (
             <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4">
-              <h3 className="text-slate-900 text-sm sm:text-base">Ações Disponíveis</h3>
+              <h3 className="text-foreground text-sm sm:text-base">Ações Disponíveis</h3>
 
               {actionType === 'none' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -399,7 +399,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
               {actionType === 'add' && (
                 <div className="space-y-4 bg-muted p-4 rounded-lg">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-slate-900 text-sm sm:text-base">Adicionar ao Estoque</h4>
+                    <h4 className="text-foreground text-sm sm:text-base">Adicionar ao Estoque</h4>
                     <Button variant="ghost" size="sm" onClick={() => setActionType('none')} className="flex-shrink-0">
                       Cancelar
                     </Button>
@@ -438,7 +438,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
                       />
                     </div>
 
-                    <div className="bg-green-50 p-3 rounded text-sm text-green-800">
+                    <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded text-sm text-green-800 dark:text-green-300">
                       Novo saldo: {stock.quantity + quantity} {item.unitOfMeasure}
                     </div>
 
@@ -453,7 +453,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
               {actionType === 'remove' && (
                 <div className="space-y-4 bg-muted p-4 rounded-lg">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-slate-900 text-sm sm:text-base">Remover do Estoque</h4>
+                    <h4 className="text-foreground text-sm sm:text-base">Remover do Estoque</h4>
                     <Button variant="ghost" size="sm" onClick={() => setActionType('none')} className="flex-shrink-0">
                       Cancelar
                     </Button>
@@ -484,7 +484,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
                       />
                     </div>
 
-                    <div className="bg-orange-50 p-3 rounded text-sm text-orange-800">
+                    <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded text-sm text-orange-800 dark:text-orange-300">
                       Novo saldo: {stock.quantity - quantity} {item.unitOfMeasure}
                     </div>
 
@@ -499,7 +499,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
               {actionType === 'loanToUser' && (
                 <div className="space-y-4 bg-muted p-4 rounded-lg">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-slate-900 text-sm sm:text-base">Emprestar para Usuário</h4>
+                    <h4 className="text-foreground text-sm sm:text-base">Emprestar para Usuário</h4>
                     <Button variant="ghost" size="sm" onClick={() => setActionType('none')} className="flex-shrink-0">
                       Cancelar
                     </Button>
@@ -543,7 +543,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
                         value={loanDays}
                         onChange={(e) => setLoanDays(parseInt(e.target.value) || 1)}
                       />
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Devolução prevista: {new Date(Date.now() + loanDays * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}
                       </p>
                     </div>
@@ -560,14 +560,14 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
                     </div>
 
                     {item.requiresResponsibilityTerm && (
-                      <div className="flex items-center gap-2 text-blue-600 bg-blue-50 p-2 rounded text-sm">
+                      <div className="flex items-center gap-2 text-primary bg-primary/10 p-2 rounded text-sm">
                         <FileText className="w-4 h-4" />
                         <span>Este item requer termo de responsabilidade</span>
                       </div>
                     )}
 
                     {willBeBelowMinimum && (
-                      <div className="flex items-center gap-2 text-orange-600 bg-orange-50 p-2 rounded text-sm">
+                      <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 p-2 rounded text-sm">
                         <AlertTriangle className="w-4 h-4" />
                         <span>Esta ação deixará o estoque abaixo do mínimo</span>
                       </div>
@@ -584,7 +584,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
               {actionType === 'consume' && (
                 <div className="space-y-4 bg-muted p-4 rounded-lg">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-slate-900 text-sm sm:text-base">
+                    <h4 className="text-foreground text-sm sm:text-base">
                       {currentUser?.role === 'executor' ? 'Consumir Item para Serviço' : (item.isConsumable ? 'Consumir Item' : 'Usar Item (Definitivo)')}
                     </h4>
                     <Button variant="ghost" size="sm" onClick={() => setActionType('none')} className="flex-shrink-0">
@@ -605,7 +605,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
                           onChange={(e) => setServiceOrder(e.target.value)}
                           required
                         />
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           Informe a OS ou descrição do serviço que está realizando
                         </p>
                       </div>
@@ -637,7 +637,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
                     </div>
 
                     {willBeBelowMinimum && (
-                      <div className="flex items-center gap-2 text-orange-600 bg-orange-50 p-2 rounded text-sm">
+                      <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 p-2 rounded text-sm">
                         <AlertTriangle className="w-4 h-4" />
                         <span>Esta ação deixará o estoque abaixo do mínimo</span>
                       </div>
@@ -655,7 +655,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
           )}
 
           {isOutOfStock && (
-            <div className="text-center py-4 text-slate-500">
+            <div className="text-center py-4 text-muted-foreground">
               <p className="text-xs sm:text-sm">Item sem estoque disponível nesta unidade</p>
             </div>
           )}

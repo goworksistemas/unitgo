@@ -204,10 +204,10 @@ export function RequestFurnitureToDesignerDialog({
                               <div className="flex flex-col">
                                 <span>{displayName}</span>
                                 {item.description && (
-                                  <span className="text-xs text-slate-500">{item.description}</span>
+                                  <span className="text-xs text-muted-foreground">{item.description}</span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200">
+                              <div className="flex items-center gap-1 text-xs text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded border border-green-200 dark:border-green-700">
                                 <Package className="h-3 w-3" />
                                 <span>{item.availableStock}</span>
                               </div>
@@ -221,7 +221,7 @@ export function RequestFurnitureToDesignerDialog({
               </PopoverContent>
             </Popover>
             {selectedItem && (
-              <div className="flex items-center gap-1.5 text-xs text-green-700 bg-green-50 px-2 py-1.5 rounded border border-green-200">
+              <div className="flex items-center gap-1.5 text-xs text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 px-2 py-1.5 rounded border border-green-200 dark:border-green-700">
                 <Package className="h-3.5 w-3.5" />
                 <span>
                   <strong>{selectedItem.availableStock}</strong> unidade{selectedItem.availableStock !== 1 ? 's' : ''} disponível{selectedItem.availableStock !== 1 ? 'is' : ''} no almoxarifado
@@ -258,7 +258,7 @@ export function RequestFurnitureToDesignerDialog({
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Ex: Sala de reunião 1, Recepção, etc."
             />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               Onde o móvel será posicionado na unidade
             </p>
           </div>
@@ -272,7 +272,7 @@ export function RequestFurnitureToDesignerDialog({
               placeholder="Explique o motivo da solicitação do móvel..."
               rows={4}
             />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               Por que este móvel é necessário para a unidade?
             </p>
           </div>
@@ -284,7 +284,7 @@ export function RequestFurnitureToDesignerDialog({
             </Alert>
           )}
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
             <p className="text-xs text-blue-800">
               <strong>Fluxo de aprovação:</strong><br />
               1. Designer avalia e aprova/rejeita<br />

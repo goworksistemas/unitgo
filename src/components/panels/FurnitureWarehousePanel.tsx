@@ -30,7 +30,11 @@ import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
-export function FurnitureWarehousePanel() {
+interface FurnitureWarehousePanelProps {
+  isDeveloperMode?: boolean;
+}
+
+export function FurnitureWarehousePanel({ isDeveloperMode = false }: FurnitureWarehousePanelProps) {
   const { 
     currentUser, 
     furnitureRequestsToDesigner, 
@@ -56,8 +60,8 @@ export function FurnitureWarehousePanel() {
   const [selectedDriverId, setSelectedDriverId] = useState('');
   const [notes, setNotes] = useState('');
 
-  const isStorageWorker = currentUser?.warehouseType === 'storage';
-  const isDeliveryDriver = currentUser?.warehouseType === 'delivery';
+  const isStorageWorker = isDeveloperMode || currentUser?.warehouseType === 'storage';
+  const isDeliveryDriver = isDeveloperMode || currentUser?.warehouseType === 'delivery';
 
   // Motoristas disponíveis
   const drivers = users.filter(u => u.role === 'warehouse' && u.warehouseType === 'delivery');
@@ -144,13 +148,13 @@ export function FurnitureWarehousePanel() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved_designer':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">Designer Aprovou</Badge>;
+        return <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">Designer Aprovou</Badge>;
       case 'approved_storage':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">Storage Aprovou</Badge>;
+        return <Badge variant="outline" className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700">Storage Aprovou</Badge>;
       case 'in_transit':
-        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300">Em Trânsito</Badge>;
+        return <Badge variant="outline" className="bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700">Em Trânsito</Badge>;
       case 'completed':
-        return <Badge variant="outline" className="bg-muted text-slate-700 border-slate-300">Concluído</Badge>;
+        return <Badge variant="outline" className="bg-muted text-muted-foreground border-border">Concluído</Badge>;
       case 'rejected':
         return <Badge variant="destructive">Rejeitado</Badge>;
       default:
@@ -188,15 +192,15 @@ export function FurnitureWarehousePanel() {
     if (!item || !unit || !requester) return null;
 
     return (
-      <div className="border rounded-lg p-4 bg-white hover:shadow-sm transition-shadow">
+      <div className="border rounded-lg p-4 bg-card hover:shadow-sm transition-shadow">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <Sofa className="h-4 w-4 text-primary flex-shrink-0" />
-              <h4 className="font-medium text-slate-900">{item.name}</h4>
+              <h4 className="font-medium text-foreground">{item.name}</h4>
             </div>
             {item.brand && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 {item.brand}{item.model && ` - ${item.model}`}
               </p>
             )}
@@ -208,30 +212,30 @@ export function FurnitureWarehousePanel() {
         </div>
 
         <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2 text-slate-600">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Building2 className="h-3.5 w-3.5" />
             <span>{unit.name}</span>
           </div>
           
-          <div className="flex items-center gap-2 text-slate-600">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <MapPin className="h-3.5 w-3.5" />
             <span className="truncate">{request.location}</span>
           </div>
 
-          <div className="flex items-center gap-2 text-slate-600">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <User className="h-3.5 w-3.5" />
             <span>Solicitante: {requester.name}</span>
           </div>
 
-          <div className="flex items-center gap-2 text-slate-600">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
             <span>{formatDate(request.createdAt)}</span>
           </div>
         </div>
 
-        <div className="mt-3 p-3 bg-muted rounded border border-slate-200">
-          <p className="text-xs font-medium text-slate-700 mb-1">Justificativa:</p>
-          <p className="text-xs text-slate-600">{request.justification}</p>
+        <div className="mt-3 p-3 bg-muted rounded border border-border">
+          <p className="text-xs font-medium text-foreground mb-1">Justificativa:</p>
+          <p className="text-xs text-muted-foreground">{request.justification}</p>
         </div>
 
         {/* Alerta de estoque insuficiente */}
@@ -248,8 +252,8 @@ export function FurnitureWarehousePanel() {
 
         {/* Informação de estoque disponível */}
         {request.status === 'approved_designer' && !hasInsufficientStock && availableQuantity > 0 && (
-          <div className="mt-3 p-2 bg-green-50 rounded border border-green-200">
-            <div className="flex items-center gap-2 text-xs text-green-700">
+          <div className="mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-700">
+            <div className="flex items-center gap-2 text-xs text-green-700 dark:text-green-300">
               <Package className="h-3 w-3" />
               <span>
                 <strong>Estoque:</strong> {availableQuantity} unidade{availableQuantity !== 1 ? 's' : ''} disponível{availableQuantity !== 1 ? 'is' : ''}
@@ -260,7 +264,7 @@ export function FurnitureWarehousePanel() {
 
         {/* Timeline de aprovações */}
         {(designer || storageWorker || separator || driver) && (
-          <div className="mt-3 space-y-1.5 text-xs text-slate-500">
+          <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
             {designer && request.reviewedAt && (
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-3 w-3 text-green-600" />
@@ -430,8 +434,8 @@ export function FurnitureWarehousePanel() {
 
             <TabsContent value="pending" className="space-y-3 mt-4">
               {pendingStorageApproval.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
-                  <CheckCircle className="h-10 w-10 mx-auto mb-2 text-slate-300" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <CheckCircle className="h-10 w-10 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">Nenhuma solicitação pendente de aprovação</p>
                 </div>
               ) : (
@@ -445,8 +449,8 @@ export function FurnitureWarehousePanel() {
 
             <TabsContent value="approved" className="space-y-3 mt-4">
               {approvedStorage.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
-                  <Package className="h-10 w-10 mx-auto mb-2 text-slate-300" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <Package className="h-10 w-10 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">Nenhum item aguardando separação</p>
                 </div>
               ) : (
@@ -465,8 +469,8 @@ export function FurnitureWarehousePanel() {
                 
                 if (deliveriesToShow.length === 0) {
                   return (
-                    <div className="text-center py-8 text-slate-500">
-                      <Truck className="h-10 w-10 mx-auto mb-2 text-slate-300" />
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Truck className="h-10 w-10 mx-auto mb-2 opacity-30" />
                       <p className="text-sm">
                         {isDeliveryDriver 
                           ? 'Nenhuma entrega atribuída a você' 
@@ -544,7 +548,7 @@ export function FurnitureWarehousePanel() {
                 <Label htmlFor="driver">Motorista *</Label>
                 <select
                   id="driver"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md"
+                  className="w-full px-3 py-2 border border-border bg-input-background text-foreground rounded-md"
                   value={selectedDriverId}
                   onChange={(e) => setSelectedDriverId(e.target.value)}
                 >

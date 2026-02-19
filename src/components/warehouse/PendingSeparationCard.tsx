@@ -20,7 +20,7 @@ export function PendingSeparationCard({
   if (batches.length === 0) return null;
 
   return (
-    <Card className="border-2 border-orange-400 bg-gradient-to-br from-orange-50 to-yellow-50">
+    <Card className="border-2 border-orange-400 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/10">
       <CardHeader>
         <CardTitle className="text-base sm:text-lg flex items-center gap-2">
           <PackageCheck className="h-5 w-5 text-orange-600" />
@@ -37,12 +37,12 @@ export function PendingSeparationCard({
           const batchRequests = requests.filter(r => batch.requestIds.includes(r.id));
 
           return (
-            <div key={batch.id} className="bg-white rounded-lg p-4 border-2 border-orange-300">
+            <div key={batch.id} className="bg-card rounded-lg p-4 border-2 border-orange-300 dark:border-orange-700">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <h4 className="font-semibold">Lote #{batch.qrCode}</h4>
-                  <p className="text-xs text-gray-600">Destino: {unit?.name}</p>
-                  <p className="text-xs text-gray-600">Motorista: {driver?.name}</p>
+                  <p className="text-xs text-muted-foreground">Destino: {unit?.name}</p>
+                  <p className="text-xs text-muted-foreground">Motorista: {driver?.name}</p>
                 </div>
                 <Badge className="bg-orange-500">Separando</Badge>
               </div>
@@ -56,12 +56,12 @@ export function PendingSeparationCard({
                     <div
                       key={req.id}
                       className={`flex items-center justify-between p-3 rounded border-2 ${
-                        isSeparated ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'
+                        isSeparated ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700' : 'bg-muted border-border'
                       }`}
                     >
                       <div className="flex-1">
                         <p className="text-sm font-medium">{item?.name}</p>
-                        <p className="text-xs text-gray-600">Qtd: {req.quantity}</p>
+                        <p className="text-xs text-muted-foreground">Qtd: {req.quantity}</p>
                       </div>
                       {isSeparated ? (
                         <Badge className="bg-green-600"> Separado</Badge>

@@ -6,6 +6,7 @@ import { RequestCard } from './RequestCard';
 import { FurnitureWarehousePanel } from '../panels/FurnitureWarehousePanel';
 
 interface RequestsPanelProps {
+  isDeveloperMode?: boolean;
   isDeliveryDriver: boolean;
   isStorageWorker: boolean;
   activeRequests: Request[];
@@ -23,7 +24,7 @@ interface RequestsPanelProps {
 }
 
 export function RequestsPanel({
-  isDeliveryDriver, isStorageWorker,
+  isDeveloperMode, isDeliveryDriver, isStorageWorker,
   activeRequests, outForDeliveryRequests, completedRequests, pendingRequests,
   getItemById, getUnitById, getUserById, getStockForItem, warehouseUnitId,
   onApprove, onReject, onDelivered,
@@ -36,7 +37,7 @@ export function RequestsPanel({
 
   const renderList = (items: Request[], emptyMsg: string) =>
     items.length === 0 ? (
-      <div className="text-center py-8 text-gray-500">{emptyMsg}</div>
+      <div className="text-center py-8 text-muted-foreground">{emptyMsg}</div>
     ) : (
       <div className="space-y-3">
         {items.map(r => <RequestCard key={r.id} request={r} {...cardProps} />)}
@@ -96,7 +97,7 @@ export function RequestsPanel({
         </CardContent>
       </Card>
 
-      <FurnitureWarehousePanel />
+      <FurnitureWarehousePanel isDeveloperMode={isDeveloperMode} />
     </div>
   );
 }

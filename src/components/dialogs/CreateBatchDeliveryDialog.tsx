@@ -211,7 +211,7 @@ export function CreateBatchDeliveryDialog({
             <select
               value={selectedDriverId}
               onChange={(e) => setSelectedDriverId(e.target.value)}
-              className="w-full border rounded-lg p-2 text-sm"
+              className="w-full border border-border bg-input-background rounded-lg p-2 text-sm text-foreground"
             >
               <option value="">Selecione um motorista</option>
               {drivers.map(driver => (
@@ -233,7 +233,7 @@ export function CreateBatchDeliveryDialog({
           {/* Lista de Itens por Unidade */}
           <div className="border rounded-lg max-h-96 overflow-y-auto">
             {allUnits.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center text-muted-foreground">
                 Nenhum item disponível para entrega
               </div>
             ) : (
@@ -250,7 +250,7 @@ export function CreateBatchDeliveryDialog({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Badge className="bg-primary">{unit?.name}</Badge>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-muted-foreground">
                             {totalUnitItems} item(ns)
                           </span>
                         </div>
@@ -272,7 +272,7 @@ export function CreateBatchDeliveryDialog({
                           <div
                             key={request.id}
                             className={`flex items-center gap-3 p-2 rounded border transition-colors cursor-pointer ${
-                              isSelected ? 'bg-blue-50 border-primary' : 'hover:bg-gray-50'
+                              isSelected ? 'bg-primary/10 border-primary' : 'hover:bg-muted'
                             }`}
                             onClick={() => toggleRequest(request.id)}
                           >
@@ -280,10 +280,10 @@ export function CreateBatchDeliveryDialog({
                               checked={isSelected}
                               onCheckedChange={() => toggleRequest(request.id)}
                             />
-                            <Package className="h-4 w-4 text-gray-500" />
+                            <Package className="h-4 w-4 text-muted-foreground" />
                             <div className="flex-1">
                               <p className="text-sm">{item?.name}</p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-muted-foreground">
                                 Quantidade: {request.quantity}
                               </p>
                             </div>
@@ -300,7 +300,7 @@ export function CreateBatchDeliveryDialog({
                           <div
                             key={request.id}
                             className={`flex items-center gap-3 p-2 rounded border transition-colors cursor-pointer ${
-                              isSelected ? 'bg-blue-50 border-primary' : 'hover:bg-gray-50'
+                              isSelected ? 'bg-primary/10 border-primary' : 'hover:bg-muted'
                             }`}
                             onClick={() => toggleFurnitureRequest(request.id)}
                           >
@@ -308,10 +308,10 @@ export function CreateBatchDeliveryDialog({
                               checked={isSelected}
                               onCheckedChange={() => toggleFurnitureRequest(request.id)}
                             />
-                            <Armchair className="h-4 w-4 text-gray-500" />
+                            <Armchair className="h-4 w-4 text-muted-foreground" />
                             <div className="flex-1">
                               <p className="text-sm">{item?.name}</p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-muted-foreground">
                                 Quantidade: {request.quantity}
                               </p>
                             </div>
@@ -327,7 +327,7 @@ export function CreateBatchDeliveryDialog({
 
           {/* Resumo da Seleção */}
           {(selectedRequestIds.length > 0 || selectedFurnitureIds.length > 0) ? (
-            <Alert className="bg-blue-50 border-primary">
+            <Alert className="bg-primary/10 border-primary">
               <Package className="h-4 w-4" />
               <AlertDescription>
                 <span className="font-medium">
@@ -340,9 +340,9 @@ export function CreateBatchDeliveryDialog({
               </AlertDescription>
             </Alert>
           ) : (
-            <Alert className="bg-yellow-50 border-yellow-400">
-              <AlertCircle className="h-4 w-4 text-yellow-600" />
-              <AlertDescription className="text-yellow-900 text-xs">
+            <Alert className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-400 dark:border-yellow-700">
+              <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+              <AlertDescription className="text-yellow-900 dark:text-yellow-300 text-xs">
                 Selecione pelo menos 1 item para criar o lote
               </AlertDescription>
             </Alert>

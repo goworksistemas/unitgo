@@ -77,22 +77,64 @@ export function ReceiptConfirmationDialog({ batch, open, onClose }: ReceiptConfi
     }
   };
 
-  // Iniciar captura de foto
   const startCamera = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast.error('Câmera não disponível. Verifique se o site está sendo acessado via HTTPS.', {
+        duration: 5000,
+      });
+      return;
+    }
+
     try {
-      setIsCapturing(true);
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' } // Câmera frontal
+        video: { facingMode: { ideal: 'user' } }
       });
       
+      setIsCapturing(true);
+
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        try {
+          await videoRef.current.play();
+        } catch {
+          // autoPlay deve resolver
+        }
+      } else {
+        stream.getTracks().forEach(track => track.stop());
+        setIsCapturing(false);
       }
-    } catch (error) {
-      toast.error('Não foi possível acessar a câmera');
-      console.error('Camera error:', error);
+    } catch (error: any) {
       setIsCapturing(false);
+
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        toast.error('Permissão da câmera negada. Habilite o acesso à câmera nas configurações do navegador.', {
+          duration: 5000,
+        });
+      } else if (error.name === 'NotFoundError' || error.name === 'NotReadableError') {
+        toast.error('Câmera não encontrada ou em uso por outro app.', { duration: 5000 });
+      } else if (error.name === 'OverconstrainedError') {
+        try {
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          setIsCapturing(true);
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+          if (videoRef.current) {
+            videoRef.current.srcObject = fallbackStream;
+            try { await videoRef.current.play(); } catch {}
+          } else {
+            fallbackStream.getTracks().forEach(track => track.stop());
+            setIsCapturing(false);
+          }
+          return;
+        } catch {
+          toast.error('Não foi possível acessar a câmera.', { duration: 5000 });
+        }
+      } else {
+        toast.error('Não foi possível acessar a câmera. Verifique as permissões.', { duration: 5000 });
+      }
+      
+      console.error('Camera error:', error);
     }
   };
 
@@ -176,7 +218,7 @@ export function ReceiptConfirmationDialog({ batch, open, onClose }: ReceiptConfi
           </Alert>
 
           {/* Verificação do Código QR */}
-          <div className="space-y-3 border rounded-lg p-4 bg-gray-50">
+          <div className="space-y-3 border rounded-lg p-4 bg-muted">
             <div className="flex items-center gap-2 mb-2">
               <QrCodeIcon className="h-5 w-5 text-primary" />
               <label className="text-sm">Código de Verificação</label>
@@ -198,7 +240,7 @@ export function ReceiptConfirmationDialog({ batch, open, onClose }: ReceiptConfi
                 >
                   Verificar Código
                 </Button>
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-muted-foreground text-center">
                   Peça ao motorista para mostrar o código QR
                 </p>
               </div>
@@ -221,7 +263,7 @@ export function ReceiptConfirmationDialog({ batch, open, onClose }: ReceiptConfi
                 return (
                   <div key={request.id} className="flex items-center justify-between text-sm py-1 border-b last:border-0">
                     <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-gray-500" />
+                      <Package className="h-4 w-4 text-muted-foreground" />
                       <span>{item?.name}</span>
                     </div>
                     <Badge variant="secondary">{request.quantity}x</Badge>
@@ -235,7 +277,7 @@ export function ReceiptConfirmationDialog({ batch, open, onClose }: ReceiptConfi
                 return (
                   <div key={request.id} className="flex items-center justify-between text-sm py-1 border-b last:border-0">
                     <div className="flex items-center gap-2">
-                      <Armchair className="h-4 w-4 text-gray-500" />
+                      <Armchair className="h-4 w-4 text-muted-foreground" />
                       <span>{item?.name}</span>
                     </div>
                     <Badge variant="secondary">{request.quantity}x</Badge>
@@ -267,7 +309,8 @@ export function ReceiptConfirmationDialog({ batch, open, onClose }: ReceiptConfi
                     ref={videoRef} 
                     className="w-full rounded-lg border"
                     autoPlay 
-                    playsInline 
+                    playsInline
+                    muted
                   />
                   <canvas ref={canvasRef} className="hidden" />
                   <div className="flex gap-2">

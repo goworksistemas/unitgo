@@ -24,7 +24,7 @@ export function ItemDetailAddStockForm({
   return (
     <div className="space-y-4 bg-muted p-4 rounded-lg">
       <div className="flex items-center justify-between gap-2">
-        <h4 className="text-slate-900 text-sm sm:text-base">Adicionar ao Estoque</h4>
+        <h4 className="text-foreground text-sm sm:text-base">Adicionar ao Estoque</h4>
         <Button variant="ghost" size="sm" onClick={onCancel} className="flex-shrink-0">
           Cancelar
         </Button>
@@ -60,7 +60,7 @@ export function ItemDetailAddStockForm({
             rows={3}
           />
         </div>
-        <div className="bg-green-50 p-3 rounded text-sm text-green-800">
+        <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded text-sm text-green-800 dark:text-green-300">
           Novo saldo: {stock.quantity + quantity} {item.unitOfMeasure}
         </div>
         <Button onClick={onSubmit} className="w-full">
@@ -89,7 +89,7 @@ export function ItemDetailRemoveStockForm({
   return (
     <div className="space-y-4 bg-muted p-4 rounded-lg">
       <div className="flex items-center justify-between gap-2">
-        <h4 className="text-slate-900 text-sm sm:text-base">Remover do Estoque</h4>
+        <h4 className="text-foreground text-sm sm:text-base">Remover do Estoque</h4>
         <Button variant="ghost" size="sm" onClick={onCancel} className="flex-shrink-0">
           Cancelar
         </Button>
@@ -118,7 +118,7 @@ export function ItemDetailRemoveStockForm({
             required
           />
         </div>
-        <div className="bg-orange-50 p-3 rounded text-sm text-orange-800">
+        <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded text-sm text-orange-800 dark:text-orange-300">
           Novo saldo: {stock.quantity - quantity} {item.unitOfMeasure}
         </div>
         <Button onClick={onSubmit} className="w-full" variant="destructive">

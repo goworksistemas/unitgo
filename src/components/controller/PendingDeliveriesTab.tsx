@@ -27,7 +27,7 @@ export function PendingDeliveriesTab({
 }: PendingDeliveriesTabProps) {
   if (pendingBatches.length === 0 && pendingFurnitureDeliveries.length === 0) {
     return (
-      <div className="text-center py-8 text-slate-500">
+      <div className="text-center py-8 text-muted-foreground">
         <CheckCircle className="h-10 w-10 mx-auto mb-2 text-slate-300" />
         <p className="text-sm">Todas as entregas confirmadas!</p>
       </div>

@@ -161,7 +161,7 @@ export function ProductsListPanel() {
                             </Badge>
                           )}
                           {item.isUniqueProduct && (
-                            <Badge variant="default" className="text-xs bg-blue-50 text-blue-700 border-blue-300">
+                            <Badge variant="default" className="text-xs bg-primary/10 text-primary border-primary/30">
                               ID Único
                             </Badge>
                           )}

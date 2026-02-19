@@ -60,17 +60,17 @@ export function TransferDialog({
 
         <div className="space-y-4">
           {selectedItem && (
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm text-gray-600">Item selecionado</div>
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="text-sm text-muted-foreground">Item selecionado</div>
               <div>{getItemById(selectedItem)?.name}</div>
             </div>
           )}
 
           <div className="space-y-2">
             <Label htmlFor="from-unit">De (Unidade Origem)</Label>
-            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="p-3 bg-muted rounded-lg border border-border">
               <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-gray-500" />
+                <Building2 className="h-4 w-4 text-muted-foreground" />
                 {getUnitById(viewingUnit)?.name}
               </div>
             </div>

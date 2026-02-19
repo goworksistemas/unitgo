@@ -99,7 +99,7 @@ export function AddItemDialog() {
     <form onSubmit={handleSubmit} className="space-y-4 px-1">
       {/* Basic Information */}
       <div className="space-y-3">
-        <h4 className="text-sm text-slate-700">Informações Básicas</h4>
+        <h4 className="text-sm text-foreground">Informações Básicas</h4>
         
         <div>
           <Label htmlFor="name">
@@ -166,14 +166,14 @@ export function AddItemDialog() {
 
       {/* Item Type */}
       <div className="space-y-3 pt-3 border-t">
-        <h4 className="text-sm text-slate-700">Tipo de Item</h4>
+        <h4 className="text-sm text-foreground">Tipo de Item</h4>
         
         <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
           <div className="flex-1 pr-3">
             <Label htmlFor="isConsumable" className="cursor-pointer">
               Item Consumível
             </Label>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {isConsumable 
                 ? 'Item de uso único (ex: café, papel)' 
                 : 'Item emprestável (ex: ferramentas)'}
@@ -210,12 +210,12 @@ export function AddItemDialog() {
               />
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
               <div className="flex-1 pr-3">
                 <Label htmlFor="requiresTerm" className="cursor-pointer">
                   Termo de Responsabilidade
                 </Label>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Para itens de alto valor
                 </p>
               </div>
@@ -231,7 +231,7 @@ export function AddItemDialog() {
 
       {/* Additional Details */}
       <div className="space-y-3 pt-3 border-t">
-        <h4 className="text-sm text-slate-700">Detalhes Adicionais (Opcional)</h4>
+        <h4 className="text-sm text-foreground">Detalhes Adicionais (Opcional)</h4>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>

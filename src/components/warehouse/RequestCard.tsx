@@ -19,9 +19,9 @@ interface RequestCardProps {
 }
 
 const URGENCY_CONFIG: Record<string, { className: string; label: string }> = {
-  low: { className: 'bg-green-100 text-green-800 border-green-300', label: 'Baixa' },
-  medium: { className: 'bg-yellow-100 text-yellow-800 border-yellow-300', label: 'Média' },
-  high: { className: 'bg-red-100 text-red-800 border-red-300', label: 'Alta' },
+  low: { className: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-300 dark:border-green-700', label: 'Baixa' },
+  medium: { className: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700', label: 'Média' },
+  high: { className: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-300 dark:border-red-700', label: 'Alta' },
 };
 
 export function RequestCard({
@@ -42,12 +42,12 @@ export function RequestCard({
 
   return (
     <div className={`border rounded-lg p-3 sm:p-4 space-y-3 ${
-      !hasStock && request.status === 'pending' ? 'bg-red-50 border-red-200' : 'bg-white'
+      !hasStock && request.status === 'pending' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-card'
     }`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <h4 className="font-semibold truncate">{item?.name || 'Item não encontrado'}</h4>
-          <p className="text-sm text-gray-600 truncate">{unit?.name}</p>
+          <p className="text-sm text-muted-foreground truncate">{unit?.name}</p>
         </div>
         <div className="flex flex-col items-end gap-1">
           <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
@@ -56,7 +56,7 @@ export function RequestCard({
       </div>
 
       {!hasStock && request.status === 'pending' && (
-        <div className="flex items-start gap-2 p-2 bg-red-100 border border-red-300 rounded text-xs text-red-800">
+        <div className="flex items-start gap-2 p-2 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded text-xs text-red-800 dark:text-red-300">
           <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold">Estoque Insuficiente</p>
@@ -67,19 +67,19 @@ export function RequestCard({
 
       <div className="grid grid-cols-2 gap-2 text-sm">
         <div>
-          <span className="text-gray-500">Qtd:</span>
+          <span className="text-muted-foreground">Qtd:</span>
           <span className="ml-1 font-semibold">{request.quantity}</span>
-          <span className={`ml-1 text-xs font-semibold ${hasStock ? 'text-green-600' : 'text-red-600'}`}>
+          <span className={`ml-1 text-xs font-semibold ${hasStock ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
             (Est: {stockQuantity})
           </span>
         </div>
         <div>
-          <span className="text-gray-500">Solicitante:</span>
+          <span className="text-muted-foreground">Solicitante:</span>
           <span className="ml-1 truncate block">{user?.name}</span>
         </div>
       </div>
 
-      <div className="text-xs text-gray-500">{formatDate(request.createdAt)}</div>
+      <div className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</div>
 
       <div className="flex flex-wrap gap-2">
         {isStorageWorker && request.status === 'pending' && (

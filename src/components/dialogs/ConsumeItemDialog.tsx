@@ -137,7 +137,7 @@ export function ConsumeItemDialog({
               onChange={(e) => setWorkOrder(e.target.value)}
               placeholder="Ex: OS-2025-001"
             />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               Obrigatório para rastreabilidade
             </p>
           </div>

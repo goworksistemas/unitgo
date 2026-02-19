@@ -361,7 +361,7 @@ export function UnitMovementsHistory() {
 
                         {/* Notes */}
                         {movement.notes && (
-                          <div className="mt-2 p-2 bg-white rounded border border-slate-200">
+                          <div className="mt-2 p-2 bg-card rounded border border-border">
                             <p className="text-xs text-slate-700">{movement.notes}</p>
                           </div>
                         )}

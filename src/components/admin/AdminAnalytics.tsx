@@ -512,7 +512,7 @@ export function AdminAnalytics() {
       case 'delivery': return 'bg-purple-100 text-purple-700 border-purple-300';
       case 'approval': return 'bg-emerald-100 text-emerald-700 border-emerald-300';
       case 'rejection': return 'bg-rose-100 text-rose-700 border-rose-300';
-      default: return 'bg-gray-100 text-gray-700 border-gray-300';
+      default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 

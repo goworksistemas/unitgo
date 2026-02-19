@@ -37,7 +37,7 @@ export function ItemDetailLoanForm({
   return (
     <div className="space-y-4 bg-muted p-4 rounded-lg">
       <div className="flex items-center justify-between gap-2">
-        <h4 className="text-slate-900 text-sm sm:text-base">Emprestar para Usuário</h4>
+        <h4 className="text-foreground text-sm sm:text-base">Emprestar para Usuário</h4>
         <Button variant="ghost" size="sm" onClick={onCancel} className="flex-shrink-0">
           Cancelar
         </Button>
@@ -81,7 +81,7 @@ export function ItemDetailLoanForm({
             value={loanDays}
             onChange={(e) => onLoanDaysChange(parseInt(e.target.value) || 1)}
           />
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Devolução prevista: {new Date(Date.now() + loanDays * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}
           </p>
         </div>
@@ -98,7 +98,7 @@ export function ItemDetailLoanForm({
         </div>
 
         {item.requiresResponsibilityTerm && (
-          <div className="flex items-center gap-2 text-blue-600 bg-blue-50 p-2 rounded text-sm">
+          <div className="flex items-center gap-2 text-primary bg-primary/10 p-2 rounded text-sm">
             <FileText className="w-4 h-4" />
             <span>Este item requer termo de responsabilidade</span>
           </div>

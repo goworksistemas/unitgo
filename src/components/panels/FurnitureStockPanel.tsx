@@ -57,7 +57,7 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
   const renderFurnitureTable = (stockList: typeof furnitureStock, emptyMessage: string) => {
     if (stockList.length === 0) {
       return (
-        <div className="text-center py-8 text-gray-500 text-sm">
+        <div className="text-center py-8 text-muted-foreground text-sm">
           {emptyMessage}
         </div>
       );
@@ -72,13 +72,13 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
             const isLow = stock.quantity < stock.minimumQuantity;
             
             return (
-              <div key={stock.id} className="border rounded-lg p-3 bg-white">
+              <div key={stock.id} className="border rounded-lg p-3 bg-card">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex items-start gap-2 flex-1 min-w-0">
                     <Armchair className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm truncate">{item?.name || 'Item não encontrado'}</h4>
-                      <p className="text-xs text-gray-500 line-clamp-1">{item?.description}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-1">{item?.description}</p>
                     </div>
                   </div>
                   {isLow ? (
@@ -92,13 +92,13 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
                 </div>
                 
                 <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="text-gray-500 truncate flex-1 mr-2">{stock.location}</span>
+                  <span className="text-muted-foreground truncate flex-1 mr-2">{stock.location}</span>
                   <div className="flex gap-2 items-center flex-shrink-0">
                     <span className={`font-semibold ${isLow ? 'text-red-600' : 'text-green-600'}`}>
                       {stock.quantity}
                     </span>
-                    <span className="text-gray-400">/</span>
-                    <span className="text-gray-600">{stock.minimumQuantity}</span>
+                    <span className="text-muted-foreground">/</span>
+                    <span className="text-muted-foreground">{stock.minimumQuantity}</span>
                   </div>
                 </div>
 
@@ -144,10 +144,10 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-600">{item?.description}</span>
+                      <span className="text-sm text-muted-foreground">{item?.description}</span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-600">{stock.location}</span>
+                      <span className="text-sm text-muted-foreground">{stock.location}</span>
                     </TableCell>
                     <TableCell className="text-center">
                       <span className={`font-semibold ${isLow ? 'text-red-600' : 'text-green-600'}`}>
@@ -227,7 +227,7 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
                 <CardContent className="pt-4 sm:pt-6 pb-3 sm:pb-6">
                   <div className="text-center">
                     <div className="text-xl sm:text-2xl font-semibold text-primary">{furnitureStock.length}</div>
-                    <p className="text-xs text-gray-600 mt-1">Total de Móveis</p>
+                    <p className="text-xs text-muted-foreground mt-1">Total de Móveis</p>
                   </div>
                 </CardContent>
               </Card>
@@ -237,7 +237,7 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
                     <div className="text-xl sm:text-2xl font-semibold text-green-600">
                       {furnitureStock.filter(s => s.quantity >= s.minimumQuantity).length}
                     </div>
-                    <p className="text-xs text-gray-600 mt-1">Estoque OK</p>
+                    <p className="text-xs text-muted-foreground mt-1">Estoque OK</p>
                   </div>
                 </CardContent>
               </Card>
@@ -245,7 +245,7 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
                 <CardContent className="pt-4 sm:pt-6 pb-3 sm:pb-6">
                   <div className="text-center">
                     <div className="text-xl sm:text-2xl font-semibold text-red-600">{lowStockFurniture.length}</div>
-                    <p className="text-xs text-gray-600 mt-1">Baixo Estoque</p>
+                    <p className="text-xs text-muted-foreground mt-1">Baixo Estoque</p>
                   </div>
                 </CardContent>
               </Card>
@@ -255,7 +255,7 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
                     <div className="text-xl sm:text-2xl font-semibold text-secondary">
                       {furnitureStock.reduce((sum, s) => sum + s.quantity, 0)}
                     </div>
-                    <p className="text-xs text-gray-600 mt-1">Unidades Total</p>
+                    <p className="text-xs text-muted-foreground mt-1">Unidades Total</p>
                   </div>
                 </CardContent>
               </Card>
@@ -270,11 +270,11 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
                   <Armchair className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
                 </div>
                 <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">Estoque de Móveis OK</h3>
-                <p className="text-sm text-gray-600">Todos os móveis estão com quantidade adequada</p>
+                <p className="text-sm text-muted-foreground">Todos os móveis estão com quantidade adequada</p>
               </div>
             ) : (
               <>
-                <div className="bg-red-50 p-3 sm:p-4 rounded-lg border border-red-200 mb-3 sm:mb-4">
+                <div className="bg-red-50 dark:bg-red-900/20 p-3 sm:p-4 rounded-lg border border-red-200 dark:border-red-800 mb-3 sm:mb-4">
                   <div className="flex items-start gap-2 sm:gap-3">
                     <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 mt-0.5 flex-shrink-0" />
                     <div>
@@ -294,15 +294,15 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
                     return (
                       <div 
                         key={stock.id} 
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-white rounded-lg border-2 border-red-200 hover:border-red-300 transition-colors gap-3"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-card rounded-lg border-2 border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700 transition-colors gap-3"
                       >
                         <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                          <div className="p-2 sm:p-3 rounded-lg bg-red-50 flex-shrink-0">
+                          <div className="p-2 sm:p-3 rounded-lg bg-red-50 dark:bg-red-900/30 flex-shrink-0">
                             <Armchair className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold text-sm sm:text-lg truncate">{item?.name}</div>
-                            <div className="text-xs sm:text-sm text-gray-600 line-clamp-1">{item?.description}</div>
+                            <div className="text-xs sm:text-sm text-muted-foreground line-clamp-1">{item?.description}</div>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
                               <Badge variant="outline" className="text-xs">
                                 {stock.location}
@@ -321,7 +321,7 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
                             <div className="text-2xl sm:text-3xl font-bold text-red-600">
                               {stock.quantity}
                             </div>
-                            <div className="text-xs sm:text-sm text-gray-600">
+                            <div className="text-xs sm:text-sm text-muted-foreground">
                               de {stock.minimumQuantity} mínimo
                             </div>
                             <div className="text-xs text-red-600 font-medium mt-1">

@@ -97,29 +97,62 @@ export function AddFurnitureDialog({ open, onOpenChange }: AddFurnitureDialogPro
   }, [open]);
 
   const startCamera = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast.error('Câmera não disponível. Verifique se o site está sendo acessado via HTTPS.', {
+        duration: 5000,
+      });
+      return;
+    }
+
     try {
-      setIsCapturing(true);
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+        video: { facingMode: { ideal: 'environment' } } 
       });
       
+      setIsCapturing(true);
+
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        try {
+          await videoRef.current.play();
+        } catch {
+          // autoPlay deve resolver na maioria dos casos
+        }
+      } else {
+        stream.getTracks().forEach(track => track.stop());
+        setIsCapturing(false);
       }
     } catch (error: any) {
       setIsCapturing(false);
       
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        toast.error('Permissão da câmera negada. Use o botão "Fazer Upload" para enviar uma foto.', {
+        toast.error('Permissão da câmera negada. Habilite nas configurações do navegador ou use "Fazer Upload".', {
           duration: 5000,
         });
-      } else if (error.name === 'NotFoundError') {
-        toast.error('Câmera não encontrada. Use o botão "Fazer Upload" para enviar uma foto.', {
+      } else if (error.name === 'NotFoundError' || error.name === 'NotReadableError') {
+        toast.error('Câmera não encontrada ou em uso por outro app. Use "Fazer Upload".', {
           duration: 5000,
         });
+      } else if (error.name === 'OverconstrainedError') {
+        try {
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          setIsCapturing(true);
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+          if (videoRef.current) {
+            videoRef.current.srcObject = fallbackStream;
+            try { await videoRef.current.play(); } catch {}
+          } else {
+            fallbackStream.getTracks().forEach(track => track.stop());
+            setIsCapturing(false);
+          }
+          return;
+        } catch {
+          toast.error('Não foi possível acessar a câmera. Use "Fazer Upload".', { duration: 5000 });
+        }
       } else {
-        toast.error('Não foi possível acessar a câmera. Use o botão "Fazer Upload" como alternativa.', {
+        toast.error('Não foi possível acessar a câmera. Use "Fazer Upload" como alternativa.', {
           duration: 5000,
         });
       }
@@ -288,7 +321,7 @@ export function AddFurnitureDialog({ open, onOpenChange }: AddFurnitureDialogPro
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Seletor de Item Existente */}
           {furnitureItems.length > 0 && (
-            <div className="space-y-3 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg">
+            <div className="space-y-3 p-4 bg-primary/10 border border-primary/30 rounded-lg">
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2 text-blue-900">
                   <Package className="w-4 h-4" />
@@ -325,7 +358,7 @@ export function AddFurnitureDialog({ open, onOpenChange }: AddFurnitureDialogPro
                       placeholder="Pesquisar por nome ou descrição..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9 bg-white"
+                      className="pl-9 bg-input-background"
                       disabled={isLoading}
                     />
                   </div>
@@ -335,7 +368,7 @@ export function AddFurnitureDialog({ open, onOpenChange }: AddFurnitureDialogPro
                     onValueChange={setSelectedExistingItem}
                     disabled={isLoading}
                   >
-                    <SelectTrigger className="bg-white">
+                    <SelectTrigger className="bg-input-background">
                       <SelectValue placeholder={filteredFurnitureItems.length === 0 ? "Nenhum móvel encontrado" : "Selecione um móvel cadastrado"} />
                     </SelectTrigger>
                     <SelectContent className="max-h-72">
@@ -418,7 +451,7 @@ export function AddFurnitureDialog({ open, onOpenChange }: AddFurnitureDialogPro
                 onValueChange={(value) => setFormData({ ...formData, floor: value })}
                 disabled={isLoading}
               >
-                <SelectTrigger id="furniture-floor" className="bg-white">
+                <SelectTrigger id="furniture-floor" className="bg-input-background">
                   <SelectValue placeholder="Selecione o andar" />
                 </SelectTrigger>
                 <SelectContent>
@@ -462,7 +495,7 @@ export function AddFurnitureDialog({ open, onOpenChange }: AddFurnitureDialogPro
 
           {/* Mensagem informativa para Almoxarifado */}
           {isWarehouse && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <Package className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div>
@@ -519,14 +552,14 @@ export function AddFurnitureDialog({ open, onOpenChange }: AddFurnitureDialogPro
                 >
                   <div className="flex flex-col items-center gap-2">
                     <Camera className="w-8 h-8 text-slate-400" />
-                    <span className="text-sm text-slate-600">Tirar Foto</span>
+                    <span className="text-sm text-muted-foreground">Tirar Foto</span>
                   </div>
                 </Button>
                 
                 <label className="cursor-pointer">
                   <div className="h-32 border-2 border-dashed rounded-md hover:bg-muted transition-colors flex flex-col items-center justify-center gap-2">
                     <Package className="w-8 h-8 text-slate-400" />
-                    <span className="text-sm text-slate-600">Fazer Upload</span>
+                    <span className="text-sm text-muted-foreground">Fazer Upload</span>
                   </div>
                   <input 
                     type="file" 
@@ -545,6 +578,7 @@ export function AddFurnitureDialog({ open, onOpenChange }: AddFurnitureDialogPro
                   ref={videoRef} 
                   autoPlay 
                   playsInline
+                  muted
                   className="w-full rounded-lg border-2 border-primary"
                 />
                 <div className="mt-3 flex gap-2">

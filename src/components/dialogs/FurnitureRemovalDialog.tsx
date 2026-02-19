@@ -161,7 +161,7 @@ export function FurnitureRemovalDialog({ open, onOpenChange }: FurnitureRemovalD
               placeholder="1"
             />
             {selectedItemStock && (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-muted-foreground">
                 Estoque disponível: {selectedItemStock.quantity}
               </p>
             )}

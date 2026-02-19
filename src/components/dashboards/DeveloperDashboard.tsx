@@ -86,7 +86,7 @@ export function DeveloperDashboard() {
               <Button
                 size="sm"
                 variant="secondary"
-                className="gap-2 bg-white text-primary hover:bg-white/90"
+                className="gap-2 bg-white dark:bg-card text-primary hover:bg-white/90 dark:hover:bg-card/90"
                 onClick={() => state.setViewAsRole(null)}
               >
                 <ArrowLeft className="h-4 w-4" />

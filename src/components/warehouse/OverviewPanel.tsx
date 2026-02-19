@@ -25,7 +25,7 @@ export function OverviewPanel({
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl">{pendingCount}</div>
-            <p className="text-xs text-gray-600">Aprovação</p>
+            <p className="text-xs text-muted-foreground">Aprovação</p>
           </CardContent>
         </Card>
 
@@ -36,7 +36,7 @@ export function OverviewPanel({
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl">{approvedCount}</div>
-            <p className="text-xs text-gray-600">Aprovados</p>
+            <p className="text-xs text-muted-foreground">Aprovados</p>
           </CardContent>
         </Card>
 
@@ -47,7 +47,7 @@ export function OverviewPanel({
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl">{awaitingPickupCount}</div>
-            <p className="text-xs text-gray-600">Retirada</p>
+            <p className="text-xs text-muted-foreground">Retirada</p>
           </CardContent>
         </Card>
 
@@ -58,7 +58,7 @@ export function OverviewPanel({
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl">{outForDeliveryCount}</div>
-            <p className="text-xs text-gray-600">Entrega</p>
+            <p className="text-xs text-muted-foreground">Entrega</p>
           </CardContent>
         </Card>
 
@@ -69,15 +69,15 @@ export function OverviewPanel({
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl">{lowStockItems.length}</div>
-            <p className="text-xs text-gray-600">Materiais</p>
+            <p className="text-xs text-muted-foreground">Materiais</p>
           </CardContent>
         </Card>
       </div>
 
       {lowStockItems.length > 0 && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
           <CardHeader>
-            <CardTitle className="text-red-900 flex items-center gap-2 text-base sm:text-lg">
+            <CardTitle className="text-red-900 dark:text-red-400 flex items-center gap-2 text-base sm:text-lg">
               <AlertCircle className="h-5 w-5" />
               Alertas de Estoque Baixo - Materiais
             </CardTitle>
@@ -88,16 +88,16 @@ export function OverviewPanel({
               {lowStockItems.map(stock => {
                 const item = getItemById(stock.itemId);
                 return (
-                  <div key={stock.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-red-200">
+                  <div key={stock.id} className="flex items-center justify-between p-3 bg-card rounded-lg border border-red-200 dark:border-red-800">
                     <div>
                       <div className="font-medium text-sm sm:text-base">{item?.name}</div>
-                      <div className="text-xs sm:text-sm text-gray-600">{stock.location}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">{stock.location}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-red-700 font-semibold text-sm sm:text-base">
+                      <div className="text-red-700 dark:text-red-400 font-semibold text-sm sm:text-base">
                         {stock.quantity} / {stock.minimumQuantity}
                       </div>
-                      <div className="text-xs text-gray-600">atual / mínimo</div>
+                      <div className="text-xs text-muted-foreground">atual / mínimo</div>
                     </div>
                   </div>
                 );

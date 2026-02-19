@@ -77,6 +77,8 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
     'overview'
   );
 
+  const isDevMode = isDeveloperMode;
+
   // IDs de todos os itens que já estão em lotes
   const itemsInBatches = new Set<string>();
   deliveryBatches.forEach(batch => {
@@ -85,12 +87,10 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
   });
 
   // MOTORISTAS NÃO VEEM MATERIAIS INDIVIDUAIS - APENAS LOTES
-  // Materiais regulares sempre vão em lotes, então motorista não precisa ver individuais
   const materialsToPickup: any[] = [];
   const materialsInTransit: any[] = [];
 
   // Coletas de móveis (para armazenamento/descarte) - APENAS os que NÃO estão em lotes
-  // Estes são individuais porque vão direto para o almoxarifado
   const furnitureToCollect = furnitureRemovalRequests.filter(
     r => (r.status === 'approved_storage' || r.status === 'approved_disposal') && 
         !itemsInBatches.has(r.id)
@@ -100,13 +100,13 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
   );
 
   // Entregas de móveis aprovadas por designers - INDIVIDUAIS atribuídas ao motorista
-  // Filtra entregas que foram atribuídas especificamente a este motorista
+  // Em modo dev: mostra todas; modo normal: filtra pelo motorista logado
   const furnitureToDeliver = furnitureRequestsToDesigner.filter(
     r => r.status === 'in_transit' && 
-         r.assignedToWarehouseUserId === currentUser?.id &&
+         (isDevMode || r.assignedToWarehouseUserId === currentUser?.id) &&
          !itemsInBatches.has(r.id)
   );
-  const furnitureDeliveryInTransit = furnitureToDeliver; // Mesma lista
+  const furnitureDeliveryInTransit = furnitureToDeliver;
 
   const totalToPickup = furnitureToCollect.length;
   const totalInTransit = furnitureInTransit.length + furnitureDeliveryInTransit.length;
@@ -170,12 +170,12 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
       <Card key={request.id} className="border-2">
         <CardContent className="p-3 md:p-4">
           <div className="flex items-start gap-2 md:gap-3 mb-3 md:mb-4">
-            <div className={`p-2 md:p-3 rounded-lg ${isStorage ? 'bg-blue-50' : 'bg-red-50'}`}>
+            <div className={`p-2 md:p-3 rounded-lg ${isStorage ? 'bg-primary/10' : 'bg-red-50 dark:bg-red-900/20'}`}>
               <Armchair className={`h-6 w-6 md:h-8 md:w-8 ${isStorage ? 'text-primary' : 'text-red-600'}`} />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-base md:text-lg mb-1 truncate">{item?.name}</h3>
-              <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600 mb-2">
+              <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-2">
                 <Building2 className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="truncate">{unit?.name}</span>
               </div>
@@ -213,15 +213,15 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
       : 0;
 
     return (
-      <Card key={request.id} className="border-2 border-purple-200 bg-purple-50/30">
+      <Card key={request.id} className="border-2 border-purple-200 dark:border-purple-700 bg-purple-50/30 dark:bg-purple-900/20">
         <CardContent className="p-3 md:p-4">
           <div className="flex items-start gap-2 md:gap-3 mb-2 md:mb-3">
-            <div className="p-2 md:p-3 rounded-lg bg-purple-100">
+            <div className="p-2 md:p-3 rounded-lg bg-purple-100 dark:bg-purple-900/30">
               <Armchair className="h-6 w-6 md:h-8 md:w-8 text-purple-600" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-base md:text-lg mb-1 truncate">{item?.name}</h3>
-              <div className="flex items-center gap-2 text-xs md:text-sm text-purple-700">
+              <div className="flex items-center gap-2 text-xs md:text-sm text-purple-700 dark:text-purple-300">
                 <Clock className="h-3 w-3 md:h-4 md:w-4" />
                 <span>Coletado há {elapsed} min</span>
               </div>
@@ -229,7 +229,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
             </div>
           </div>
 
-          <div className="text-xs md:text-sm text-gray-600 text-center p-2 md:p-3 bg-purple-100 rounded-lg">
+          <div className="text-xs md:text-sm text-muted-foreground text-center p-2 md:p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
             Entregue este móvel no almoxarifado central
           </div>
         </CardContent>
@@ -245,23 +245,23 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
       : 0;
 
     return (
-      <Card key={request.id} className="border-2 border-green-200 bg-green-50/30">
+      <Card key={request.id} className="border-2 border-green-200 dark:border-green-700 bg-green-50/30 dark:bg-green-900/20">
         <CardContent className="p-3 md:p-4">
           <div className="flex items-start gap-2 md:gap-3 mb-2 md:mb-3">
-            <div className="p-2 md:p-3 rounded-lg bg-green-100">
+            <div className="p-2 md:p-3 rounded-lg bg-green-100 dark:bg-green-900/30">
               <Armchair className="h-6 w-6 md:h-8 md:w-8 text-green-600" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-base md:text-lg mb-1 truncate">{item?.name}</h3>
-              <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600 mb-1 md:mb-2">
+              <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-1 md:mb-2">
                 <Building2 className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="truncate">{unit?.name}</span>
               </div>
-              <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600 mb-1 md:mb-2">
+              <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-1 md:mb-2">
                 <MapPin className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="truncate">{request.location}</span>
               </div>
-              <div className="flex items-center gap-2 text-xs md:text-sm text-green-700 mb-1 md:mb-2">
+              <div className="flex items-center gap-2 text-xs md:text-sm text-green-700 dark:text-green-300 mb-1 md:mb-2">
                 <Clock className="h-3 w-3 md:h-4 md:w-4" />
                 <span>Atribuído há {elapsed} min</span>
               </div>
@@ -336,8 +336,8 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                   </div>
                 </div>
               )}
-              {currentUser && deliveryBatches.filter(b => 
-                b.driverUserId === currentUser.id && 
+              {deliveryBatches.filter(b => 
+                (isDevMode || b.driverUserId === currentUser?.id) && 
                 (b.status === 'in_transit' || b.status === 'delivery_confirmed')
               ).length > 0 && (
                 <div>
@@ -347,7 +347,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                   </h2>
                   <div className="space-y-3">
                     {deliveryBatches
-                      .filter(b => b.driverUserId === currentUser!.id && (b.status === 'in_transit' || b.status === 'delivery_confirmed'))
+                      .filter(b => (isDevMode || b.driverUserId === currentUser?.id) && (b.status === 'in_transit' || b.status === 'delivery_confirmed'))
                       .map(batch => {
                         const unit = getUnitById(batch.targetUnitId);
                         const totalItems = batch.requestIds.length + (batch.furnitureRequestIds?.length || 0);
@@ -358,12 +358,12 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                           <Card key={batch.id} className="border-2 border-primary">
                             <CardContent className="p-3 md:p-4">
                               <div className="flex items-start gap-2 md:gap-3 mb-3 md:mb-4">
-                                <div className="p-2 md:p-3 rounded-lg bg-blue-50">
+                                <div className="p-2 md:p-3 rounded-lg bg-primary/10">
                                   <Package className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <h3 className="font-semibold text-base md:text-lg mb-1">Lote {batch.qrCode}</h3>
-                                  <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600 mb-2">
+                                  <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-2">
                                     <Building2 className="h-3 w-3 md:h-4 md:w-4" />
                                     <span className="truncate">{unit?.name}</span>
                                   </div>
@@ -399,7 +399,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                               )}
                               {(batch.status === 'delivery_confirmed' || hasDeliveryConfirmation) && (
                                 <div className="space-y-2">
-                                  <div className="text-xs md:text-sm text-center p-2 md:p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                  <div className="text-xs md:text-sm text-center p-2 md:p-3 bg-primary/10 rounded-lg border border-primary/30">
                                     ✓ Aguardando confirmação do recebedor
                                   </div>
                                   <Button 
@@ -431,7 +431,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                 </div>
               )}
               {totalToPickup === 0 && totalInTransit === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-4 opacity-30" />
                   <p>Nenhuma tarefa no momento</p>
                 </div>
@@ -447,16 +447,16 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
   return (
     <div className="space-y-4 md:space-y-6">
       {showTutorial && (
-        <Card className="border-2 border-primary bg-gradient-to-r from-blue-50 to-cyan-50">
+        <Card className="border-2 border-primary bg-primary/5">
           <CardContent className="p-4">
             <h3 className="font-semibold text-lg mb-3 text-primary">
-              👋 Bem-vindo, Motorista!
+              Bem-vindo, Motorista!
             </h3>
-            <div className="space-y-2 text-sm mb-4">
-              <p>📦 <strong>Lotes de Entrega:</strong> Itens separados pelo almoxarifado</p>
-              <p>✓ <strong>Mostrar QR Code:</strong> O recebedor escaneia para confirmar</p>
-              <p>⏰ <strong>Confirmar Depois:</strong> Se o recebedor não estiver presente</p>
-              <p>🚛 <strong>Coletas:</strong> Móveis para levar ao almoxarifado</p>
+            <div className="space-y-2 text-sm text-muted-foreground mb-4">
+              <p><strong className="text-foreground">Lotes de Entrega:</strong> Itens separados pelo almoxarifado</p>
+              <p><strong className="text-foreground">Mostrar QR Code:</strong> O recebedor escaneia para confirmar</p>
+              <p><strong className="text-foreground">Confirmar Depois:</strong> Se o recebedor não estiver presente</p>
+              <p><strong className="text-foreground">Coletas:</strong> Móveis para levar ao almoxarifado</p>
             </div>
             <Button onClick={() => {
               setShowTutorial(false);

@@ -88,15 +88,15 @@ export function FurnitureRequestsPanel() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending_designer':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Aguardando Análise</Badge>;
+        return <Badge variant="outline" className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700">Aguardando Análise</Badge>;
       case 'approved_designer':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">Aprovado</Badge>;
+        return <Badge variant="outline" className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700">Aprovado</Badge>;
       case 'approved_storage':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">Aguardando Entrega</Badge>;
+        return <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">Aguardando Entrega</Badge>;
       case 'in_transit':
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300">Em Trânsito</Badge>;
+        return <Badge variant="outline" className="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700">Em Trânsito</Badge>;
       case 'completed':
-        return <Badge variant="outline" className="bg-muted text-slate-700 border-slate-300">Concluído</Badge>;
+        return <Badge variant="outline" className="bg-muted text-muted-foreground border-border">Concluído</Badge>;
       case 'rejected':
         return <Badge variant="destructive">Rejeitado</Badge>;
       default:
@@ -122,15 +122,15 @@ export function FurnitureRequestsPanel() {
     if (!item || !unit || !requester) return null;
 
     return (
-      <div className="border rounded-lg p-4 bg-white hover:shadow-sm transition-shadow">
+      <div className="border rounded-lg p-4 bg-card hover:shadow-sm transition-shadow">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <Sofa className="h-4 w-4 text-slate-600 flex-shrink-0" />
-              <h4 className="font-medium text-slate-900">{item.name}</h4>
+              <Sofa className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <h4 className="font-medium text-foreground">{item.name}</h4>
             </div>
             {item.brand && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 {item.brand}{item.model && ` - ${item.model}`}
               </p>
             )}
@@ -142,30 +142,30 @@ export function FurnitureRequestsPanel() {
         </div>
 
         <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2 text-slate-600">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Building2 className="h-3.5 w-3.5" />
             <span>{unit.name}</span>
           </div>
           
-          <div className="flex items-center gap-2 text-slate-600">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <MapPin className="h-3.5 w-3.5" />
             <span className="truncate">{request.location}</span>
           </div>
 
-          <div className="flex items-center gap-2 text-slate-600">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <User className="h-3.5 w-3.5" />
             <span>{requester.name}</span>
           </div>
 
-          <div className="flex items-center gap-2 text-slate-600">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
             <span>{formatDate(request.createdAt)}</span>
           </div>
         </div>
 
-        <div className="mt-3 p-3 bg-muted rounded border border-slate-200">
-          <p className="text-xs font-medium text-slate-700 mb-1">Justificativa:</p>
-          <p className="text-xs text-slate-600">{request.justification}</p>
+        <div className="mt-3 p-3 bg-muted rounded border border-border">
+          <p className="text-xs font-medium text-foreground mb-1">Justificativa:</p>
+          <p className="text-xs text-muted-foreground">{request.justification}</p>
         </div>
 
         {request.status === 'rejected' && request.rejectionReason && (
@@ -178,7 +178,7 @@ export function FurnitureRequestsPanel() {
         )}
 
         {reviewer && request.reviewedAt && (
-          <div className="mt-3 text-xs text-slate-500">
+          <div className="mt-3 text-xs text-muted-foreground">
             Avaliado por {reviewer.name} em {formatDate(request.reviewedAt)}
           </div>
         )}
@@ -227,8 +227,8 @@ export function FurnitureRequestsPanel() {
           </CardHeader>
           <CardContent>
             {pendingRequests.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                <CheckCircle className="h-10 w-10 mx-auto mb-2 text-slate-300" />
+              <div className="text-center py-8 text-muted-foreground">
+                <CheckCircle className="h-10 w-10 mx-auto mb-2 opacity-30" />
                 <p className="text-sm">Nenhuma solicitação pendente</p>
               </div>
             ) : (

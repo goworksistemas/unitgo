@@ -103,14 +103,14 @@ export function EditFurnitureStockDialog({ open, onOpenChange, stockId }: EditFu
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Info do Móvel */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
             <div className="flex items-start gap-3">
               <div className="p-2 bg-primary rounded-lg flex-shrink-0">
                 <Armchair className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-semibold truncate">{item.name}</h4>
-                <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
+                <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
               </div>
             </div>
           </div>
@@ -147,7 +147,7 @@ export function EditFurnitureStockDialog({ open, onOpenChange, stockId }: EditFu
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Quantidade atual de unidades disponíveis deste móvel
             </p>
           </div>
@@ -184,7 +184,7 @@ export function EditFurnitureStockDialog({ open, onOpenChange, stockId }: EditFu
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Quantidade mínima necessária para alertas de reposição
             </p>
           </div>
@@ -199,15 +199,15 @@ export function EditFurnitureStockDialog({ open, onOpenChange, stockId }: EditFu
               placeholder="Ex: Galpão A - Corredor 3 - Prateleira 2"
               required
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Onde este móvel está armazenado no almoxarifado
             </p>
           </div>
 
           {/* Status Preview */}
-          <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+          <div className="bg-muted rounded-lg p-3 space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Status após atualização:</span>
+              <span className="text-muted-foreground">Status após atualização:</span>
               {parseInt(quantity) >= parseInt(minimumQuantity) ? (
                 <span className="font-semibold text-green-600">✓ Estoque Adequado</span>
               ) : (
@@ -215,7 +215,7 @@ export function EditFurnitureStockDialog({ open, onOpenChange, stockId }: EditFu
               )}
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Unidades faltantes:</span>
+              <span className="text-muted-foreground">Unidades faltantes:</span>
               <span className="font-semibold">
                 {Math.max(0, parseInt(minimumQuantity) - parseInt(quantity))}
               </span>

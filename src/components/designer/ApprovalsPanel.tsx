@@ -70,7 +70,7 @@ export function ApprovalsPanel({
 
           <TabsContent value="approved" className="space-y-4">
             {approvedRemovalRequests.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 Nenhuma solicitação aprovada
               </div>
             ) : (
@@ -98,7 +98,7 @@ export function ApprovalsPanel({
                           <TableCell>
                             <div>
                               <div>{item?.name}</div>
-                              <div className="text-xs text-gray-500">{item?.description}</div>
+                              <div className="text-xs text-muted-foreground">{item?.description}</div>
                             </div>
                           </TableCell>
                           <TableCell>{unit?.name}</TableCell>
@@ -112,7 +112,7 @@ export function ApprovalsPanel({
                             <Badge variant={config.variant}>{config.label}</Badge>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm text-gray-600 max-w-xs">
+                            <div className="text-sm text-muted-foreground max-w-xs">
                               {request.disposalJustification || '-'}
                             </div>
                           </TableCell>

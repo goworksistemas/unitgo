@@ -57,22 +57,64 @@ export function FurnitureDeliveryConfirmationDialog({ request, open, onClose }: 
     }
   };
 
-  // Iniciar captura de foto
   const startCamera = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast.error('Câmera não disponível. Verifique se o site está sendo acessado via HTTPS.', {
+        duration: 5000,
+      });
+      return;
+    }
+
     try {
-      setIsCapturing(true);
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+        video: { facingMode: { ideal: 'environment' } } 
       });
       
+      setIsCapturing(true);
+
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        try {
+          await videoRef.current.play();
+        } catch {
+          // autoPlay deve resolver
+        }
+      } else {
+        stream.getTracks().forEach(track => track.stop());
+        setIsCapturing(false);
       }
-    } catch (error) {
-      toast.error('Não foi possível acessar a câmera');
-      console.error('Camera error:', error);
+    } catch (error: any) {
       setIsCapturing(false);
+
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        toast.error('Permissão da câmera negada. Habilite o acesso à câmera nas configurações do navegador.', {
+          duration: 5000,
+        });
+      } else if (error.name === 'NotFoundError' || error.name === 'NotReadableError') {
+        toast.error('Câmera não encontrada ou em uso por outro app.', { duration: 5000 });
+      } else if (error.name === 'OverconstrainedError') {
+        try {
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          setIsCapturing(true);
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+          if (videoRef.current) {
+            videoRef.current.srcObject = fallbackStream;
+            try { await videoRef.current.play(); } catch {}
+          } else {
+            fallbackStream.getTracks().forEach(track => track.stop());
+            setIsCapturing(false);
+          }
+          return;
+        } catch {
+          toast.error('Não foi possível acessar a câmera.', { duration: 5000 });
+        }
+      } else {
+        toast.error('Não foi possível acessar a câmera. Verifique as permissões.', { duration: 5000 });
+      }
+      
+      console.error('Camera error:', error);
     }
   };
 
@@ -251,7 +293,9 @@ export function FurnitureDeliveryConfirmationDialog({ request, open, onClose }: 
                 <video
                   ref={videoRef}
                   className="w-full rounded-lg border-2 border-primary"
+                  autoPlay
                   playsInline
+                  muted
                 />
                 <Button
                   type="button"

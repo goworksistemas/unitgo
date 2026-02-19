@@ -96,8 +96,8 @@ export function FurniturePanel({
       <CardContent>
         <div className="space-y-4">
           {furnitureStock.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">
-              <Armchair className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+            <div className="text-center py-12 text-muted-foreground">
+              <Armchair className="h-12 w-12 mx-auto mb-3 opacity-30" />
               <p>Nenhum móvel cadastrado nesta unidade</p>
             </div>
           ) : (
@@ -108,7 +108,7 @@ export function FurniturePanel({
                 return (
                   <Card key={stock.id}>
                     {item.imageUrl && (
-                      <div className="h-40 overflow-hidden bg-gray-100">
+                      <div className="h-40 overflow-hidden bg-muted">
                         <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                       </div>
                     )}
@@ -123,11 +123,11 @@ export function FurniturePanel({
                     </CardHeader>
                     <CardContent className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">Quantidade:</span>
+                        <span className="text-muted-foreground">Quantidade:</span>
                         <Badge variant="outline">{stock.quantity}</Badge>
                       </div>
                       {stock.location && stock.location.includes(' - ') && (
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <MapPin className="h-3 w-3" />
                           <span className="text-xs truncate">{stock.location.split(' - ')[1]}</span>
                         </div>
@@ -149,8 +149,8 @@ export function FurniturePanel({
                   return (
                     <div key={req.id} className="flex items-center justify-between p-3 bg-muted rounded-lg border">
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-slate-900">{item.name}</p>
-                        <p className="text-xs text-slate-600">Qtd: {req.quantity}</p>
+                        <p className="text-sm font-medium text-foreground">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">Qtd: {req.quantity}</p>
                       </div>
                       <Badge variant="outline">Aguardando aprovação</Badge>
                     </div>

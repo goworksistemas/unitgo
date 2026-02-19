@@ -17,7 +17,11 @@ import { StockPanel } from '../warehouse/StockPanel';
 import { ConfirmActionDialog } from '../warehouse/ConfirmActionDialog';
 import { FinalizeBatchDialog } from '../warehouse/FinalizeBatchDialog';
 
-export function WarehouseDashboard() {
+interface WarehouseDashboardProps {
+  isDeveloperMode?: boolean;
+}
+
+export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboardProps) {
   const {
     currentUser, requests, items, getItemById, getUnitById, getUserById,
     unitStocks, getStockForItem, furnitureRemovalRequests,
@@ -29,8 +33,8 @@ export function WarehouseDashboard() {
   const [showCreateBatch, setShowCreateBatch] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const actions = useWarehouseActions();
-  const isDeliveryDriver = currentUser?.warehouseType === 'delivery';
-  const isStorageWorker = currentUser?.warehouseType === 'storage';
+  const isDeliveryDriver = isDeveloperMode || currentUser?.warehouseType === 'delivery';
+  const isStorageWorker = isDeveloperMode || currentUser?.warehouseType === 'storage';
 
   const navigationSections: NavigationSection[] = useMemo(() => [
     { id: 'overview', label: 'Visão Geral e Estoque', icon: LayoutDashboard },
@@ -87,7 +91,7 @@ export function WarehouseDashboard() {
       case 'requests':
         return (
           <RequestsPanel {...lookups} getStockForItem={getStockForItem}
-            isDeliveryDriver={isDeliveryDriver} isStorageWorker={isStorageWorker}
+            isDeveloperMode={isDeveloperMode} isDeliveryDriver={isDeliveryDriver} isStorageWorker={isStorageWorker}
             activeRequests={activeRequests} outForDeliveryRequests={outForDeliveryRequests}
             completedRequests={completedRequests} pendingRequests={pendingRequests}
             warehouseUnitId={actions.warehouseUnitId}

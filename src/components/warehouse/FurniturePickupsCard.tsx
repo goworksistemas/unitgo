@@ -31,7 +31,7 @@ export function FurniturePickupsCard({
 
   const renderList = (items: FurnitureRemovalRequest[], emptyMsg: string) =>
     items.length === 0 ? (
-      <div className="text-center py-8 text-gray-500">{emptyMsg}</div>
+      <div className="text-center py-8 text-muted-foreground">{emptyMsg}</div>
     ) : (
       <div className="space-y-3">
         {items.map(r => <FurnitureCard key={r.id} request={r} {...cardProps} />)}

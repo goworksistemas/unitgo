@@ -24,7 +24,7 @@ export function ApprovedItemsCard({
   }, {} as Record<string, Request[]>);
 
   return (
-    <Card className="border-2 border-primary bg-gradient-to-br from-blue-50 to-cyan-50">
+    <Card className="border-2 border-primary bg-primary/5">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -47,11 +47,11 @@ export function ApprovedItemsCard({
           {Object.entries(itemsByUnit).map(([unitId, unitRequests]) => {
             const unit = getUnitById(unitId);
             return (
-              <div key={unitId} className="bg-white rounded-lg p-4 border-2 border-blue-200">
+              <div key={unitId} className="bg-card rounded-lg p-4 border-2 border-primary/30">
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <h4 className="font-semibold text-sm">{unit?.name}</h4>
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-muted-foreground">
                       {unitRequests.length} {unitRequests.length === 1 ? 'item' : 'itens'}
                     </p>
                   </div>
@@ -61,7 +61,7 @@ export function ApprovedItemsCard({
                   {unitRequests.map(req => {
                     const item = getItemById(req.itemId);
                     return (
-                      <div key={req.id} className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs">
+                      <div key={req.id} className="flex items-center justify-between p-2 bg-muted rounded text-xs">
                         <span className="truncate flex-1">{item?.name}</span>
                         <Badge variant="outline" className="ml-2">Qtd: {req.quantity}</Badge>
                       </div>
