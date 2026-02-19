@@ -1,34 +1,27 @@
 /**
- * Utilitário para gerenciar códigos únicos diários de usuários
- * Códigos expiram a cada 24 horas
+ * Utilitário para gerenciar códigos únicos diários de usuários.
+ * Códigos são aleatórios, armazenados no banco e renovados diariamente.
  */
 
 /**
- * Gera um código único de 6 dígitos baseado no userId e data atual
+ * Gera um código aleatório de 6 dígitos usando crypto seguro.
  */
-export function generateDailyCode(userId: string): string {
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  const seed = `${userId}-${today}`;
-  
-  // Gera um hash simples baseado no seed
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    const char = seed.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  
-  // Converte para 6 dígitos positivos
-  const code = Math.abs(hash).toString().slice(0, 6).padStart(6, '0');
+export function generateRandomDailyCode(): string {
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  const code = (array[0] % 1000000).toString().padStart(6, '0');
   return code;
 }
 
 /**
- * Verifica se um código fornecido é válido para o usuário hoje
+ * Verifica se o código armazenado ainda é válido (gerado hoje).
  */
-export function isDailyCodeValid(userId: string, code: string): boolean {
-  const currentCode = generateDailyCode(userId);
-  return code === currentCode;
+export function isDailyCodeExpired(generatedAt: Date | string | undefined): boolean {
+  if (!generatedAt) return true;
+  const generated = typeof generatedAt === 'string' ? new Date(generatedAt) : generatedAt;
+  const today = new Date().toISOString().split('T')[0];
+  const generatedDate = generated.toISOString().split('T')[0];
+  return today !== generatedDate;
 }
 
 /**

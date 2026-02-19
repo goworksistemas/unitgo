@@ -26,7 +26,6 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog';
 import { DeliveryConfirmationDialog } from '../dialogs/DeliveryConfirmationDialog';
-import { FurnitureDeliveryConfirmationDialog } from '../dialogs/FurnitureDeliveryConfirmationDialog';
 import { MarkFurnitureDeliveryPendingDialog } from '../dialogs/MarkFurnitureDeliveryPendingDialog';
 import { FurnitureQRCodeScannerDialog } from '../dialogs/FurnitureQRCodeScannerDialog';
 import { DeliveryTimeline } from '../delivery/DeliveryTimeline';
@@ -58,7 +57,6 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
   const [actionType, setActionType] = useState<'pickup' | 'deliver' | null>(null);
   const [selectedBatchForConfirmation, setSelectedBatchForConfirmation] = useState<string | null>(null);
   const [selectedBatchForPending, setSelectedBatchForPending] = useState<string | null>(null);
-  const [selectedFurnitureForDelivery, setSelectedFurnitureForDelivery] = useState<string | null>(null);
   const [selectedFurnitureForQRScan, setSelectedFurnitureForQRScan] = useState<string | null>(null);
   const [selectedFurnitureForPending, setSelectedFurnitureForPending] = useState<string | null>(null);
   const [selectedBatchForTimeline, setSelectedBatchForTimeline] = useState<string | null>(null);
@@ -280,7 +278,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
               }}
             >
               <QrCode className="h-5 w-5 md:h-6 md:w-6 mr-2" />
-              Confirmar Entrega c/ QR Code
+              Mostrar QR Code
             </Button>
             <Button 
               variant="outline"
@@ -290,7 +288,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                 setSelectedFurnitureForPending(request.id);
               }}
             >
-              Marcar como Entregue (Confirmar Depois)
+              Confirmar Depois (Recebedor Ausente)
             </Button>
           </div>
         </CardContent>
@@ -388,14 +386,14 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                                     onClick={() => setSelectedBatchForConfirmation(batch.id)}
                                   >
                                     <QrCode className="h-5 w-5 md:h-6 md:w-6 mr-2" />
-                                    Confirmar Entrega c/ QR Code
+                                    Mostrar QR Code
                                   </Button>
                                   <Button 
                                     variant="outline"
                                     className="w-full h-10 md:h-12 text-xs md:text-sm border-2"
                                     onClick={() => setSelectedBatchForPending(batch.id)}
                                   >
-                                    Marcar como Entregue (Confirmar Depois)
+                                    Confirmar Depois (Recebedor Ausente)
                                   </Button>
                                 </div>
                               )}
@@ -456,8 +454,8 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
             </h3>
             <div className="space-y-2 text-sm mb-4">
               <p>📦 <strong>Lotes de Entrega:</strong> Itens separados pelo almoxarifado</p>
-              <p>✓ <strong>Confirmar com QR Code:</strong> Escaneie o código do recebedor</p>
-              <p>⏰ <strong>Confirmar Depois:</strong> Marque como entregue para confirmar mais tarde</p>
+              <p>✓ <strong>Mostrar QR Code:</strong> O recebedor escaneia para confirmar</p>
+              <p>⏰ <strong>Confirmar Depois:</strong> Se o recebedor não estiver presente</p>
               <p>🚛 <strong>Coletas:</strong> Móveis para levar ao almoxarifado</p>
             </div>
             <Button onClick={() => {
@@ -504,14 +502,6 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
           batch={deliveryBatches.find(b => b.id === selectedBatchForPending)!}
           open={true}
           onClose={() => setSelectedBatchForPending(null)}
-        />
-      )}
-
-      {selectedFurnitureForDelivery && (
-        <FurnitureDeliveryConfirmationDialog
-          request={furnitureRequestsToDesigner.find(r => r.id === selectedFurnitureForDelivery)!}
-          open={true}
-          onClose={() => setSelectedFurnitureForDelivery(null)}
         />
       )}
 

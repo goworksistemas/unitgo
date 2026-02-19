@@ -22,14 +22,12 @@ export function DailyCodeDisplay() {
   }, [currentDate]);
 
   if (!currentUser) return null;
+  if (['admin', 'driver'].includes(currentUser.role)) return null;
 
   const dailyCode = getUserDailyCode(currentUser.id);
-  const formattedCode = formatDailyCode(dailyCode);
+  if (!dailyCode) return null;
 
-  // Apenas mostrar para controladores, motoristas e pessoas que recebem entregas
-  if (!['controller', 'warehouse'].includes(currentUser.role)) {
-    return null;
-  }
+  const formattedCode = formatDailyCode(dailyCode);
 
   return (
     <TooltipProvider>
@@ -42,7 +40,7 @@ export function DailyCodeDisplay() {
         </TooltipTrigger>
         <TooltipContent>
           <p className="text-xs">Seu código diário de confirmação</p>
-          <p className="text-xs text-gray-500">Válido por 24h • Renova automaticamente</p>
+          <p className="text-xs text-gray-500">Válido por 24h • Renova a cada novo dia</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

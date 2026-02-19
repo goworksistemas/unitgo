@@ -13,11 +13,14 @@ import {
   CheckCircle, 
   KeyRound,
   AlertCircle,
-  Clock
+  Clock,
+  Scan
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApp } from '../../contexts/AppContext';
 import { formatDailyCode, unformatDailyCode } from '../../utils/dailyCode';
+import { QRCodeScanner } from '../shared/QRCodeScanner';
+import { ReceiptConfirmationWithCode } from './ReceiptConfirmationWithCode';
 
 export function RequesterConfirmationPanel() {
   const { 
@@ -37,16 +40,15 @@ export function RequesterConfirmationPanel() {
   const [dailyCodeInput, setDailyCodeInput] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
+  const [scannedBatch, setScannedBatch] = useState<typeof deliveryBatches[0] | null>(null);
 
-  // Encontrar lotes que têm itens solicitados pelo usuário atual e estão pendentes de confirmação
   const pendingBatches = useMemo(() => {
     if (!currentUser) return [];
 
     return deliveryBatches.filter(batch => {
-      // Só lotes com status "pending_confirmation"
       if (batch.status !== 'pending_confirmation') return false;
 
-      // Verificar se o usuário atual solicitou algum item deste lote
       const hasMyRequests = requests.some(r => 
         batch.requestIds.includes(r.id) && r.requestedByUserId === currentUser.id
       );
@@ -56,7 +58,6 @@ export function RequesterConfirmationPanel() {
 
       if (!hasMyRequests && !hasMyFurnitureRequests) return false;
 
-      // Verificar se já confirmou
       const confirmations = getConfirmationsForBatch(batch.id);
       const alreadyConfirmed = confirmations.some(c => 
         c.confirmedByUserId === currentUser.id && c.type === 'requester'
@@ -69,10 +70,19 @@ export function RequesterConfirmationPanel() {
   const myDailyCode = currentUser ? getUserDailyCode(currentUser.id) : '';
   const formattedMyCode = formatDailyCode(myDailyCode);
 
+  const handleQRScanSuccess = (code: string) => {
+    const batch = deliveryBatches.find(b => b.qrCode === code);
+    if (batch) {
+      setScannedBatch(batch);
+      setShowQRScanner(false);
+    } else {
+      toast.error('Lote não encontrado. Verifique o QR Code.');
+    }
+  };
+
   const handleConfirm = async () => {
     if (!currentUser || !selectedBatchId) return;
 
-    // Validar código diário
     const cleanCode = unformatDailyCode(dailyCodeInput);
     if (!validateUserDailyCode(currentUser.id, cleanCode)) {
       toast.error('Código incorreto. Verifique e tente novamente.');
@@ -103,22 +113,65 @@ export function RequesterConfirmationPanel() {
 
   if (!currentUser) return null;
 
+  if (showQRScanner) {
+    return (
+      <div className="space-y-4" data-confirmation-panel>
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowQRScanner(false)}>
+          <div onClick={(e) => e.stopPropagation()}>
+            <QRCodeScanner
+              onScanSuccess={handleQRScanSuccess}
+              onClose={() => setShowQRScanner(false)}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (scannedBatch) {
+    return (
+      <div className="space-y-4" data-confirmation-panel>
+        <ReceiptConfirmationWithCode
+          batch={scannedBatch}
+          onSuccess={() => setScannedBatch(null)}
+          onCancel={() => setScannedBatch(null)}
+          viaQRCode
+        />
+      </div>
+    );
+  }
+
   if (pendingBatches.length === 0) {
     return (
       <Card data-confirmation-panel>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-primary" />
-            Confirmar Recebimentos
-          </CardTitle>
-          <CardDescription>
-            Nenhuma entrega aguardando sua confirmação
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                Confirmar Recebimentos
+              </CardTitle>
+              <CardDescription>
+                Nenhuma entrega aguardando sua confirmação
+              </CardDescription>
+            </div>
+            <Button 
+              onClick={() => setShowQRScanner(true)} 
+              className="bg-primary hover:bg-primary/90"
+              size="sm"
+            >
+              <Scan className="h-4 w-4 mr-2" />
+              Escanear QR Code
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
             <CheckCircle className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
             <p className="text-sm">Você está em dia com suas confirmações!</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Use o botão "Escanear QR Code" para confirmar entregas presenciais
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -129,7 +182,6 @@ export function RequesterConfirmationPanel() {
     ? deliveryBatches.find(b => b.id === selectedBatchId)
     : null;
 
-  // Filtrar apenas os itens do lote selecionado que foram solicitados pelo usuário
   const myItemsInBatch = selectedBatch ? {
     products: requests.filter(r => 
       selectedBatch.requestIds.includes(r.id) && r.requestedByUserId === currentUser.id
@@ -144,15 +196,35 @@ export function RequesterConfirmationPanel() {
       {!selectedBatchId ? (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
-              Confirmar Recebimentos
-            </CardTitle>
-            <CardDescription>
-              {pendingBatches.length} entrega(s) aguardando sua confirmação
-            </CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-primary" />
+                  Confirmar Recebimentos
+                </CardTitle>
+                <CardDescription>
+                  {pendingBatches.length} entrega(s) aguardando sua confirmação
+                </CardDescription>
+              </div>
+              <Button 
+                onClick={() => setShowQRScanner(true)} 
+                className="bg-primary hover:bg-primary/90"
+                size="sm"
+              >
+                <Scan className="h-4 w-4 mr-2" />
+                Escanear QR Code
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
+            <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800">
+              <Scan className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-xs text-blue-800 dark:text-blue-200">
+                Se o motorista está presente, use o botão "Escanear QR Code" para confirmar instantaneamente.
+                Os lotes abaixo são de entregas que aguardam confirmação com código diário.
+              </AlertDescription>
+            </Alert>
+
             {pendingBatches.map(batch => {
               const myRequests = requests.filter(r => 
                 batch.requestIds.includes(r.id) && r.requestedByUserId === currentUser.id
@@ -208,8 +280,8 @@ export function RequesterConfirmationPanel() {
                     className="w-full"
                     size="sm"
                   >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Confirmar Recebimento
+                    <KeyRound className="h-4 w-4 mr-2" />
+                    Confirmar com Código Diário
                   </Button>
                 </div>
               );
@@ -228,7 +300,6 @@ export function RequesterConfirmationPanel() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Seus itens */}
             <div>
               <Label className="text-sm font-medium mb-2 block">Seus Itens:</Label>
               <div className="space-y-2">
@@ -261,7 +332,6 @@ export function RequesterConfirmationPanel() {
 
             <Separator />
 
-            {/* Código único */}
             <Alert>
               <KeyRound className="h-4 w-4" />
               <AlertDescription>
@@ -277,7 +347,6 @@ export function RequesterConfirmationPanel() {
               </AlertDescription>
             </Alert>
 
-            {/* Campo de código */}
             <div className="space-y-2">
               <Label htmlFor="dailyCode">Digite seu código único *</Label>
               <Input
@@ -290,7 +359,6 @@ export function RequesterConfirmationPanel() {
               />
             </div>
 
-            {/* Observações */}
             <div className="space-y-2">
               <Label htmlFor="notes">Observações (opcional)</Label>
               <Textarea
@@ -302,7 +370,6 @@ export function RequesterConfirmationPanel() {
               />
             </div>
 
-            {/* Botões */}
             <div className="flex flex-col sm:flex-row gap-2 pt-4">
               <Button
                 variant="outline"

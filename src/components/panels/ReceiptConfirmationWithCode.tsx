@@ -26,12 +26,14 @@ interface ReceiptConfirmationWithCodeProps {
   batch: DeliveryBatch;
   onSuccess: () => void;
   onCancel: () => void;
+  viaQRCode?: boolean;
 }
 
 export function ReceiptConfirmationWithCode({ 
   batch, 
   onSuccess, 
-  onCancel 
+  onCancel,
+  viaQRCode = false 
 }: ReceiptConfirmationWithCodeProps) {
   const { 
     currentUser, 
@@ -80,21 +82,25 @@ export function ReceiptConfirmationWithCode({
   const handleConfirm = async () => {
     if (!currentUser) return;
 
-    // Validar código diário
-    const cleanCode = unformatDailyCode(dailyCodeInput);
-    if (!validateUserDailyCode(currentUser.id, cleanCode)) {
-      toast.error('Código diário incorreto. Verifique e tente novamente.');
-      return;
+    if (!viaQRCode) {
+      const cleanCode = unformatDailyCode(dailyCodeInput);
+      if (!validateUserDailyCode(currentUser.id, cleanCode)) {
+        toast.error('Código diário incorreto. Verifique e tente novamente.');
+        return;
+      }
     }
 
     setIsSubmitting(true);
 
     try {
+      const cleanCode = viaQRCode ? '' : unformatDailyCode(dailyCodeInput);
+
       await confirmReceipt(batch.id, {
         type: 'receipt',
         confirmedByUserId: currentUser.id,
-        photoUrl: '', // Não tem foto neste fluxo (confirmação por código)
-        notes: notes.trim() ? `${notes.trim()} | dailyCode:${cleanCode}` : `dailyCode:${cleanCode}`,
+        photoUrl: '',
+        notes: notes.trim() || (viaQRCode ? 'Confirmado via QR Code' : undefined),
+        dailyCode: cleanCode || undefined,
       });
 
       toast.success('Recebimento confirmado com sucesso!');
@@ -218,45 +224,61 @@ export function ReceiptConfirmationWithCode({
         </CardContent>
       </Card>
 
-      {/* Confirmação com Código */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <KeyRound className="h-4 w-4 text-primary" />
-            Validação de Segurança
+            {viaQRCode ? (
+              <>
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                Confirmação via QR Code
+              </>
+            ) : (
+              <>
+                <KeyRound className="h-4 w-4 text-primary" />
+                Validação de Segurança
+              </>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Mostrar código do usuário */}
-          <Alert>
-            <KeyRound className="h-4 w-4" />
-            <AlertDescription>
+          {viaQRCode ? (
+            <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800 dark:text-green-200">
+                QR Code lido com sucesso! Confirme o recebimento dos itens abaixo.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              <Alert>
+                <KeyRound className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="space-y-2">
+                    <p className="text-sm">Seu código único de hoje:</p>
+                    <p className="text-2xl font-mono font-bold text-primary tracking-wider">
+                      {formattedMyCode}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Digite este código abaixo para confirmar o recebimento
+                    </p>
+                  </div>
+                </AlertDescription>
+              </Alert>
+
               <div className="space-y-2">
-                <p className="text-sm">Seu código único de hoje:</p>
-                <p className="text-2xl font-mono font-bold text-primary tracking-wider">
-                  {formattedMyCode}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Digite este código abaixo para confirmar o recebimento
-                </p>
+                <Label htmlFor="dailyCode">Digite seu código único *</Label>
+                <Input
+                  id="dailyCode"
+                  value={dailyCodeInput}
+                  onChange={(e) => setDailyCodeInput(e.target.value)}
+                  placeholder="000-000"
+                  maxLength={7}
+                  className="text-center text-lg font-mono tracking-wider"
+                />
               </div>
-            </AlertDescription>
-          </Alert>
+            </>
+          )}
 
-          {/* Campo de código */}
-          <div className="space-y-2">
-            <Label htmlFor="dailyCode">Digite seu código único *</Label>
-            <Input
-              id="dailyCode"
-              value={dailyCodeInput}
-              onChange={(e) => setDailyCodeInput(e.target.value)}
-              placeholder="000-000"
-              maxLength={7}
-              className="text-center text-lg font-mono tracking-wider"
-            />
-          </div>
-
-          {/* Observações */}
           <div className="space-y-2">
             <Label htmlFor="notes">Observações (opcional)</Label>
             <Textarea
@@ -268,7 +290,6 @@ export function ReceiptConfirmationWithCode({
             />
           </div>
 
-          {/* Botões */}
           <div className="flex flex-col sm:flex-row gap-2 pt-4">
             <Button
               variant="outline"
@@ -281,7 +302,7 @@ export function ReceiptConfirmationWithCode({
             <Button
               onClick={handleConfirm}
               className="flex-1"
-              disabled={isSubmitting || !dailyCodeInput.trim()}
+              disabled={isSubmitting || (!viaQRCode && !dailyCodeInput.trim())}
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               Confirmar Recebimento

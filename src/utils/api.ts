@@ -119,6 +119,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(user),
     }),
+    update: (id: string, updates: any) => apiRequest(`/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    }),
   },
 
   // ========== UNITS ==========

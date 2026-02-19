@@ -8,7 +8,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User, Unit, Item, UnitStock, Movement, SimpleMovement, Loan, Category, Request, FurnitureTransfer, FurnitureRemovalRequest, FurnitureRequestToDesigner, DeliveryBatch, DeliveryConfirmation } from '../types';
 import { api } from '../utils/api';
-import { generateDailyCode, isDailyCodeValid } from '../utils/dailyCode';
+import { generateRandomDailyCode, isDailyCodeExpired } from '../utils/dailyCode';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 
 interface AppContextType {
@@ -209,7 +209,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (userToRestore) {
             console.log('✅ Sessão restaurada:', userToRestore.name);
             setCurrentUser(userToRestore);
-            
+
+            if (!['admin', 'driver'].includes(userToRestore.role)) {
+              if (!userToRestore.dailyCode || isDailyCodeExpired(userToRestore.dailyCodeGeneratedAt)) {
+                const newCode = generateRandomDailyCode();
+                const now = new Date();
+                userToRestore.dailyCode = newCode;
+                userToRestore.dailyCodeGeneratedAt = now;
+                setAppUsers(prev => prev.map(u =>
+                  u.id === userToRestore.id ? { ...u, dailyCode: newCode, dailyCodeGeneratedAt: now } : u
+                ));
+                api.users.update(userToRestore.id, {
+                  dailyCode: newCode,
+                  dailyCodeGeneratedAt: now.toISOString(),
+                }).catch(err => console.error('Erro ao salvar código diário:', err));
+              }
+            }
+
             // Set primary unit if exists
             if (userToRestore.role !== 'designer' && userToRestore.primaryUnitId && unitsData) {
               const primaryUnit = unitsData.find((u: Unit) => u.id === userToRestore.primaryUnitId);
@@ -241,7 +257,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const user = appUsers.find(u => u.id === userId);
     if (user) {
       setCurrentUser(user);
-      // Designers e Developers são volantes e não têm unidade fixa
+
+      if (!['admin', 'driver'].includes(user.role)) {
+        if (!user.dailyCode || isDailyCodeExpired(user.dailyCodeGeneratedAt)) {
+          const newCode = generateRandomDailyCode();
+          const now = new Date();
+          user.dailyCode = newCode;
+          user.dailyCodeGeneratedAt = now;
+          setAppUsers(prev => prev.map(u =>
+            u.id === userId ? { ...u, dailyCode: newCode, dailyCodeGeneratedAt: now } : u
+          ));
+          api.users.update(userId, {
+            dailyCode: newCode,
+            dailyCodeGeneratedAt: now.toISOString(),
+          }).catch(err => console.error('Erro ao salvar código diário:', err));
+        }
+      }
+
       if (user.role === 'designer' || user.role === 'developer' || !user.primaryUnitId) {
         setCurrentUnitState(null);
       } else {
@@ -1335,24 +1367,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const getUserDailyCode = (userId: string) => {
+  const ensureUserDailyCode = async (userId: string): Promise<string> => {
     const user = appUsers.find(u => u.id === userId);
-    if (user) {
-      return generateDailyCode(user.id);
+    if (!user) return '';
+
+    if (user.dailyCode && !isDailyCodeExpired(user.dailyCodeGeneratedAt)) {
+      return user.dailyCode;
     }
-    return '';
+
+    const newCode = generateRandomDailyCode();
+    const now = new Date();
+
+    setAppUsers(prev => prev.map(u =>
+      u.id === userId ? { ...u, dailyCode: newCode, dailyCodeGeneratedAt: now } : u
+    ));
+
+    try {
+      await api.users.update(userId, {
+        dailyCode: newCode,
+        dailyCodeGeneratedAt: now.toISOString(),
+      });
+    } catch (error) {
+      console.error('Erro ao salvar código diário no backend:', error);
+    }
+
+    return newCode;
+  };
+
+  const getUserDailyCode = (userId: string): string => {
+    const user = appUsers.find(u => u.id === userId);
+    if (!user) return '';
+
+    if (user.dailyCode && !isDailyCodeExpired(user.dailyCodeGeneratedAt)) {
+      return user.dailyCode;
+    }
+
+    ensureUserDailyCode(userId);
+    return user.dailyCode || '';
   };
 
   const getUserByDailyCode = (code: string): User | undefined => {
-    return appUsers.find(user => isDailyCodeValid(user.id, code));
+    return appUsers.find(user =>
+      user.dailyCode === code && !isDailyCodeExpired(user.dailyCodeGeneratedAt)
+    );
   };
 
-  const validateUserDailyCode = (userId: string, code: string) => {
+  const validateUserDailyCode = (userId: string, code: string): boolean => {
     const user = appUsers.find(u => u.id === userId);
-    if (user) {
-      return isDailyCodeValid(user.id, code);
-    }
-    return false;
+    if (!user) return false;
+    return user.dailyCode === code && !isDailyCodeExpired(user.dailyCodeGeneratedAt);
   };
 
   const markDeliveryAsPendingConfirmation = async (batchId: string, notes?: string) => {
@@ -1404,9 +1467,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       batchId,
       type: 'requester',
       confirmedByUserId: confirmationData.userId,
-      photoUrl: '', // Não tem foto neste fluxo
+      photoUrl: '',
       timestamp: new Date(),
       notes: confirmationData.notes,
+      dailyCode: confirmationData.dailyCode,
     };
 
     try {

@@ -1,6 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import {
   Building2,
   Users,
@@ -19,9 +24,20 @@ import {
   ClipboardList,
   TrendingUp,
   Layers,
+  CalendarIcon,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+  Filter,
+  RotateCcw,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
+import { format, subDays, startOfDay, endOfDay, differenceInDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import type { DateRange } from 'react-day-picker';
+
+type DatePreset = 'today' | '7d' | '30d' | '90d' | 'all' | 'custom';
 
 const chartConfig: ChartConfig = {
   count: { label: 'Quantidade', color: 'var(--primary)' },
@@ -36,8 +52,8 @@ function HorizontalBarChart({ data, dataKey, nameKey, height = 300 }: { data: Re
       <BarChart data={data} layout="vertical" margin={{ top: 5, right: 40, left: 5, bottom: 5 }}>
         <defs>
           <linearGradient id={GRADIENT_H} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="var(--primary)" />
-            <stop offset="100%" stopColor="var(--secondary)" />
+            <stop offset="0%" stopColor="var(--secondary)" />
+            <stop offset="100%" stopColor="var(--primary)" />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -72,6 +88,43 @@ function VerticalBarChart({ data, dataKey, nameKey, height = 250, fontSize = 11 
   );
 }
 
+function getDateRange(preset: DatePreset, customRange?: DateRange): { from: Date; to: Date } | null {
+  if (preset === 'all') return null;
+  const now = new Date();
+  const to = endOfDay(now);
+  switch (preset) {
+    case 'today': return { from: startOfDay(now), to };
+    case '7d': return { from: startOfDay(subDays(now, 7)), to };
+    case '30d': return { from: startOfDay(subDays(now, 30)), to };
+    case '90d': return { from: startOfDay(subDays(now, 90)), to };
+    case 'custom':
+      if (customRange?.from) return { from: startOfDay(customRange.from), to: customRange.to ? endOfDay(customRange.to) : endOfDay(customRange.from) };
+      return null;
+    default: return null;
+  }
+}
+
+function getPreviousPeriod(range: { from: Date; to: Date }): { from: Date; to: Date } {
+  const days = differenceInDays(range.to, range.from) + 1;
+  return {
+    from: startOfDay(subDays(range.from, days)),
+    to: endOfDay(subDays(range.from, 1)),
+  };
+}
+
+function isInRange(date: Date | string | undefined, range: { from: Date; to: Date } | null): boolean {
+  if (!range || !date) return true;
+  const d = new Date(date);
+  return d >= range.from && d <= range.to;
+}
+
+function calcVariation(current: number, previous: number): { pct: number; direction: 'up' | 'down' | 'same' } {
+  if (previous === 0 && current === 0) return { pct: 0, direction: 'same' };
+  if (previous === 0) return { pct: 100, direction: 'up' };
+  const pct = Math.round(((current - previous) / previous) * 100);
+  return { pct: Math.abs(pct), direction: pct > 0 ? 'up' : pct < 0 ? 'down' : 'same' };
+}
+
 export function SystemOverviewPanel() {
   const {
     units,
@@ -89,8 +142,45 @@ export function SystemOverviewPanel() {
     getUnitById,
   } = useApp();
 
+  const [datePreset, setDatePreset] = useState<DatePreset>('all');
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
+  const [compareEnabled, setCompareEnabled] = useState(false);
+
+  const activeRange = useMemo(() => getDateRange(datePreset, customRange), [datePreset, customRange]);
+  const previousRange = useMemo(() => activeRange ? getPreviousPeriod(activeRange) : null, [activeRange]);
+
+  const handlePreset = useCallback((preset: DatePreset) => {
+    setDatePreset(preset);
+    if (preset !== 'custom') setCustomRange(undefined);
+  }, []);
+
+  const handleCustomRange = useCallback((range: DateRange | undefined) => {
+    setCustomRange(range);
+    setDatePreset('custom');
+  }, []);
+
+  const handleReset = useCallback(() => {
+    setDatePreset('all');
+    setCustomRange(undefined);
+    setCompareEnabled(false);
+  }, []);
+
   const warehouseUnit = units.find(u => u.name === 'Almoxarifado Central');
   const operationalUnits = units.filter(u => u.id !== warehouseUnit?.id);
+
+  const filteredRequests = useMemo(() => requests.filter(r => isInRange(r.createdAt, activeRange)), [requests, activeRange]);
+  const filteredLoans = useMemo(() => loans.filter(l => isInRange(l.withdrawalDate, activeRange)), [loans, activeRange]);
+  const filteredTransfers = useMemo(() => furnitureTransfers.filter(t => isInRange(t.createdAt, activeRange)), [furnitureTransfers, activeRange]);
+  const filteredDesignerReqs = useMemo(() => furnitureRequestsToDesigner.filter(r => isInRange(r.createdAt, activeRange)), [furnitureRequestsToDesigner, activeRange]);
+  const filteredRemovals = useMemo(() => furnitureRemovalRequests.filter(r => isInRange(r.createdAt, activeRange)), [furnitureRemovalRequests, activeRange]);
+  const filteredBatches = useMemo(() => deliveryBatches.filter(b => isInRange(b.createdAt, activeRange)), [deliveryBatches, activeRange]);
+
+  const prevRequests = useMemo(() => compareEnabled ? requests.filter(r => isInRange(r.createdAt, previousRange)) : [], [requests, previousRange, compareEnabled]);
+  const prevLoans = useMemo(() => compareEnabled ? loans.filter(l => isInRange(l.withdrawalDate, previousRange)) : [], [loans, previousRange, compareEnabled]);
+  const prevTransfers = useMemo(() => compareEnabled ? furnitureTransfers.filter(t => isInRange(t.createdAt, previousRange)) : [], [furnitureTransfers, previousRange, compareEnabled]);
+  const prevDesignerReqs = useMemo(() => compareEnabled ? furnitureRequestsToDesigner.filter(r => isInRange(r.createdAt, previousRange)) : [], [furnitureRequestsToDesigner, previousRange, compareEnabled]);
+  const prevRemovals = useMemo(() => compareEnabled ? furnitureRemovalRequests.filter(r => isInRange(r.createdAt, previousRange)) : [], [furnitureRemovalRequests, previousRange, compareEnabled]);
+  const prevBatches = useMemo(() => compareEnabled ? deliveryBatches.filter(b => isInRange(b.createdAt, previousRange)) : [], [deliveryBatches, previousRange, compareEnabled]);
 
   const stats = useMemo(() => ({
     activeUnits: operationalUnits.filter(u => u.status === 'active').length,
@@ -100,26 +190,49 @@ export function SystemOverviewPanel() {
     totalFurniture: items.filter(i => i.active && i.isFurniture).length,
     inactiveItems: items.filter(i => !i.active).length,
     totalCategories: categories.length,
-    totalRequests: requests.length,
-    pendingRequests: requests.filter(r => r.status === 'pending').length,
-    approvedRequests: requests.filter(r => ['approved', 'processing'].includes(r.status)).length,
-    completedRequests: requests.filter(r => r.status === 'completed').length,
-    rejectedRequests: requests.filter(r => r.status === 'rejected').length,
+    totalRequests: filteredRequests.length,
+    pendingRequests: filteredRequests.filter(r => r.status === 'pending').length,
+    approvedRequests: filteredRequests.filter(r => ['approved', 'processing'].includes(r.status)).length,
+    completedRequests: filteredRequests.filter(r => r.status === 'completed').length,
+    rejectedRequests: filteredRequests.filter(r => r.status === 'rejected').length,
     lowStockItems: unitStocks.filter(s => s.quantity <= s.minimumQuantity && s.quantity > 0).length,
     outOfStockItems: unitStocks.filter(s => s.quantity === 0).length,
-    totalLoans: loans.length,
-    activeLoans: loans.filter(l => l.status === 'active').length,
-    overdueLoans: loans.filter(l => l.status === 'overdue').length,
-    totalTransfers: furnitureTransfers.length,
-    pendingTransfers: furnitureTransfers.filter(t => t.status === 'pending').length,
-    totalDesignerRequests: furnitureRequestsToDesigner.length,
-    pendingDesignerRequests: furnitureRequestsToDesigner.filter(r => r.status === 'pending_designer').length,
-    totalRemovals: furnitureRemovalRequests.length,
-    pendingRemovals: furnitureRemovalRequests.filter(r => r.status === 'pending').length,
-    totalBatches: deliveryBatches.length,
-    batchesInTransit: deliveryBatches.filter(b => b.status === 'in_transit').length,
-    batchesCompleted: deliveryBatches.filter(b => ['completed', 'delivered'].includes(b.status)).length,
-  }), [units, users, items, categories, unitStocks, requests, loans, furnitureTransfers, furnitureRequestsToDesigner, furnitureRemovalRequests, deliveryBatches]);
+    totalLoans: filteredLoans.length,
+    activeLoans: filteredLoans.filter(l => l.status === 'active').length,
+    overdueLoans: filteredLoans.filter(l => l.status === 'overdue').length,
+    totalTransfers: filteredTransfers.length,
+    pendingTransfers: filteredTransfers.filter(t => t.status === 'pending').length,
+    totalDesignerRequests: filteredDesignerReqs.length,
+    pendingDesignerRequests: filteredDesignerReqs.filter(r => r.status === 'pending_designer').length,
+    totalRemovals: filteredRemovals.length,
+    pendingRemovals: filteredRemovals.filter(r => r.status === 'pending').length,
+    totalBatches: filteredBatches.length,
+    batchesInTransit: filteredBatches.filter(b => b.status === 'in_transit').length,
+    batchesCompleted: filteredBatches.filter(b => ['completed', 'delivered'].includes(b.status)).length,
+  }), [units, users, items, categories, unitStocks, filteredRequests, filteredLoans, filteredTransfers, filteredDesignerReqs, filteredRemovals, filteredBatches, operationalUnits]);
+
+  const prevStats = useMemo(() => {
+    if (!compareEnabled) return null;
+    return {
+      totalRequests: prevRequests.length,
+      pendingRequests: prevRequests.filter(r => r.status === 'pending').length,
+      approvedRequests: prevRequests.filter(r => ['approved', 'processing'].includes(r.status)).length,
+      completedRequests: prevRequests.filter(r => r.status === 'completed').length,
+      rejectedRequests: prevRequests.filter(r => r.status === 'rejected').length,
+      totalLoans: prevLoans.length,
+      activeLoans: prevLoans.filter(l => l.status === 'active').length,
+      overdueLoans: prevLoans.filter(l => l.status === 'overdue').length,
+      totalTransfers: prevTransfers.length,
+      pendingTransfers: prevTransfers.filter(t => t.status === 'pending').length,
+      totalDesignerRequests: prevDesignerReqs.length,
+      pendingDesignerRequests: prevDesignerReqs.filter(r => r.status === 'pending_designer').length,
+      totalRemovals: prevRemovals.length,
+      pendingRemovals: prevRemovals.filter(r => r.status === 'pending').length,
+      totalBatches: prevBatches.length,
+      batchesInTransit: prevBatches.filter(b => b.status === 'in_transit').length,
+      batchesCompleted: prevBatches.filter(b => ['completed', 'delivered'].includes(b.status)).length,
+    };
+  }, [compareEnabled, prevRequests, prevLoans, prevTransfers, prevDesignerReqs, prevRemovals, prevBatches]);
 
   const usersByRole = useMemo(() => {
     const roleLabels: Record<string, string> = {
@@ -142,16 +255,16 @@ export function SystemOverviewPanel() {
       delivery_confirmed: 'Entregue', received_confirmed: 'Recebido',
     };
     const counts = new Map<string, number>();
-    requests.forEach(r => counts.set(r.status, (counts.get(r.status) || 0) + 1));
+    filteredRequests.forEach(r => counts.set(r.status, (counts.get(r.status) || 0) + 1));
     return Array.from(counts.entries())
       .map(([status, count]) => ({ name: statusLabels[status] || status, count }))
       .filter(d => d.count > 0)
       .sort((a, b) => b.count - a.count);
-  }, [requests]);
+  }, [filteredRequests]);
 
   const requestsByItem = useMemo(() => {
     const counts = new Map<string, { name: string; count: number }>();
-    requests.forEach(r => {
+    filteredRequests.forEach(r => {
       const item = getItemById(r.itemId);
       if (item) {
         const cur = counts.get(item.id) || { name: item.name, count: 0 };
@@ -159,16 +272,16 @@ export function SystemOverviewPanel() {
       }
     });
     return Array.from(counts.values()).sort((a, b) => b.count - a.count).slice(0, 10);
-  }, [requests, getItemById]);
+  }, [filteredRequests, getItemById]);
 
   const requestsByUrgency = useMemo(() => {
     const labels: Record<string, string> = { low: 'Baixa', medium: 'Média', high: 'Alta' };
     const counts = new Map<string, number>();
-    requests.forEach(r => counts.set(r.urgency, (counts.get(r.urgency) || 0) + 1));
+    filteredRequests.forEach(r => counts.set(r.urgency, (counts.get(r.urgency) || 0) + 1));
     return Array.from(counts.entries())
       .map(([urgency, count]) => ({ name: labels[urgency] || urgency, count }))
       .filter(d => d.count > 0);
-  }, [requests]);
+  }, [filteredRequests]);
 
   const stockByUnit = useMemo(() => {
     const counts = new Map<string, { name: string; total: number }>();
@@ -186,11 +299,11 @@ export function SystemOverviewPanel() {
   const loansByStatus = useMemo(() => {
     const labels: Record<string, string> = { active: 'Ativos', overdue: 'Atrasados', returned: 'Devolvidos', lost: 'Perdidos' };
     const counts = new Map<string, number>();
-    loans.forEach(l => counts.set(l.status, (counts.get(l.status) || 0) + 1));
+    filteredLoans.forEach(l => counts.set(l.status, (counts.get(l.status) || 0) + 1));
     return Array.from(counts.entries())
       .map(([status, count]) => ({ name: labels[status] || status, count }))
       .filter(d => d.count > 0);
-  }, [loans]);
+  }, [filteredLoans]);
 
   const batchesByStatus = useMemo(() => {
     const labels: Record<string, string> = {
@@ -199,16 +312,16 @@ export function SystemOverviewPanel() {
       confirmed_by_requester: 'Confirmado', delivered: 'Entregue',
     };
     const counts = new Map<string, number>();
-    deliveryBatches.forEach(b => counts.set(b.status, (counts.get(b.status) || 0) + 1));
+    filteredBatches.forEach(b => counts.set(b.status, (counts.get(b.status) || 0) + 1));
     return Array.from(counts.entries())
       .map(([status, count]) => ({ name: labels[status] || status, count }))
       .filter(d => d.count > 0)
       .sort((a, b) => b.count - a.count);
-  }, [deliveryBatches]);
+  }, [filteredBatches]);
 
   const requestsByUnit = useMemo(() => {
     const counts = new Map<string, { name: string; count: number }>();
-    requests.forEach(r => {
+    filteredRequests.forEach(r => {
       const unit = getUnitById(r.requestingUnitId);
       if (unit) {
         const cur = counts.get(r.requestingUnitId) || { name: unit.name.replace('Gowork ', '').replace('GoWork ', ''), count: 0 };
@@ -217,16 +330,16 @@ export function SystemOverviewPanel() {
       }
     });
     return Array.from(counts.values()).sort((a, b) => b.count - a.count).slice(0, 10);
-  }, [requests, getUnitById]);
+  }, [filteredRequests, getUnitById]);
 
   const transfersByStatus = useMemo(() => {
     const labels: Record<string, string> = { pending: 'Pendente', approved: 'Aprovada', completed: 'Concluída', rejected: 'Rejeitada' };
     const counts = new Map<string, number>();
-    furnitureTransfers.forEach(t => counts.set(t.status, (counts.get(t.status) || 0) + 1));
+    filteredTransfers.forEach(t => counts.set(t.status, (counts.get(t.status) || 0) + 1));
     return Array.from(counts.entries())
       .map(([status, count]) => ({ name: labels[status] || status, count }))
       .filter(d => d.count > 0);
-  }, [furnitureTransfers]);
+  }, [filteredTransfers]);
 
   const itemsByCategory = useMemo(() => {
     const counts = new Map<string, { name: string; count: number }>();
@@ -246,18 +359,108 @@ export function SystemOverviewPanel() {
       awaiting_pickup: 'Aguard. Coleta', in_transit: 'Em Trânsito', completed: 'Concluída', rejected: 'Rejeitada',
     };
     const counts = new Map<string, number>();
-    furnitureRemovalRequests.forEach(r => counts.set(r.status, (counts.get(r.status) || 0) + 1));
+    filteredRemovals.forEach(r => counts.set(r.status, (counts.get(r.status) || 0) + 1));
     return Array.from(counts.entries())
       .map(([status, count]) => ({ name: labels[status] || status, count }))
       .filter(d => d.count > 0);
-  }, [furnitureRemovalRequests]);
+  }, [filteredRemovals]);
+
+  const isFiltered = datePreset !== 'all';
+  const presetLabel = datePreset === 'today' ? 'Hoje' : datePreset === '7d' ? '7 dias' : datePreset === '30d' ? '30 dias' : datePreset === '90d' ? '90 dias' : datePreset === 'custom' ? 'Personalizado' : 'Tudo';
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold mb-1">Dashboard do Sistema</h2>
-        <p className="text-sm text-muted-foreground">Visão completa com gráficos de todas as áreas</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h2 className="text-xl font-semibold mb-1">Dashboard do Sistema</h2>
+          <p className="text-sm text-muted-foreground">Visão completa com gráficos de todas as áreas</p>
+        </div>
+        {isFiltered && (
+          <Badge variant="secondary" className="text-xs">
+            {presetLabel}
+            {datePreset === 'custom' && customRange?.from && (
+              <span className="ml-1">
+                ({format(customRange.from, 'dd/MM/yy', { locale: ptBR })}
+                {customRange.to && ` - ${format(customRange.to, 'dd/MM/yy', { locale: ptBR })}`})
+              </span>
+            )}
+            {compareEnabled && ' vs anterior'}
+          </Badge>
+        )}
       </div>
+
+      {/* ═══ FILTROS DE DATA ═══ */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Filter className="h-4 w-4 text-primary" />
+            Filtros de Data
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              {(['today', '7d', '30d', '90d', 'all'] as DatePreset[]).map(preset => {
+                const labels: Record<string, string> = { today: 'Hoje', '7d': '7 dias', '30d': '30 dias', '90d': '90 dias', all: 'Tudo' };
+                return (
+                  <Button
+                    key={preset}
+                    size="sm"
+                    variant={datePreset === preset ? 'default' : 'outline'}
+                    onClick={() => handlePreset(preset)}
+                  >
+                    {labels[preset]}
+                  </Button>
+                );
+              })}
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant={datePreset === 'custom' ? 'default' : 'outline'} className="gap-2">
+                    <CalendarIcon className="h-4 w-4" />
+                    {datePreset === 'custom' && customRange?.from
+                      ? `${format(customRange.from, 'dd/MM/yy', { locale: ptBR })}${customRange.to ? ` - ${format(customRange.to, 'dd/MM/yy', { locale: ptBR })}` : ''}`
+                      : 'Período Personalizado'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={customRange}
+                    onSelect={handleCustomRange}
+                    numberOfMonths={2}
+                    locale={ptBR}
+                    disabled={{ after: new Date() }}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {isFiltered && (
+                <Button size="sm" variant="ghost" onClick={handleReset} className="gap-1 text-muted-foreground">
+                  <RotateCcw className="h-3 w-3" />
+                  Limpar
+                </Button>
+              )}
+            </div>
+
+            {isFiltered && (
+              <div className="flex items-center gap-3 pt-1 border-t">
+                <div className="flex items-center gap-2">
+                  <Switch checked={compareEnabled} onCheckedChange={setCompareEnabled} id="compare-toggle" />
+                  <label htmlFor="compare-toggle" className="text-sm cursor-pointer select-none">
+                    Comparar com período anterior
+                  </label>
+                </div>
+                {compareEnabled && previousRange && (
+                  <span className="text-xs text-muted-foreground">
+                    ({format(previousRange.from, 'dd/MM/yy', { locale: ptBR })} - {format(previousRange.to, 'dd/MM/yy', { locale: ptBR })})
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ═══ KPIs ═══ */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -266,23 +469,81 @@ export function SystemOverviewPanel() {
         <KpiCard title="Materiais" value={stats.totalMaterials} sub={`${stats.inactiveItems} inativos`} icon={<Package className="h-4 w-4 text-primary" />} />
         <KpiCard title="Móveis" value={stats.totalFurniture} icon={<Armchair className="h-4 w-4 text-primary" />} />
         <KpiCard title="Categorias" value={stats.totalCategories} icon={<ClipboardList className="h-4 w-4 text-primary" />} />
-        <KpiCard title="Solicitações" value={stats.totalRequests} sub={`${stats.pendingRequests} pendentes`} icon={<TrendingUp className="h-4 w-4 text-primary" />} />
+        <KpiCard
+          title="Solicitações"
+          value={stats.totalRequests}
+          sub={`${stats.pendingRequests} pendentes`}
+          icon={<TrendingUp className="h-4 w-4 text-primary" />}
+          variation={prevStats ? calcVariation(stats.totalRequests, prevStats.totalRequests) : undefined}
+        />
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <KpiCard title="Aprovados" value={stats.approvedRequests} icon={<CheckCircle className="h-4 w-4 text-primary" />} />
-        <KpiCard title="Concluídos" value={stats.completedRequests} icon={<CheckCircle className="h-4 w-4 text-secondary" />} />
-        <KpiCard title="Rejeitados" value={stats.rejectedRequests} icon={<XCircle className="h-4 w-4 text-destructive" />} />
+        <KpiCard
+          title="Aprovados"
+          value={stats.approvedRequests}
+          icon={<CheckCircle className="h-4 w-4 text-primary" />}
+          variation={prevStats ? calcVariation(stats.approvedRequests, prevStats.approvedRequests) : undefined}
+        />
+        <KpiCard
+          title="Concluídos"
+          value={stats.completedRequests}
+          icon={<CheckCircle className="h-4 w-4 text-secondary" />}
+          variation={prevStats ? calcVariation(stats.completedRequests, prevStats.completedRequests) : undefined}
+        />
+        <KpiCard
+          title="Rejeitados"
+          value={stats.rejectedRequests}
+          icon={<XCircle className="h-4 w-4 text-destructive" />}
+          variation={prevStats ? calcVariation(stats.rejectedRequests, prevStats.rejectedRequests) : undefined}
+          invertColor
+        />
         <KpiCard title="Estoque Baixo" value={stats.lowStockItems} sub={`${stats.outOfStockItems} zerados`} icon={<AlertTriangle className="h-4 w-4 text-yellow-600" />} />
-        <KpiCard title="Empréstimos" value={stats.activeLoans} sub={`${stats.overdueLoans} atrasados`} icon={<Clock className="h-4 w-4 text-yellow-600" />} />
-        <KpiCard title="Lotes Entrega" value={stats.totalBatches} sub={`${stats.batchesInTransit} em trânsito`} icon={<Truck className="h-4 w-4 text-primary" />} />
+        <KpiCard
+          title="Empréstimos"
+          value={stats.activeLoans}
+          sub={`${stats.overdueLoans} atrasados`}
+          icon={<Clock className="h-4 w-4 text-yellow-600" />}
+          variation={prevStats ? calcVariation(stats.totalLoans, prevStats.totalLoans) : undefined}
+        />
+        <KpiCard
+          title="Lotes Entrega"
+          value={stats.totalBatches}
+          sub={`${stats.batchesInTransit} em trânsito`}
+          icon={<Truck className="h-4 w-4 text-primary" />}
+          variation={prevStats ? calcVariation(stats.totalBatches, prevStats.totalBatches) : undefined}
+        />
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <KpiCard title="Transferências" value={stats.totalTransfers} sub={`${stats.pendingTransfers} pendentes`} icon={<ArrowRightLeft className="h-4 w-4 text-secondary" />} />
-        <KpiCard title="Solic. Designer" value={stats.totalDesignerRequests} sub={`${stats.pendingDesignerRequests} pendentes`} icon={<Palette className="h-4 w-4 text-secondary" />} />
-        <KpiCard title="Remoções" value={stats.totalRemovals} sub={`${stats.pendingRemovals} pendentes`} icon={<AlertTriangle className="h-4 w-4 text-orange-600" />} />
-        <KpiCard title="Entregas OK" value={stats.batchesCompleted} sub={`de ${stats.totalBatches} lotes`} icon={<CheckCircle className="h-4 w-4 text-secondary" />} />
+        <KpiCard
+          title="Transferências"
+          value={stats.totalTransfers}
+          sub={`${stats.pendingTransfers} pendentes`}
+          icon={<ArrowRightLeft className="h-4 w-4 text-secondary" />}
+          variation={prevStats ? calcVariation(stats.totalTransfers, prevStats.totalTransfers) : undefined}
+        />
+        <KpiCard
+          title="Solic. Designer"
+          value={stats.totalDesignerRequests}
+          sub={`${stats.pendingDesignerRequests} pendentes`}
+          icon={<Palette className="h-4 w-4 text-secondary" />}
+          variation={prevStats ? calcVariation(stats.totalDesignerRequests, prevStats.totalDesignerRequests) : undefined}
+        />
+        <KpiCard
+          title="Remoções"
+          value={stats.totalRemovals}
+          sub={`${stats.pendingRemovals} pendentes`}
+          icon={<AlertTriangle className="h-4 w-4 text-orange-600" />}
+          variation={prevStats ? calcVariation(stats.totalRemovals, prevStats.totalRemovals) : undefined}
+        />
+        <KpiCard
+          title="Entregas OK"
+          value={stats.batchesCompleted}
+          sub={`de ${stats.totalBatches} lotes`}
+          icon={<CheckCircle className="h-4 w-4 text-secondary" />}
+          variation={prevStats ? calcVariation(stats.batchesCompleted, prevStats.batchesCompleted) : undefined}
+        />
       </div>
 
       {/* ═══ GRÁFICOS ═══ */}
@@ -303,7 +564,7 @@ export function SystemOverviewPanel() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><ClipboardList className="h-5 w-5 text-primary" />Solicitações por Status</CardTitle>
-              <CardDescription>{stats.totalRequests} solicitações no sistema</CardDescription>
+              <CardDescription>{stats.totalRequests} solicitações {isFiltered ? 'no período' : 'no sistema'}</CardDescription>
             </CardHeader>
             <CardContent>
               <VerticalBarChart data={requestsByStatus} dataKey="count" nameKey="name" height={250} fontSize={10} />
@@ -317,7 +578,7 @@ export function SystemOverviewPanel() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary" />Top 10 Itens Mais Solicitados</CardTitle>
-              <CardDescription>Volume de pedidos por item</CardDescription>
+              <CardDescription>Volume de pedidos por item {isFiltered ? 'no período' : ''}</CardDescription>
             </CardHeader>
             <CardContent>
               <HorizontalBarChart data={requestsByItem} dataKey="count" nameKey="name" />
@@ -329,7 +590,7 @@ export function SystemOverviewPanel() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Building2 className="h-5 w-5 text-primary" />Solicitações por Unidade</CardTitle>
-              <CardDescription>Volume de pedidos por unidade operacional</CardDescription>
+              <CardDescription>Volume de pedidos por unidade operacional {isFiltered ? 'no período' : ''}</CardDescription>
             </CardHeader>
             <CardContent>
               <HorizontalBarChart data={requestsByUnit} dataKey="count" nameKey="name" />
@@ -354,7 +615,7 @@ export function SystemOverviewPanel() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-primary" />Empréstimos por Status</CardTitle>
-              <CardDescription>{stats.totalLoans} empréstimos registrados</CardDescription>
+              <CardDescription>{stats.totalLoans} empréstimos {isFiltered ? 'no período' : 'registrados'}</CardDescription>
             </CardHeader>
             <CardContent>
               <VerticalBarChart data={loansByStatus} dataKey="count" nameKey="name" height={220} fontSize={12} />
@@ -392,7 +653,7 @@ export function SystemOverviewPanel() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" />Lotes de Entrega por Status</CardTitle>
-              <CardDescription>{stats.totalBatches} lotes de entrega</CardDescription>
+              <CardDescription>{stats.totalBatches} lotes de entrega {isFiltered ? 'no período' : ''}</CardDescription>
             </CardHeader>
             <CardContent>
               <VerticalBarChart data={batchesByStatus} dataKey="count" nameKey="name" height={300} fontSize={10} />
@@ -406,7 +667,7 @@ export function SystemOverviewPanel() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><ArrowRightLeft className="h-5 w-5 text-primary" />Transferências de Móveis</CardTitle>
-              <CardDescription>{stats.totalTransfers} transferências registradas</CardDescription>
+              <CardDescription>{stats.totalTransfers} transferências {isFiltered ? 'no período' : 'registradas'}</CardDescription>
             </CardHeader>
             <CardContent>
               <VerticalBarChart data={transfersByStatus} dataKey="count" nameKey="name" fontSize={12} />
@@ -418,7 +679,7 @@ export function SystemOverviewPanel() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Armchair className="h-5 w-5 text-primary" />Remoções de Móveis</CardTitle>
-              <CardDescription>{stats.totalRemovals} remoções registradas</CardDescription>
+              <CardDescription>{stats.totalRemovals} remoções {isFiltered ? 'no período' : 'registradas'}</CardDescription>
             </CardHeader>
             <CardContent>
               <VerticalBarChart data={removalsByStatus} dataKey="count" nameKey="name" fontSize={10} />
@@ -438,8 +699,8 @@ export function SystemOverviewPanel() {
               { icon: Building2, label: 'Unidades Operacionais', value: operationalUnits.length },
               { icon: Users, label: 'Total de Usuários', value: stats.totalUsers },
               { icon: Package, label: 'Itens Cadastrados', value: stats.totalMaterials + stats.totalFurniture },
-              { icon: TrendingUp, label: 'Solicitações Totais', value: stats.totalRequests },
-              { icon: Truck, label: 'Lotes de Entrega', value: stats.totalBatches },
+              { icon: TrendingUp, label: `Solicitações${isFiltered ? ' (período)' : ' Totais'}`, value: stats.totalRequests },
+              { icon: Truck, label: `Lotes de Entrega${isFiltered ? ' (período)' : ''}`, value: stats.totalBatches },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex flex-col items-center text-center gap-2">
                 <div className="h-10 w-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
@@ -456,7 +717,22 @@ export function SystemOverviewPanel() {
   );
 }
 
-function KpiCard({ title, value, sub, icon }: { title: string; value: number; sub?: string; icon: React.ReactNode }) {
+interface KpiCardProps {
+  title: string;
+  value: number;
+  sub?: string;
+  icon: React.ReactNode;
+  variation?: { pct: number; direction: 'up' | 'down' | 'same' };
+  invertColor?: boolean;
+}
+
+function KpiCard({ title, value, sub, icon, variation, invertColor }: KpiCardProps) {
+  const getVariationColor = () => {
+    if (!variation || variation.direction === 'same') return 'text-muted-foreground';
+    if (invertColor) return variation.direction === 'up' ? 'text-destructive' : 'text-emerald-600';
+    return variation.direction === 'up' ? 'text-emerald-600' : 'text-destructive';
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -465,6 +741,14 @@ function KpiCard({ title, value, sub, icon }: { title: string; value: number; su
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
+        {variation && (
+          <div className={`flex items-center gap-1 text-xs font-medium ${getVariationColor()}`}>
+            {variation.direction === 'up' && <ArrowUpRight className="h-3 w-3" />}
+            {variation.direction === 'down' && <ArrowDownRight className="h-3 w-3" />}
+            {variation.direction === 'same' && <Minus className="h-3 w-3" />}
+            <span>{variation.pct}% vs anterior</span>
+          </div>
+        )}
         {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
       </CardContent>
     </Card>

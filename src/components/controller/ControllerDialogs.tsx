@@ -157,6 +157,7 @@ export function ControllerDialogs({
               batch={scannedBatch}
               onSuccess={() => onScannedBatchIdChange(null)}
               onCancel={() => onScannedBatchIdChange(null)}
+              viaQRCode
             />
           </div>
         </div>

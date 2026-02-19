@@ -1109,8 +1109,8 @@ app.post("/make-server-46b247d8/users", async (c) => {
 app.put("/make-server-46b247d8/users/:id", async (c) => {
   try {
     const id = c.req.param("id");
-    const { name, email, role, primaryUnitId, additionalUnitIds, warehouseType, adminType, jobTitle, password } = await c.req.json();
-    
+    const { name, email, role, primaryUnitId, additionalUnitIds, warehouseType, adminType, jobTitle, password, dailyCode, dailyCodeGeneratedAt } = await c.req.json();
+
     // Prepare updates for public.users table
     const dbUpdates: any = {};
     if (name !== undefined) dbUpdates.name = name;
@@ -1121,6 +1121,8 @@ app.put("/make-server-46b247d8/users/:id", async (c) => {
     if (warehouseType !== undefined) dbUpdates.warehouse_type = warehouseType;
     if (adminType !== undefined) dbUpdates.admin_type = adminType;
     if (jobTitle !== undefined) dbUpdates.job_title = jobTitle;
+    if (dailyCode !== undefined) dbUpdates.daily_code = dailyCode;
+    if (dailyCodeGeneratedAt !== undefined) dbUpdates.daily_code_generated_at = dailyCodeGeneratedAt;
     
     // Update public.users table
     const { data: userData, error: dbError } = await supabase
@@ -2644,6 +2646,7 @@ app.post("/make-server-46b247d8/delivery-confirmations", async (c) => {
         location: body.location ? JSON.stringify(body.location) : null,
         signature: body.signature || null,
         notes: body.notes || null,
+        daily_code: body.daily_code || null,
       })
       .select()
       .single();
@@ -2699,14 +2702,17 @@ CREATE TABLE IF NOT EXISTS delivery_batches (
 
 CREATE TABLE IF NOT EXISTS delivery_confirmations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  batch_id TEXT NOT NULL,
+  batch_id TEXT,
+  furniture_request_id UUID,
   type TEXT NOT NULL,
   confirmed_by_user_id UUID,
+  received_by_user_id UUID,
   photo_url TEXT,
   timestamp TIMESTAMPTZ DEFAULT NOW(),
   location JSONB,
   signature TEXT,
-  notes TEXT
+  notes TEXT,
+  daily_code TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_delivery_batches_status ON delivery_batches(status);

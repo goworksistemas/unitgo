@@ -269,5 +269,5 @@ export interface DeliveryConfirmation {
   };
   signature?: string; // Assinatura digital opcional (base64)
   notes?: string;
-  dailyCode?: string; // Código diário para confirmação (não persistido)
+  dailyCode?: string; // Código diário usado na confirmação
 }

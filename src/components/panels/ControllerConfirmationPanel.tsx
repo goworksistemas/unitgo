@@ -82,9 +82,8 @@ export function ControllerConfirmationPanel() {
     try {
       await confirmReceipt(selectedBatchId, {
         confirmedByUserId: currentUser.id,
-        userId: currentUser.id,
-        userName: currentUser.name,
         type: 'receipt',
+        photoUrl: '',
         dailyCode: cleanCode,
       });
 
