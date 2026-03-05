@@ -179,6 +179,8 @@ export function FurnitureWarehousePanel({ isDeveloperMode = false }: FurnitureWa
     const storageWorker = request.approvedByStorageUserId ? getUserById(request.approvedByStorageUserId) : null;
     const separator = request.separatedByUserId ? getUserById(request.separatedByUserId) : null;
     const driver = request.assignedToWarehouseUserId ? getUserById(request.assignedToWarehouseUserId) : null;
+    const deliverer = request.deliveredByUserId ? getUserById(request.deliveredByUserId) : null;
+    const receiver = request.receivedByUserId ? getUserById(request.receivedByUserId) : null;
 
     // Verificar estoque disponível no Almoxarifado Central
     const warehouseUnitId = getWarehouseUnitId();
@@ -263,30 +265,42 @@ export function FurnitureWarehousePanel({ isDeveloperMode = false }: FurnitureWa
         )}
 
         {/* Timeline de aprovações */}
-        {(designer || storageWorker || separator || driver) && (
+        {(designer || storageWorker || separator || driver || deliverer || receiver) && (
           <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
             {designer && request.reviewedAt && (
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-3 w-3 text-green-600" />
-                <span>Designer: {designer.name} em {formatDate(request.reviewedAt)}</span>
+                <span>Designer: <strong className="text-foreground">{designer.name}</strong> em {formatDate(request.reviewedAt)}</span>
               </div>
             )}
             {storageWorker && request.approvedByStorageAt && (
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-3 w-3 text-green-600" />
-                <span>Storage: {storageWorker.name} em {formatDate(request.approvedByStorageAt)}</span>
+                <span>Aprovado: <strong className="text-foreground">{storageWorker.name}</strong> em {formatDate(request.approvedByStorageAt)}</span>
               </div>
             )}
             {separator && request.separatedAt && (
               <div className="flex items-center gap-2">
                 <PackageCheck className="h-3 w-3 text-purple-600" />
-                <span>Separado: {separator.name} em {formatDate(request.separatedAt)}</span>
+                <span>Separado: <strong className="text-foreground">{separator.name}</strong> em {formatDate(request.separatedAt)}</span>
               </div>
             )}
             {driver && request.assignedAt && (
               <div className="flex items-center gap-2">
                 <Truck className="h-3 w-3 text-orange-600" />
-                <span>Motorista: {driver.name} em {formatDate(request.assignedAt)}</span>
+                <span>Motorista: <strong className="text-foreground">{driver.name}</strong> em {formatDate(request.assignedAt)}</span>
+              </div>
+            )}
+            {deliverer && request.deliveredAt && (
+              <div className="flex items-center gap-2">
+                <Package className="h-3 w-3 text-primary" />
+                <span>Entrega confirmada por: <strong className="text-foreground">{deliverer.name}</strong> em {formatDate(request.deliveredAt)}</span>
+              </div>
+            )}
+            {receiver && request.completedAt && (
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-3 w-3 text-green-600" />
+                <span>Recebido por: <strong className="text-foreground">{receiver.name}</strong> em {formatDate(request.completedAt)}</span>
               </div>
             )}
           </div>

@@ -6,6 +6,8 @@ import { WarehouseDashboard } from '@/components/dashboards/WarehouseDashboard';
 import { DriverDashboard } from '@/components/dashboards/DriverDashboard';
 import { DesignerDashboard } from '@/components/dashboards/DesignerDashboard';
 import { RequesterDashboard } from '@/components/dashboards/RequesterDashboard';
+import { BuyerDashboard } from '@/components/dashboards/BuyerDashboard';
+import { FinancialDashboard } from '@/components/dashboards/FinancialDashboard';
 
 interface ViewAsPanelProps {
   viewAsRole: UserRole | null;
@@ -34,6 +36,10 @@ function RoleDashboard({ role }: { role: string }) {
       return <DesignerDashboard />;
     case 'requester':
       return <RequesterDashboard />;
+    case 'buyer':
+      return <BuyerDashboard />;
+    case 'financial':
+      return <FinancialDashboard />;
     default:
       return null;
   }

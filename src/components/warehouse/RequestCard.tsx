@@ -1,7 +1,7 @@
 import type { Request, Item, Unit, User, UnitStock } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, User as UserIcon, Truck, PackageCheck } from 'lucide-react';
 import { getStatusConfig, formatDate } from '@/lib/format';
 
 interface RequestCardProps {
@@ -32,6 +32,9 @@ export function RequestCard({
   const item = getItemById(request.itemId);
   const unit = getUnitById(request.requestingUnitId);
   const user = getUserById(request.requestedByUserId);
+  const approver = request.approvedByUserId ? getUserById(request.approvedByUserId) : null;
+  const picker = request.pickedUpByUserId ? getUserById(request.pickedUpByUserId) : null;
+  const completer = request.completedByUserId ? getUserById(request.completedByUserId) : null;
   const warehouseStock = warehouseUnitId
     ? getStockForItem(request.itemId, warehouseUnitId)
     : undefined;
@@ -80,6 +83,29 @@ export function RequestCard({
       </div>
 
       <div className="text-xs text-muted-foreground">{formatDate(request.createdAt)}</div>
+
+      {(approver || picker || completer) && (
+        <div className="space-y-1 text-xs text-muted-foreground border-t pt-2">
+          {approver && request.approvedAt && (
+            <div className="flex items-center gap-1.5">
+              <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
+              <span>Aprovado por <strong className="text-foreground">{approver.name}</strong> em {formatDate(request.approvedAt)}</span>
+            </div>
+          )}
+          {picker && request.pickedUpAt && (
+            <div className="flex items-center gap-1.5">
+              <Truck className="h-3 w-3 text-primary" />
+              <span>Retirado por <strong className="text-foreground">{picker.name}</strong> em {formatDate(request.pickedUpAt)}</span>
+            </div>
+          )}
+          {completer && request.completedAt && (
+            <div className="flex items-center gap-1.5">
+              <PackageCheck className="h-3 w-3 text-green-600 dark:text-green-400" />
+              <span>Entrega confirmada por <strong className="text-foreground">{completer.name}</strong> em {formatDate(request.completedAt)}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {isStorageWorker && request.status === 'pending' && (

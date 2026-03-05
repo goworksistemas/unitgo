@@ -1,13 +1,15 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
-import { Package, History, CheckCircle2, Scan } from 'lucide-react';
+import { Package, History, CheckCircle2, Scan, ShoppingCart, FileText } from 'lucide-react';
 import { RequesterConfirmationPanel } from '../panels/RequesterConfirmationPanel';
 import { QRCodeScanner } from '../shared/QRCodeScanner';
 import { ReceiptConfirmationWithCode } from '../panels/ReceiptConfirmationWithCode';
 import { StockPanel } from '../requester/StockPanel';
 import { RequestsPanel } from '../requester/RequestsPanel';
 import { NewRequestDialog } from '../requester/NewRequestDialog';
+import { CreatePurchaseRequestPanel } from '../purchases/requester/CreatePurchaseRequestPanel';
+import { MyPurchaseRequestsPanel } from '../purchases/requester/MyPurchaseRequestsPanel';
 import { toast } from 'sonner';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
@@ -22,9 +24,13 @@ export function RequesterDashboard() {
     { id: 'stock', label: 'Estoque Disponível', icon: Package },
     { id: 'requests', label: 'Meus Pedidos', icon: History },
     { id: 'deliveries', label: 'Recebimentos', icon: CheckCircle2 },
+    { id: 'purchases', label: 'Compras', icon: ShoppingCart, items: [
+      { id: 'new-purchase', label: 'Nova Solicitação', icon: ShoppingCart },
+      { id: 'my-purchases', label: 'Minhas Solicitações', icon: FileText },
+    ]},
   ], []);
 
-  const { activeSection } = useDashboardNav(navigationSections, 'Minhas Solicitações', 'Solicite materiais do almoxarifado central', 'stock');
+  const { activeSection, activeItem } = useDashboardNav(navigationSections, 'Minhas Solicitações', 'Solicite materiais do almoxarifado central', 'stock');
 
   const availableItems = items.filter(item => !item.isFurniture && item.active);
   const warehouseId = getWarehouseUnitId();
@@ -74,6 +80,8 @@ export function RequesterDashboard() {
         <RequestsPanel myRequests={myRequests} getItemById={getItemById} onNewRequest={() => setIsNewRequestOpen(true)} />
       )}
       {activeSection === 'deliveries' && <RequesterConfirmationPanel />}
+      {activeSection === 'purchases' && activeItem === 'my-purchases' && <MyPurchaseRequestsPanel />}
+      {activeSection === 'purchases' && activeItem !== 'my-purchases' && <CreatePurchaseRequestPanel />}
 
       <Button
         onClick={() => setShowQRScanner(true)}

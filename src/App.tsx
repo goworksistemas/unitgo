@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './contexts/AppContext';
+import { PurchaseProvider } from './contexts/PurchaseContext';
 import { LoginPage } from './components/auth/LoginPage';
 import { ResetPasswordPage } from './components/auth/ResetPasswordPage';
 import { AppLayout } from './components/layout/AppLayout';
@@ -11,6 +12,8 @@ import { DriverDashboard } from './components/dashboards/DriverDashboard';
 import { DesignerDashboard } from './components/dashboards/DesignerDashboard';
 import { DeveloperDashboard } from './components/dashboards/DeveloperDashboard';
 import { RequesterDashboard } from './components/dashboards/RequesterDashboard';
+import { BuyerDashboard } from './components/dashboards/BuyerDashboard';
+import { FinancialDashboard } from './components/dashboards/FinancialDashboard';
 import { Toaster } from './components/ui/sonner';
 import { projectId, publicAnonKey, functionSlug } from './utils/supabase/info';
 import { useInactivityLogout } from './hooks/useInactivityLogout';
@@ -133,16 +136,22 @@ function AppContent() {
         return <DeveloperDashboard />;
       case 'requester':
         return <RequesterDashboard />;
+      case 'buyer':
+        return <BuyerDashboard />;
+      case 'financial':
+        return <FinancialDashboard />;
       default:
         return <div>Perfil não reconhecido</div>;
     }
   };
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
-      <AppLayout>
-        {renderDashboard()}
-      </AppLayout>
+    <div className="min-h-screen overflow-x-hidden">
+      <PurchaseProvider>
+        <AppLayout>
+          {renderDashboard()}
+        </AppLayout>
+      </PurchaseProvider>
       <Toaster />
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
-import { Package, Calendar, Armchair, Scan } from 'lucide-react';
+import { Package, Calendar, Armchair, Scan, ShoppingCart, ClipboardList, History } from 'lucide-react';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
 import { ControllerKPIs } from '../controller/ControllerKPIs';
@@ -12,6 +12,8 @@ import { AlmoxarifadoPanel } from '../controller/AlmoxarifadoPanel';
 import { PendingDeliveriesAlert } from '../controller/PendingDeliveriesAlert';
 import { LoanAlerts } from '../controller/LoanAlerts';
 import { ControllerDialogs, type StockDialogState } from '../controller/ControllerDialogs';
+import { ManagerPurchaseRequestsPanel } from '../purchases/manager/ManagerPurchaseRequestsPanel';
+import { ManagerApprovalHistoryPanel } from '../purchases/manager/ManagerApprovalHistoryPanel';
 
 export function ControllerDashboard() {
   const {
@@ -73,10 +75,14 @@ export function ControllerDashboard() {
       { id: 'furniture-almoxarifado', label: 'Móveis e Almoxarifado', icon: Armchair },
       { id: 'loans', label: 'Empréstimos', icon: Calendar },
       { id: 'deliveries', label: 'Recebimentos', icon: Package, badge: pendingDeliveries > 0 ? pendingDeliveries : undefined },
+      { id: 'purchases', label: 'Compras', icon: ShoppingCart, items: [
+        { id: 'manager-requests', label: 'Solicitações da Área', icon: ClipboardList },
+        { id: 'approval-history', label: 'Histórico Aprovações', icon: History },
+      ]},
     ];
   }, [currentUnit, deliveryBatches]);
 
-  const { activeSection } = useDashboardNav(
+  const { activeSection, activeItem } = useDashboardNav(
     navigationSections, 'Painel do Controlador',
     currentUnit ? `Gestão de ${currentUnit.name}` : 'Selecione uma unidade no sidebar',
     'furniture-almoxarifado'
@@ -94,6 +100,9 @@ export function ControllerDashboard() {
 
   const renderSection = () => {
     switch (activeSection) {
+      case 'purchases':
+        if (activeItem === 'approval-history') return <ManagerApprovalHistoryPanel />;
+        return <ManagerPurchaseRequestsPanel />;
       case 'loans': return <LoansPanel />;
       case 'deliveries':
         return (

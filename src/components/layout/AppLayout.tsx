@@ -47,9 +47,13 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <NavigationContext.Provider value={contextValue}>
+      {/* Background Animation (estilo pipego) */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 opacity-20 bg-rotate-gradient" aria-hidden />
+      </div>
       <SidebarProvider defaultOpen>
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="bg-background/80">
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />

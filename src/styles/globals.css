@@ -314,6 +314,27 @@ html {
   color: var(--sidebar-accent-foreground);
 }
 
+/* Rotating gradient background (estilo pipego) */
+@keyframes rotate-gradient {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.bg-rotate-gradient {
+  background: conic-gradient(
+    from 0deg,
+    rgba(63, 118, 255, 0.3),
+    rgba(147, 51, 234, 0.2),
+    rgba(0, 197, 233, 0.3),
+    rgba(63, 118, 255, 0.3)
+  );
+  animation: rotate-gradient 20s linear infinite;
+}
+
 .has-\[\[data-variant\=inset\]\]\:bg-sidebar:has([data-variant="inset"]) {
   background-color: var(--sidebar);
 }

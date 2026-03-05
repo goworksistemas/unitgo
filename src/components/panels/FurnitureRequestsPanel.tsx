@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
-import { AlertCircle, CheckCircle, Sofa, XCircle, Building2, MapPin, Clock, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertCircle, CheckCircle, Sofa, XCircle, Building2, MapPin, Clock, User } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import {
   Dialog,
@@ -16,11 +16,6 @@ import {
 } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '../ui/collapsible';
 
 export function FurnitureRequestsPanel() {
   const { currentUser, furnitureRequestsToDesigner, updateFurnitureRequestToDesigner, getItemById, getUnitById, getUserById } = useApp();
@@ -31,7 +26,6 @@ export function FurnitureRequestsPanel() {
   });
   const [rejectionReason, setRejectionReason] = useState('');
   const [observations, setObservations] = useState('');
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const { pendingRequests, approvedRequests, completedRequests } = useMemo(() => {
     const pending = furnitureRequestsToDesigner.filter(r => r.status === 'pending_designer');
@@ -263,37 +257,26 @@ export function FurnitureRequestsPanel() {
           </Card>
         )}
 
-        {/* Completed/Rejected Requests */}
+        {/* Completed/Rejected Requests - Histórico sempre aberto */}
         {completedRequests.length > 0 && (
-          <Collapsible open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-            <Card>
-              <CardHeader>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full flex items-center justify-between p-0 hover:bg-transparent">
-                    <div className="text-left">
-                      <CardTitle className="text-base md:text-lg text-[18px] flex items-center">
-                        Histórico
-                        <Badge variant="secondary" className="ml-2">{completedRequests.length}</Badge>
-                      </CardTitle>
-                      <CardDescription className="text-xs md:text-sm">
-                        Solicitações concluídas ou rejeitadas
-                      </CardDescription>
-                    </div>
-                    {isHistoryOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                  </Button>
-                </CollapsibleTrigger>
-              </CardHeader>
-              <CollapsibleContent>
-                <CardContent>
-                  <div className="grid gap-3">
-                    {completedRequests.slice(0, 5).map(request => (
-                      <RequestCard key={request.id} request={request} />
-                    ))}
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base md:text-lg text-[18px] flex items-center">
+                Histórico
+                <Badge variant="secondary" className="ml-2">{completedRequests.length}</Badge>
+              </CardTitle>
+              <CardDescription className="text-xs md:text-sm">
+                Solicitações concluídas ou rejeitadas
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3">
+                {completedRequests.slice(0, 5).map(request => (
+                  <RequestCard key={request.id} request={request} />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
 

@@ -1,10 +1,18 @@
 import { useMemo } from 'react';
 import { useApp } from '../../contexts/AppContext';
+import { usePurchases } from '../../contexts/PurchaseContext';
 import { Button } from '../ui/button';
-import { Clock, Package, ArrowRightLeft, BarChart3, Eye, LayoutDashboard } from 'lucide-react';
+import { Clock, Package, ArrowRightLeft, BarChart3, Eye, LayoutDashboard, ShoppingCart, Building2, Landmark, FileText, ClipboardList, CheckSquare, History, Search } from 'lucide-react';
 import { AdminAnalytics } from './AdminAnalytics';
 import { OverviewPanel } from '../admin-units/OverviewPanel';
 import { RequestsTable, StockTable, TransfersTable } from '../admin-units/DataTablePanel';
+import { SupplierManagementPanel } from '../purchases/admin/SupplierManagementPanel';
+import { CostCenterManagementPanel } from '../purchases/admin/CostCenterManagementPanel';
+import { ContractManagementPanel } from '../purchases/admin/ContractManagementPanel';
+import { PurchaseRequestApprovalPanel } from '../purchases/admin/PurchaseRequestApprovalPanel';
+import { ManagerPurchaseRequestsPanel } from '../purchases/manager/ManagerPurchaseRequestsPanel';
+import { ManagerApprovalHistoryPanel } from '../purchases/manager/ManagerApprovalHistoryPanel';
+import { AdminRequestTrackingPanel } from './AdminRequestTrackingPanel';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
 
@@ -13,7 +21,17 @@ interface AdminUnitsDashboardProps {
 }
 
 export function AdminUnitsDashboard({ onSwitchToController }: AdminUnitsDashboardProps) {
-  const { units, items, users, unitStocks, requests, furnitureTransfers, getItemById, getUnitById, getUserById } = useApp();
+  const { units, items, users, unitStocks, requests, furnitureTransfers, getItemById, getUnitById, getUserById, currentUser, currentUnit } = useApp();
+
+  let pendingManagerCount = 0;
+  try {
+    const { purchaseRequests } = usePurchases();
+    pendingManagerCount = purchaseRequests.filter(
+      (r) => r.status === 'pending_manager' && currentUnit && r.unidadeId === currentUnit.id && r.solicitanteId !== currentUser?.id
+    ).length;
+  } catch {
+    // PurchaseContext pode não estar disponível em todos os cenários
+  }
 
   const navigationSections: NavigationSection[] = [
     { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
@@ -21,9 +39,18 @@ export function AdminUnitsDashboard({ onSwitchToController }: AdminUnitsDashboar
     { id: 'stock', label: 'Estoque', icon: Package },
     { id: 'transfers', label: 'Transferências', icon: ArrowRightLeft },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'purchases', label: 'Compras', icon: ShoppingCart, items: [
+      { id: 'manager-approvals', label: 'Aprovações Gestor', icon: CheckSquare, badge: pendingManagerCount > 0 ? pendingManagerCount : undefined },
+      { id: 'approvals', label: 'Aprovações Diretoria', icon: ClipboardList },
+      { id: 'approval-history', label: 'Histórico Aprovações', icon: History },
+      { id: 'tracking', label: 'Acompanhamento', icon: Search },
+      { id: 'suppliers', label: 'Fornecedores', icon: Building2 },
+      { id: 'cost-centers', label: 'Centros de Custo', icon: Landmark },
+      { id: 'contracts', label: 'Contratos', icon: FileText },
+    ]},
   ];
 
-  const { activeSection } = useDashboardNav(navigationSections, 'Dashboard Administrativo', 'Visão geral do sistema', 'overview');
+  const { activeSection, activeItem } = useDashboardNav(navigationSections, 'Dashboard Administrativo', 'Visão geral do sistema', 'overview');
 
   const warehouseUnit = units.find(u => u.name === 'Almoxarifado Central');
   const operationalUnits = units.filter(u => u.id !== warehouseUnit?.id);
@@ -83,6 +110,14 @@ export function AdminUnitsDashboard({ onSwitchToController }: AdminUnitsDashboar
       {activeSection === 'stock' && <StockTable lowStockItems={lowStockItemsData} />}
       {activeSection === 'transfers' && <TransfersTable transfers={recentTransfers} getItemById={getItemById} getUnitById={getUnitById} />}
       {activeSection === 'analytics' && <AdminAnalytics />}
+      {activeSection === 'purchases' && activeItem === 'manager-approvals' && <ManagerPurchaseRequestsPanel />}
+      {activeSection === 'purchases' && activeItem === 'approvals' && <PurchaseRequestApprovalPanel />}
+      {activeSection === 'purchases' && activeItem === 'approval-history' && <ManagerApprovalHistoryPanel />}
+      {activeSection === 'purchases' && activeItem === 'tracking' && <AdminRequestTrackingPanel />}
+      {activeSection === 'purchases' && activeItem === 'suppliers' && <SupplierManagementPanel />}
+      {activeSection === 'purchases' && activeItem === 'cost-centers' && <CostCenterManagementPanel />}
+      {activeSection === 'purchases' && activeItem === 'contracts' && <ContractManagementPanel />}
+      {activeSection === 'purchases' && !activeItem && <ManagerPurchaseRequestsPanel />}
     </>
   );
 }

@@ -145,9 +145,20 @@ export function SystemOverviewPanel() {
   const [datePreset, setDatePreset] = useState<DatePreset>('all');
   const [customRange, setCustomRange] = useState<DateRange | undefined>();
   const [compareEnabled, setCompareEnabled] = useState(false);
+  const [compareCustomRange, setCompareCustomRange] = useState<DateRange | undefined>();
+  const [compareMode, setCompareMode] = useState<'auto' | 'custom'>('auto');
 
   const activeRange = useMemo(() => getDateRange(datePreset, customRange), [datePreset, customRange]);
-  const previousRange = useMemo(() => activeRange ? getPreviousPeriod(activeRange) : null, [activeRange]);
+  const previousRange = useMemo(() => {
+    if (!activeRange) return null;
+    if (compareMode === 'custom' && compareCustomRange?.from) {
+      return {
+        from: startOfDay(compareCustomRange.from),
+        to: compareCustomRange.to ? endOfDay(compareCustomRange.to) : endOfDay(compareCustomRange.from),
+      };
+    }
+    return getPreviousPeriod(activeRange);
+  }, [activeRange, compareMode, compareCustomRange]);
 
   const handlePreset = useCallback((preset: DatePreset) => {
     setDatePreset(preset);
@@ -163,6 +174,8 @@ export function SystemOverviewPanel() {
     setDatePreset('all');
     setCustomRange(undefined);
     setCompareEnabled(false);
+    setCompareMode('auto');
+    setCompareCustomRange(undefined);
   }, []);
 
   const warehouseUnit = units.find(u => u.name === 'Almoxarifado Central');
@@ -444,17 +457,51 @@ export function SystemOverviewPanel() {
             </div>
 
             {isFiltered && (
-              <div className="flex items-center gap-3 pt-1 border-t">
+              <div className="flex flex-col gap-3 pt-3 border-t">
                 <div className="flex items-center gap-2">
-                  <Switch checked={compareEnabled} onCheckedChange={setCompareEnabled} id="compare-toggle" />
+                  <Switch checked={compareEnabled} onCheckedChange={(v) => { setCompareEnabled(v); if (!v) { setCompareMode('auto'); setCompareCustomRange(undefined); } }} id="compare-toggle" />
                   <label htmlFor="compare-toggle" className="text-sm cursor-pointer select-none">
-                    Comparar com período anterior
+                    Comparar com outro período
                   </label>
                 </div>
-                {compareEnabled && previousRange && (
-                  <span className="text-xs text-muted-foreground">
-                    ({format(previousRange.from, 'dd/MM/yy', { locale: ptBR })} - {format(previousRange.to, 'dd/MM/yy', { locale: ptBR })})
-                  </span>
+
+                {compareEnabled && (
+                  <div className="flex flex-wrap items-center gap-2 pl-1">
+                    <Button
+                      size="sm"
+                      variant={compareMode === 'auto' ? 'default' : 'outline'}
+                      onClick={() => { setCompareMode('auto'); setCompareCustomRange(undefined); }}
+                    >
+                      Período anterior
+                    </Button>
+
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="sm" variant={compareMode === 'custom' ? 'default' : 'outline'} className="gap-2">
+                          <CalendarIcon className="h-4 w-4" />
+                          {compareMode === 'custom' && compareCustomRange?.from
+                            ? `${format(compareCustomRange.from, 'dd/MM/yy', { locale: ptBR })}${compareCustomRange.to ? ` - ${format(compareCustomRange.to, 'dd/MM/yy', { locale: ptBR })}` : ''}`
+                            : 'Escolher data'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="range"
+                          selected={compareCustomRange}
+                          onSelect={(range) => { setCompareCustomRange(range); setCompareMode('custom'); }}
+                          numberOfMonths={2}
+                          locale={ptBR}
+                          disabled={{ after: new Date() }}
+                        />
+                      </PopoverContent>
+                    </Popover>
+
+                    {previousRange && (
+                      <span className="text-xs text-muted-foreground">
+                        Comparando: {format(previousRange.from, 'dd/MM/yy', { locale: ptBR })} - {format(previousRange.to, 'dd/MM/yy', { locale: ptBR })}
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
             )}

@@ -77,6 +77,10 @@ export function UserFormFields({ userForm, setUserForm, units, showPassword = fa
               <SelectItem value="designer">Designer</SelectItem>
               <SelectItem value="developer">Desenvolvedor</SelectItem>
               <SelectItem value="requester">Solicitante</SelectItem>
+              <SelectItem value="buyer">Comprador</SelectItem>
+              <SelectItem value="financial">Financeiro</SelectItem>
+              <SelectItem value="executor">Executor</SelectItem>
+              <SelectItem value="driver">Motorista</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -2827,4 +2827,428 @@ app.get("/make-server-46b247d8/developer/check-furniture-table", async (c) => {
   }
 });
 
+// ========== MÓDULO DE COMPRAS ==========
+
+// --- Supplier Categories ---
+app.get("/make-server-46b247d8/supplier-categories", async (c) => {
+  try {
+    const { data, error } = await supabase.from('supplier_categories').select('*');
+    if (error) throw error;
+    return c.json(data || []);
+  } catch (error) {
+    console.error("Error fetching supplier categories:", error);
+    return c.json({ error: "Failed to fetch supplier categories" }, 500);
+  }
+});
+
+app.post("/make-server-46b247d8/supplier-categories", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { id, ...rest } = body;
+    const { data, error } = await supabase.from('supplier_categories').insert(rest).select().single();
+    if (error) throw error;
+    return c.json(data, 201);
+  } catch (error) {
+    console.error("Error creating supplier category:", error);
+    return c.json({ error: "Failed to create supplier category" }, 500);
+  }
+});
+
+app.put("/make-server-46b247d8/supplier-categories/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const updates = await c.req.json();
+    const { data, error } = await supabase.from('supplier_categories').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    return c.json(data);
+  } catch (error) {
+    console.error("Error updating supplier category:", error);
+    return c.json({ error: "Failed to update supplier category" }, 500);
+  }
+});
+
+// --- Suppliers ---
+app.get("/make-server-46b247d8/suppliers", async (c) => {
+  try {
+    const { data, error } = await supabase.from('suppliers').select('*').order('razao_social');
+    if (error) throw error;
+    return c.json(data || []);
+  } catch (error) {
+    console.error("Error fetching suppliers:", error);
+    return c.json({ error: "Failed to fetch suppliers" }, 500);
+  }
+});
+
+app.post("/make-server-46b247d8/suppliers", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { id, ...rest } = body;
+    const { data, error } = await supabase.from('suppliers').insert(rest).select().single();
+    if (error) throw error;
+    return c.json(data, 201);
+  } catch (error) {
+    console.error("Error creating supplier:", error);
+    return c.json({ error: "Failed to create supplier", details: error instanceof Error ? error.message : String(error) }, 500);
+  }
+});
+
+app.put("/make-server-46b247d8/suppliers/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const updates = await c.req.json();
+    const { data, error } = await supabase.from('suppliers').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    return c.json(data);
+  } catch (error) {
+    console.error("Error updating supplier:", error);
+    return c.json({ error: "Failed to update supplier" }, 500);
+  }
+});
+
+app.delete("/make-server-46b247d8/suppliers/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const { error } = await supabase.from('suppliers').delete().eq('id', id);
+    if (error) throw error;
+    return c.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting supplier:", error);
+    return c.json({ error: "Failed to delete supplier" }, 500);
+  }
+});
+
+// --- Cost Centers ---
+app.get("/make-server-46b247d8/cost-centers", async (c) => {
+  try {
+    const { data, error } = await supabase.from('cost_centers').select('*').order('codigo');
+    if (error) throw error;
+    return c.json(data || []);
+  } catch (error) {
+    console.error("Error fetching cost centers:", error);
+    return c.json({ error: "Failed to fetch cost centers" }, 500);
+  }
+});
+
+app.post("/make-server-46b247d8/cost-centers", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { id, ...rest } = body;
+    const { data, error } = await supabase.from('cost_centers').insert(rest).select().single();
+    if (error) throw error;
+    return c.json(data, 201);
+  } catch (error) {
+    console.error("Error creating cost center:", error);
+    return c.json({ error: "Failed to create cost center" }, 500);
+  }
+});
+
+app.put("/make-server-46b247d8/cost-centers/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const updates = await c.req.json();
+    const { data, error } = await supabase.from('cost_centers').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    return c.json(data);
+  } catch (error) {
+    console.error("Error updating cost center:", error);
+    return c.json({ error: "Failed to update cost center" }, 500);
+  }
+});
+
+// --- Contracts ---
+app.get("/make-server-46b247d8/contracts", async (c) => {
+  try {
+    const { data, error } = await supabase.from('contracts').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return c.json(data || []);
+  } catch (error) {
+    console.error("Error fetching contracts:", error);
+    return c.json({ error: "Failed to fetch contracts" }, 500);
+  }
+});
+
+app.post("/make-server-46b247d8/contracts", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { id, saldo, ...rest } = body;
+    const { data, error } = await supabase.from('contracts').insert(rest).select().single();
+    if (error) throw error;
+    return c.json(data, 201);
+  } catch (error) {
+    console.error("Error creating contract:", error);
+    return c.json({ error: "Failed to create contract" }, 500);
+  }
+});
+
+app.put("/make-server-46b247d8/contracts/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const updates = await c.req.json();
+    delete updates.saldo;
+    const { data, error } = await supabase.from('contracts').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    return c.json(data);
+  } catch (error) {
+    console.error("Error updating contract:", error);
+    return c.json({ error: "Failed to update contract" }, 500);
+  }
+});
+
+// --- Currencies ---
+app.get("/make-server-46b247d8/currencies", async (c) => {
+  try {
+    const { data, error } = await supabase.from('currencies').select('*').order('codigo');
+    if (error) throw error;
+    return c.json(data || []);
+  } catch (error) {
+    console.error("Error fetching currencies:", error);
+    return c.json({ error: "Failed to fetch currencies" }, 500);
+  }
+});
+
+// --- Purchase Requests ---
+app.get("/make-server-46b247d8/purchase-requests", async (c) => {
+  try {
+    const { data, error } = await supabase.from('purchase_requests').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return c.json(data || []);
+  } catch (error) {
+    console.error("Error fetching purchase requests:", error);
+    return c.json({ error: "Failed to fetch purchase requests" }, 500);
+  }
+});
+
+app.post("/make-server-46b247d8/purchase-requests", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { id, ...rest } = body;
+    const { data, error } = await supabase.from('purchase_requests').insert(rest).select().single();
+    if (error) throw error;
+    return c.json(data, 201);
+  } catch (error) {
+    console.error("Error creating purchase request:", error);
+    return c.json({ error: "Failed to create purchase request", details: error instanceof Error ? error.message : String(error) }, 500);
+  }
+});
+
+app.put("/make-server-46b247d8/purchase-requests/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const updates = await c.req.json();
+    const { data, error } = await supabase.from('purchase_requests').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    return c.json(data);
+  } catch (error) {
+    console.error("Error updating purchase request:", error);
+    return c.json({ error: "Failed to update purchase request" }, 500);
+  }
+});
+
+app.put("/make-server-46b247d8/purchase-requests/:id/approve-manager", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    const { data: current, error: fetchErr } = await supabase.from('purchase_requests').select('aprovacoes').eq('id', id).single();
+    if (fetchErr) throw fetchErr;
+    const aprovacoes = Array.isArray(current?.aprovacoes) ? current.aprovacoes : [];
+    aprovacoes.push({
+      id: crypto.randomUUID(),
+      user_id: body.approver_id,
+      user_name: body.approver_name,
+      role: 'manager',
+      action: 'approved',
+      timestamp: new Date().toISOString(),
+    });
+    const { data, error } = await supabase.from('purchase_requests')
+      .update({ status: 'pending_director', aprovacoes })
+      .eq('id', id).select().single();
+    if (error) throw error;
+    return c.json(data);
+  } catch (error) {
+    console.error("Error approving (manager):", error);
+    return c.json({ error: "Failed to approve", details: error instanceof Error ? error.message : String(error) }, 500);
+  }
+});
+
+app.put("/make-server-46b247d8/purchase-requests/:id/reject-manager", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    const { data: current, error: fetchErr } = await supabase.from('purchase_requests').select('aprovacoes').eq('id', id).single();
+    if (fetchErr) throw fetchErr;
+    const aprovacoes = Array.isArray(current?.aprovacoes) ? current.aprovacoes : [];
+    aprovacoes.push({
+      id: crypto.randomUUID(),
+      user_id: body.approver_id,
+      user_name: body.approver_name,
+      role: 'manager',
+      action: 'rejected',
+      justificativa: body.justificativa,
+      timestamp: new Date().toISOString(),
+    });
+    const { data, error } = await supabase.from('purchase_requests')
+      .update({ status: 'rejected_manager', aprovacoes })
+      .eq('id', id).select().single();
+    if (error) throw error;
+    return c.json(data);
+  } catch (error) {
+    console.error("Error rejecting (manager):", error);
+    return c.json({ error: "Failed to reject", details: error instanceof Error ? error.message : String(error) }, 500);
+  }
+});
+
+app.put("/make-server-46b247d8/purchase-requests/:id/approve-director", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    const { data: current, error: fetchErr } = await supabase.from('purchase_requests').select('aprovacoes').eq('id', id).single();
+    if (fetchErr) throw fetchErr;
+    const aprovacoes = Array.isArray(current?.aprovacoes) ? current.aprovacoes : [];
+    aprovacoes.push({
+      id: crypto.randomUUID(),
+      user_id: body.approver_id,
+      user_name: body.approver_name,
+      role: 'director',
+      action: 'approved',
+      timestamp: new Date().toISOString(),
+    });
+    const { data, error } = await supabase.from('purchase_requests')
+      .update({ status: 'in_quotation', aprovacoes })
+      .eq('id', id).select().single();
+    if (error) throw error;
+    return c.json(data);
+  } catch (error) {
+    console.error("Error approving (director):", error);
+    return c.json({ error: "Failed to approve", details: error instanceof Error ? error.message : String(error) }, 500);
+  }
+});
+
+app.put("/make-server-46b247d8/purchase-requests/:id/reject-director", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    const { data: current, error: fetchErr } = await supabase.from('purchase_requests').select('aprovacoes').eq('id', id).single();
+    if (fetchErr) throw fetchErr;
+    const aprovacoes = Array.isArray(current?.aprovacoes) ? current.aprovacoes : [];
+    aprovacoes.push({
+      id: crypto.randomUUID(),
+      user_id: body.approver_id,
+      user_name: body.approver_name,
+      role: 'director',
+      action: 'rejected',
+      justificativa: body.justificativa,
+      timestamp: new Date().toISOString(),
+    });
+    const { data, error } = await supabase.from('purchase_requests')
+      .update({ status: 'rejected_director', aprovacoes })
+      .eq('id', id).select().single();
+    if (error) throw error;
+    return c.json(data);
+  } catch (error) {
+    console.error("Error rejecting (director):", error);
+    return c.json({ error: "Failed to reject", details: error instanceof Error ? error.message : String(error) }, 500);
+  }
+});
+
+// --- Quotations ---
+app.get("/make-server-46b247d8/quotations", async (c) => {
+  try {
+    const { data, error } = await supabase.from('quotations').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return c.json(data || []);
+  } catch (error) {
+    console.error("Error fetching quotations:", error);
+    return c.json({ error: "Failed to fetch quotations" }, 500);
+  }
+});
+
+app.post("/make-server-46b247d8/quotations", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { id, ...rest } = body;
+    const { data, error } = await supabase.from('quotations').insert(rest).select().single();
+    if (error) throw error;
+    return c.json(data, 201);
+  } catch (error) {
+    console.error("Error creating quotation:", error);
+    return c.json({ error: "Failed to create quotation" }, 500);
+  }
+});
+
+app.put("/make-server-46b247d8/quotations/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const updates = await c.req.json();
+    const { data, error } = await supabase.from('quotations').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    return c.json(data);
+  } catch (error) {
+    console.error("Error updating quotation:", error);
+    return c.json({ error: "Failed to update quotation" }, 500);
+  }
+});
+
+// --- Purchase Orders ---
+app.get("/make-server-46b247d8/purchase-orders", async (c) => {
+  try {
+    const { data, error } = await supabase.from('purchase_orders').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return c.json(data || []);
+  } catch (error) {
+    console.error("Error fetching purchase orders:", error);
+    return c.json({ error: "Failed to fetch purchase orders" }, 500);
+  }
+});
+
+app.post("/make-server-46b247d8/purchase-orders", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { id, ...rest } = body;
+    const { data, error } = await supabase.from('purchase_orders').insert(rest).select().single();
+    if (error) throw error;
+    return c.json(data, 201);
+  } catch (error) {
+    console.error("Error creating purchase order:", error);
+    return c.json({ error: "Failed to create purchase order" }, 500);
+  }
+});
+
+app.put("/make-server-46b247d8/purchase-orders/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const updates = await c.req.json();
+    const { data, error } = await supabase.from('purchase_orders').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    return c.json(data);
+  } catch (error) {
+    console.error("Error updating purchase order:", error);
+    return c.json({ error: "Failed to update purchase order" }, 500);
+  }
+});
+
+// --- Receivings ---
+app.get("/make-server-46b247d8/receivings", async (c) => {
+  try {
+    const { data, error } = await supabase.from('receivings').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return c.json(data || []);
+  } catch (error) {
+    console.error("Error fetching receivings:", error);
+    return c.json({ error: "Failed to fetch receivings" }, 500);
+  }
+});
+
+app.post("/make-server-46b247d8/receivings", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { id, ...rest } = body;
+    const { data, error } = await supabase.from('receivings').insert(rest).select().single();
+    if (error) throw error;
+    return c.json(data, 201);
+  } catch (error) {
+    console.error("Error creating receiving:", error);
+    return c.json({ error: "Failed to create receiving" }, 500);
+  }
+});
+
 Deno.serve(app.fetch);

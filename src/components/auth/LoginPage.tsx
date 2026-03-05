@@ -161,7 +161,14 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-3 md:p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-3 md:p-4 relative">
+      {/* Background Animation (estilo pipego) */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div
+          className="absolute inset-0 opacity-20 bg-rotate-gradient"
+          aria-hidden
+        />
+      </div>
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-6 md:mb-8 flex flex-col items-center">

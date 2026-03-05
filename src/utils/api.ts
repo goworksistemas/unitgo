@@ -293,6 +293,55 @@ export const api = {
       body: JSON.stringify(updates),
     }),
   },
+
+  // ========== PURCHASE MODULE ==========
+  purchaseRequests: {
+    getAll: () => apiRequest('/purchase-requests'),
+    create: (data: any) => apiRequest('/purchase-requests', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, updates: any) => apiRequest(`/purchase-requests/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
+    approveManager: (id: string, data: any) => apiRequest(`/purchase-requests/${id}/approve-manager`, { method: 'PUT', body: JSON.stringify(data) }),
+    rejectManager: (id: string, data: any) => apiRequest(`/purchase-requests/${id}/reject-manager`, { method: 'PUT', body: JSON.stringify(data) }),
+    approveDirector: (id: string, data: any) => apiRequest(`/purchase-requests/${id}/approve-director`, { method: 'PUT', body: JSON.stringify(data) }),
+    rejectDirector: (id: string, data: any) => apiRequest(`/purchase-requests/${id}/reject-director`, { method: 'PUT', body: JSON.stringify(data) }),
+  },
+  suppliers: {
+    getAll: () => apiRequest('/suppliers'),
+    create: (data: any) => apiRequest('/suppliers', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, updates: any) => apiRequest(`/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
+    delete: (id: string) => apiRequest(`/suppliers/${id}`, { method: 'DELETE' }),
+  },
+  supplierCategories: {
+    getAll: () => apiRequest('/supplier-categories'),
+    create: (data: any) => apiRequest('/supplier-categories', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, updates: any) => apiRequest(`/supplier-categories/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
+  },
+  costCenters: {
+    getAll: () => apiRequest('/cost-centers'),
+    create: (data: any) => apiRequest('/cost-centers', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, updates: any) => apiRequest(`/cost-centers/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
+  },
+  contracts: {
+    getAll: () => apiRequest('/contracts'),
+    create: (data: any) => apiRequest('/contracts', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, updates: any) => apiRequest(`/contracts/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
+  },
+  currencies: {
+    getAll: () => apiRequest('/currencies'),
+  },
+  quotations: {
+    getAll: () => apiRequest('/quotations'),
+    create: (data: any) => apiRequest('/quotations', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, updates: any) => apiRequest(`/quotations/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
+  },
+  purchaseOrders: {
+    getAll: () => apiRequest('/purchase-orders'),
+    create: (data: any) => apiRequest('/purchase-orders', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, updates: any) => apiRequest(`/purchase-orders/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
+  },
+  receivings: {
+    getAll: () => apiRequest('/receivings'),
+    create: (data: any) => apiRequest('/receivings', { method: 'POST', body: JSON.stringify(data) }),
+  },
 };
 
 // Manter exports separados para compatibilidade com código existente

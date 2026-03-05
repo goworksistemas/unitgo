@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useRef } from 'react';
-import { Users, Building2, Package, List, TestTube2, Eye, LayoutDashboard, Settings2, ArrowLeft } from 'lucide-react';
+import { Users, Building2, Package, List, TestTube2, Eye, LayoutDashboard, Settings2, ArrowLeft, ShoppingCart, ClipboardList, FileText, Landmark, Truck, BarChart3 } from 'lucide-react';
 import { ProductsListPanel } from '../panels/ProductsListPanel';
 import { TestFlowPanel } from '../panels/TestFlowPanel';
 import { AdminResetPasswordDialog } from '../auth/AdminResetPasswordDialog';
@@ -16,6 +16,17 @@ import { ItemCreationPanel } from '../developer/ItemCreationPanel';
 import { EditItemDialog } from '../developer/EditItemDialog';
 import { ViewAsPanel } from '../developer/ViewAsPanel';
 import { SystemOverviewPanel } from '../developer/SystemOverviewPanel';
+import { SupplierManagementPanel } from '../purchases/admin/SupplierManagementPanel';
+import { CostCenterManagementPanel } from '../purchases/admin/CostCenterManagementPanel';
+import { ContractManagementPanel } from '../purchases/admin/ContractManagementPanel';
+import { PurchaseRequestApprovalPanel } from '../purchases/admin/PurchaseRequestApprovalPanel';
+import { ManagerPurchaseRequestsPanel } from '../purchases/manager/ManagerPurchaseRequestsPanel';
+import { ManagerApprovalHistoryPanel } from '../purchases/manager/ManagerApprovalHistoryPanel';
+import { ApprovedPurchaseRequestsPanel } from '../purchases/buyer/ApprovedPurchaseRequestsPanel';
+import { QuotationManagementPanel } from '../purchases/buyer/QuotationManagementPanel';
+import { BuyerPurchaseOrdersPanel } from '../purchases/buyer/BuyerPurchaseOrdersPanel';
+import { CreatePurchaseRequestPanel } from '../purchases/requester/CreatePurchaseRequestPanel';
+import { MyPurchaseRequestsPanel } from '../purchases/requester/MyPurchaseRequestsPanel';
 import { Button } from '../ui/button';
 
 const roleLabels: Record<string, string> = {
@@ -33,6 +44,7 @@ export function DeveloperDashboard() {
 
   const navigationSections: NavigationSection[] = useMemo(() => [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'view-as', label: 'Visualizar como', icon: Eye },
     {
       id: 'admin',
       label: 'Admin',
@@ -45,7 +57,23 @@ export function DeveloperDashboard() {
         { id: 'test-flow', label: 'Testar Fluxo', icon: TestTube2 },
       ],
     },
-    { id: 'view-as', label: 'Visualizar como', icon: Eye },
+    {
+      id: 'purchases',
+      label: 'Compras',
+      icon: ShoppingCart,
+      items: [
+        { id: 'new-purchase', label: 'Nova Solicitação', icon: ShoppingCart },
+        { id: 'my-purchases', label: 'Minhas Solicitações', icon: FileText },
+        { id: 'manager-requests', label: 'Solicitações Gestor', icon: ClipboardList },
+        { id: 'director-approvals', label: 'Aprovações Diretoria', icon: ClipboardList },
+        { id: 'approved-requests', label: 'Solicitações Aprovadas', icon: ClipboardList },
+        { id: 'quotations', label: 'Cotações', icon: FileText },
+        { id: 'orders', label: 'Pedidos', icon: Package },
+        { id: 'suppliers', label: 'Fornecedores', icon: Building2 },
+        { id: 'cost-centers', label: 'Centros de Custo', icon: Landmark },
+        { id: 'contracts', label: 'Contratos', icon: FileText },
+      ],
+    },
   ], []);
 
   const { activeSection, activeItem } = useDashboardNav(
@@ -169,6 +197,31 @@ export function DeveloperDashboard() {
             <TestFlowPanel />
           </div>
         )}
+        <DeveloperDialogs state={state} />
+      </>
+    );
+  }
+
+  if (activeSection === 'purchases') {
+    const panel = (() => {
+      switch (activeItem) {
+        case 'cost-centers': return <CostCenterManagementPanel />;
+        case 'contracts': return <ContractManagementPanel />;
+        case 'director-approvals': return <PurchaseRequestApprovalPanel />;
+        case 'manager-requests': return <ManagerPurchaseRequestsPanel />;
+        case 'approval-history': return <ManagerApprovalHistoryPanel />;
+        case 'approved-requests': return <ApprovedPurchaseRequestsPanel />;
+        case 'quotations': return <QuotationManagementPanel />;
+        case 'orders': return <BuyerPurchaseOrdersPanel />;
+        case 'new-purchase': return <CreatePurchaseRequestPanel />;
+        case 'my-purchases': return <MyPurchaseRequestsPanel />;
+        case 'suppliers':
+        default: return <SupplierManagementPanel />;
+      }
+    })();
+    return (
+      <>
+        {panel}
         <DeveloperDialogs state={state} />
       </>
     );

@@ -7,13 +7,15 @@
 /**
  * Perfis de usuário:
  * - controller: Controlador com acesso total (Almoxarifado + Admin)
- * - admin: Administrador (gerencia usuários e unidades)
+ * - admin: Administrador (gerencia usuários e unidades + gestor de compras 1ª camada)
  * - warehouse: Almoxarife (separa e entrega pedidos)
  * - designer: Designer (aprova/rejeita pedidos de móveis)
  * - developer: Developer (gerencia catálogo de itens e categorias)
  * - requester: Solicitante (faz pedidos de materiais)
+ * - buyer: Comprador (cotações, pedidos, fornecedores)
+ * - financial: Financeiro (contratos, centros de custo, relatórios)
  */
-export type UserRole = 'controller' | 'admin' | 'warehouse' | 'designer' | 'developer' | 'requester' | 'executor' | 'driver';
+export type UserRole = 'controller' | 'admin' | 'warehouse' | 'designer' | 'developer' | 'requester' | 'executor' | 'driver' | 'buyer' | 'financial';
 
 export type MovementType = 'entrada' | 'saida' | 'emprestimo' | 'devolucao' | 'ajuste';
 
@@ -271,3 +273,6 @@ export interface DeliveryConfirmation {
   notes?: string;
   dailyCode?: string; // Código diário usado na confirmação
 }
+
+// Re-export purchase types
+export * from './purchases';

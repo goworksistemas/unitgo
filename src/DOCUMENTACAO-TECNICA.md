@@ -9,6 +9,7 @@
 5. [Backend e API](#backend-e-api)
 6. [Tipos e Interfaces](#tipos-e-interfaces)
 7. [Fluxos de Dados](#fluxos-de-dados)
+8. [Módulo Sistema de Compras](#módulo-sistema-de-compras)
 
 ---
 
@@ -1842,6 +1843,249 @@ interface UnitStock {
 
 ---
 
+## 🛒 Módulo Sistema de Compras
+
+### Visão Geral
+
+Módulo completo de Sistema de Compras integrado ao NetworkGo (GoWork). Persistência via Supabase. Integrações externas: Omie ERP (pedidos e NFs) e N8N (automações e notificações).
+
+---
+
+### Estrutura de Pastas
+
+```
+/components/purchases/
+  /admin/          ← Dashboards admin/controller/diretoria
+  /buyer/          ← Dashboards comprador
+  /manager/        ← Dashboards gestor (aprovação 1ª camada)
+  /requester/      ← Dashboards solicitante
+  /warehouse/      ← Recebimento almoxarifado
+  /financial/      ← Dashboards financeiro
+  /shared/         ← Componentes compartilhados do módulo compras
+```
+
+---
+
+### Navegação e Abas
+
+**Nova aba principal:** "Compras" no menu do DeveloperDashboard e AdminDashboard.
+
+**Subabas por perfil:**
+
+| Perfil | Subabas |
+|--------|---------|
+| Admin/Controller/Diretoria | Cadastros, Solicitações Pendentes, Cotações, Pedidos, Relatórios |
+| Manager (Gestor) | Solicitações da Minha Área, Histórico de Aprovações |
+| Buyer (Comprador) | Solicitações Aprovadas, Cotações, Pedidos, Fornecedores |
+| Requester (Solicitante) | Nova Solicitação, Minhas Solicitações |
+| Warehouse (Almoxarifado) | Recebimentos Pendentes, Confirmar Recebimento |
+| Financial (Financeiro) | Dashboard Contratos, Centros de Custo, Relatórios |
+
+---
+
+### Entidades e Estrutura de Dados
+
+#### Cadastros Base
+
+**Supplier (Fornecedor)**  
+`id`, `razaoSocial`, `cnpj`, `contato`, `email`, `telefone`, `categoriaId`, `endereco`, `dadosBancarios` (banco, agencia, conta, pix), `status` (ativo/inativo), `createdAt`, `updatedAt`
+
+**SupplierCategory (Categoria Fornecedor)**  
+`id`, `nome`, `descricao`, `status` (ativo/inativo)
+
+**CostCenter (Centro de Custo)**  
+`id`, `codigo`, `nome`, `descricao`, `status` (ativo/inativo)
+
+**Contract (Contrato)**  
+`id`, `numero`, `nome`, `cnpjCliente`, `valorTotal`, `valorConsumido` (calculado), `saldo` (calculado), `dataInicio`, `dataFim`, `centroCustoId`, `status` (ativo/encerrado/suspenso), `createdAt`, `updatedAt`
+
+Cálculos: `valorConsumido` = soma de valores de NFs vinculadas; `saldo` = `valorTotal` - `valorConsumido`
+
+**Currency (Moeda)**  
+`id`, `codigo` (BRL/USD/EUR), `simbolo` (R$/$/€), `nome`, `status` (ativo/inativo)
+
+#### Fluxo de Compras
+
+**PurchaseRequest (Solicitação de Compra)**  
+`id`, `solicitanteId`, `unidadeId`, `centroCustoId`, `cnpjSolicitante`, `contratoId` (opcional), `justificativa`, `status`, `itens[]`, `aprovacoes[]`, `createdAt`, `updatedAt`
+
+**Status do fluxo:**  
+`pending_manager` → `approved_manager` / `rejected_manager` → `pending_director` → `approved_director` / `rejected_director` → `in_quotation` → `quotation_completed` → `in_purchase` → `completed`
+
+**PurchaseRequestItem**  
+`id`, `solicitacaoId`, `descricao`, `quantidade`, `unidadeMedida`, `observacao`
+
+**Approval (Histórico de Aprovação)**  
+`id`, `userId`, `userName`, `role` (manager/director), `action` (approved/rejected), `justificativa` (obrigatória se rejected), `timestamp`
+
+**Quotation (Cotação)**  
+`id`, `solicitacaoId`, `fornecedorId`, `moedaId`, `formaPagamento`, `condicoesPagamento`, `prazoEntrega` (dias), `observacoes`, `status`, `itens[]`, `linkPreenchimento` (URL única para fornecedor), `enviadoEm`, `respondidoEm`, `createdAt`, `updatedAt`
+
+Status: `draft` → `sent` → `responded` → `approved` / `rejected`
+
+**QuotationItem**  
+`id`, `cotacaoId`, `itemSolicitacaoId`, `descricao`, `quantidade`, `unidadeMedida`, `precoUnitario`, `valorTotal` (calculado), `observacoes`
+
+**PurchaseOrder (Pedido)**  
+`id`, `cotacaoId`, `numeroOmie`, `valorTotal`, `status`, `notasFiscais[]`, `observacoes`, `createdAt`, `updatedAt`
+
+Status: `created` → `awaiting_nf` → `nf_issued` → `in_transit` → `partially_received` → `fully_received`
+
+**InvoiceInfo (Nota Fiscal)**  
+`numero`, `valor`, `dataEmissao`, `chaveAcesso`
+
+**Receiving (Recebimento)**  
+`id`, `pedidoId`, `itemId`, `quantidadeEsperada`, `quantidadeRecebida`, `responsavelId`, `dataRecebimento`, `localEntrega`, `status` (pending/partially_received/fully_received), `observacoes`, `createdAt`
+
+---
+
+### Regras de Negócio
+
+#### Aprovações (Duas Camadas)
+
+**1ª Camada - Manager (Gestor):**
+- Aprova/rejeita solicitações da sua unidade/centro de custo
+- Não pode aprovar própria solicitação
+- Justificativa obrigatória em rejeições
+- Notificação via N8N ao solicitante
+
+**2ª Camada - Director (Diretoria):**
+- Aprova/rejeita apenas solicitações já aprovadas por gestor
+- Validação de saldo de contrato antes de aprovar
+- Se saldo contrato < valor solicitação → bloqueio automático
+- Notificação via N8N ao comprador quando aprovado
+
+**Histórico:** Array `aprovacoes[]` registra todas as ações (userId, userName, role, action, justificativa, timestamp).
+
+#### Contratos
+
+- Validação antes de aprovar: se contrato vinculado e saldo < valor_solicitacao → rejeitar automaticamente e notificar financeiro via N8N
+- Alerta amarelo no dashboard quando `valorConsumido` >= 80% do `valorTotal`
+- Bloqueio total quando `valorConsumido` >= 100%
+- `valorConsumido` recalculado ao vincular cada NF ao pedido
+
+#### Cotações
+
+- Suporte a 3–5 fornecedores simultâneos por solicitação
+- Link único para fornecedor: token `crypto.randomUUID()`, URL `https://app.com/quotation/:token`, expiração 7 dias
+- Interface pública sem autenticação para preenchimento pelo fornecedor
+- Fallback: comprador preenche manualmente se fornecedor não responder
+- Campo moeda pré-preenchido conforme cadastro do fornecedor; conversão automática para BRL no comparativo
+
+#### Recebimento
+
+- Parcial permitido: registrar item por item; `quantidadeRecebida` <= `quantidadeEsperada`
+- Status do pedido: `partially_received` se algum item < esperado; `fully_received` quando todos completos
+- Qualquer usuário autorizado do almoxarifado pode registrar
+- NF obrigatória antes de permitir recebimento; local de entrega obrigatório
+
+---
+
+### Integrações
+
+**Omie ERP:**
+- Criar pedido ao aprovar cotação
+- Sincronizar NFs via webhook ou polling (ex.: a cada 6h)
+- Campos mapeados: `numeroOmie`, `chaveAcesso`, `valor`, `dataEmissao`
+- Fallback manual se API falhar
+
+**N8N (Automações):**
+- Solicitação criada → Gestor
+- Aprovada gestor → Diretoria
+- Aprovada diretoria → Comprador
+- Cotação enviada → Fornecedor (com link)
+- Cotação respondida → Comprador
+- Pedido criado → Solicitante
+- NF emitida → Solicitante + Almoxarifado
+- Recebimento completo → Solicitante
+- Contrato 80% → Financeiro
+- Contrato 100% → Financeiro (urgente)
+- Verificação diária de contratos próximos ao limite
+- Lembrete cotações não respondidas (3 dias)
+- Alerta itens não recebidos (prazo + 7 dias)
+
+---
+
+### Portal do Fornecedor
+
+- Interface pública sem autenticação em `quotation/:token`
+- Exibe: solicitante (empresa), itens, quantidades, especificações
+- Formulário: preço unitário, prazo entrega, condições pagamento, observações
+- Validações: preço > 0, prazo >= 0
+- Token único, não reutilizável; expiração 7 dias; rate limit: 5 tentativas/hora
+
+---
+
+### Dashboards e Relatórios
+
+**Dashboard Geral (Admin/Buyer):** KPIs (total por status, valor em cotação, pedidos em trânsito); gráficos (solicitações por mês, distribuição por status); top 5 fornecedores por volume.
+
+**Dashboard Financeiro:** Gastos por centro de custo; evolução mensal; contratos com saldo, % consumido e alertas; filtros por período, centro custo, contrato.
+
+**Dashboard Fornecedores:** Volume de compras; prazo médio de entrega; taxa de resposta a cotações; entregas no prazo vs atrasadas.
+
+**Exportação CSV:** Log de solicitações, cotações, pedidos, recebimentos, gastos por centro custo/contrato; BOM UTF-8 para acentos.
+
+---
+
+### Controle de Acesso
+
+| Funcionalidade | Admin | Manager | Buyer | Requester | Warehouse | Financial |
+|----------------|-------|---------|-------|-----------|------------|-----------|
+| Criar cadastros base | ✅ | ❌ | ⚠️ (só fornecedores) | ❌ | ❌ | ❌ |
+| Criar solicitação | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Aprovar 1ª camada (gestor) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Aprovar 2ª camada (diretoria) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Criar cotações | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Criar pedidos Omie | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Registrar recebimento | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Visualizar contratos | ✅ | ⚠️ (só sua área) | ✅ | ❌ | ❌ | ✅ |
+| Exportar relatórios | ✅ | ⚠️ (só sua área) | ✅ | ❌ | ❌ | ✅ |
+
+Manager só aprova solicitações de sua unidade/centro de custo e não pode aprovar própria solicitação. Requester cria apenas para sua unidade e vê apenas próprias solicitações. Warehouse acessa apenas pedidos com status `nf_issued` ou `in_transit` e não vê valores financeiros.
+
+---
+
+### Logs de Auditoria
+
+Estrutura: `id`, `timestamp`, `type`, `action`, `userId`, `userName`, `userRole`, `entityId`, `details` (previousStatus, newStatus, justification, changes).
+
+Eventos: solicitação criada/aprovada/rejeitada; cotação criada/enviada/respondida/aprovada/rejeitada; pedido criado; NF vinculada; recebimento registrado; contrato 80%/100%; edições em cadastros base.
+
+Painel Analytics com filtros: período, tipo, usuário, ação; busca em tempo real; exportação CSV.
+
+---
+
+### Componentes do Módulo
+
+**Admin/Controller:** SupplierManagementPanel, CostCenterManagementPanel, ContractManagementPanel, PurchaseRequestApprovalPanel, PurchaseOrdersPanel.
+
+**Manager:** ManagerPurchaseRequestsPanel, ManagerApprovalHistoryPanel.
+
+**Buyer:** ApprovedRequestsPanel, QuotationManagementPanel, QuotationComparisonPanel, CreatePurchaseOrderDialog.
+
+**Requester:** CreatePurchaseRequestPanel, MyPurchaseRequestsPanel.
+
+**Warehouse:** PendingReceivingsPanel, ReceiveItemsDialog.
+
+**Financial:** ContractsDashboard, CostCenterAnalytics, PurchaseReportsPanel.
+
+**Shared:** PurchaseRequestStatusBadge, ContractProgressBar, QuotationComparisonTable, ApprovalTimeline.
+
+---
+
+### Padrões do Módulo
+
+- Estado global via AppContext (padrão `createRequest`, `approveRequest`)
+- Persistência via Supabase
+- Rotas API: `/api/purchase-requests`, `/api/suppliers`, `/api/quotations`, `/api/contracts`, etc.
+- Componentes UI base: Card, Button, Dialog, Table, Badge, Input, Tabs, Select
+- Toast notifications em todas as ações
+- Loading states obrigatórios em operações assíncronas
+- Naming: PurchaseRequestPanel.tsx, createPurchaseRequest(), etc.
+
+---
+
 ## 🔐 Segurança e Validações
 
 ### Validações de Frontend
@@ -2140,6 +2384,226 @@ xl: 1280px  /* Desktops */
 
 ---
 
+## 💰 Perfil Financeiro (Financial)
+
+### Visão Geral
+
+Perfil estratégico/gerencial voltado para o departamento Financeiro/Controladoria. Responsável por monitorar contratos, centros de custo, análise financeira, relatórios e alertas do módulo de compras.
+
+**Role:** `financial`  
+**Tipo:** Perfil dedicado ao módulo de compras (não opera no sistema de estoque)  
+**Componente principal:** `FinancialDashboard.tsx`
+
+### Seções de Navegação
+
+| Seção | Ícone | Descrição |
+|-------|-------|-----------|
+| Visão Executiva | BarChart3 | Dashboard consolidado com KPIs, gráficos e alertas |
+| Gestão de Contratos | FileText | Lista detalhada de contratos com filtros e ordenação |
+| Centros de Custo | Landmark | Análise por centro de custo com gráfico comparativo |
+| Alertas | Bell | Alertas categorizados por severidade |
+| Relatórios | Download | Exportação CSV e resumo executivo |
+
+### Componentes e Funcionalidades
+
+#### 1. Visão Executiva (`OverviewSection`)
+- **KPIs:** Valor total, consumido, saldo disponível, alertas ativos
+- **Consumo geral:** Barra de progresso consolidada
+- **Gráfico pizza:** Distribuição de gastos por centro de custo (Recharts)
+- **Atenção imediata:** Contratos bloqueados, críticos e a vencer
+- **Mini KPIs:** Solicitações pendentes, pedidos em andamento, contratos a vencer
+
+#### 2. Gestão de Contratos (`ContractsSection`)
+- **Filtros:** Status (ativo, encerrado, suspenso)
+- **Ordenação:** Maior consumo, maior valor, vencimento
+- **Cards detalhados:** Número, nome, valores, centro de custo, datas, CNPJ
+- **Badges visuais:** Status, alertas de consumo ≥80%, vencimento ≤30d
+- **Barra de progresso:** Por contrato individual
+
+#### 3. Centros de Custo (`CostCentersSection`)
+- **Gráfico de barras horizontal:** Consumido vs. Saldo por CC (ChartContainer + Recharts)
+- **Cards por CC:** Total, consumido, saldo, contratos ativos, alertas
+- **Barra de progresso:** Por centro de custo consolidado
+
+#### 4. Alertas e Notificações (`AlertsSection`)
+- **Severidades categorizadas:**
+  - 🔴 Bloqueados (100%) — saldo esgotado
+  - 🔴 Vencidos — data de vigência expirada
+  - 🟡 Críticos (≥80%) — risco de bloqueio iminente
+  - 🔵 A vencer (60 dias) — avaliar renovação
+  - ⚪ Atenção (≥60%) — monitorar evolução
+- **AlertGroup:** Componente reutilizável com card por contrato
+
+#### 5. Relatórios e Exportações (`ReportsSection`)
+- **Exportação CSV (UTF-8 com BOM):**
+  - Contratos completos
+  - Centros de custo consolidados
+  - Relatório de alertas
+  - Solicitações de compra
+- **Resumo executivo:** Dados consolidados com data/hora de geração
+
+### Limiares de Alerta
+
+| Faixa | Cor | Classificação |
+|-------|-----|---------------|
+| ≥100% | Vermelho | Bloqueado/Esgotado |
+| ≥80% | Âmbar | Crítico |
+| ≥60% | Amarelo | Atenção |
+| <60% | Verde | Normal |
+| ≤30d vencimento | Azul | A vencer |
+| <0d vencimento | Vermelho | Vencido |
+
+### Dados Consumidos (PurchaseContext)
+
+- `contracts` — Lista de contratos
+- `costCenters` — Lista de centros de custo
+- `purchaseRequests` — Solicitações de compra
+- `purchaseOrders` — Pedidos de compra
+- `isLoadingPurchases` — Estado de carregamento
+
+### Componentes Auxiliares
+
+| Componente | Descrição |
+|------------|-----------|
+| `KpiCard` | Card de KPI com ícone, valor, subtítulo e cor |
+| `MiniKpi` | KPI compacto para métricas secundárias |
+| `ContractStatusBadge` | Badge de status baseado no percentual |
+| `AlertItem` | Item de alerta compacto (bloqueado/crítico/a vencer) |
+| `AlertGroup` | Grupo de alertas por severidade |
+| `ReportExportCard` | Card de exportação com botão CSV |
+| `SummaryItem` | Item do resumo executivo |
+
+### Integração no Sistema
+
+- **App.tsx:** Rota `financial` → `<FinancialDashboard />`
+- **AppSidebar.tsx:** Label "Financeiro" no ROLE_LABELS
+- **ViewAsPanel.tsx:** Developer pode simular visão financeira
+- **DeveloperModeSelector.tsx:** Ícone UserCog, cor emerald-600
+- **PurchaseProvider:** Envolve o dashboard com dados de compras
+
+## 👔 Funcionalidades de Gestor (Manager) — Integrado ao Perfil Admin
+
+### Visão Geral
+
+As funcionalidades de gestor estão **integradas ao perfil `admin`** (não é um role separado). O admin atua como gestor de área na 1ª camada de aprovação de solicitações de compra, além de suas responsabilidades administrativas existentes.
+
+**Role:** `admin` (com funcionalidades de gestor adicionadas)  
+**Componente:** `AdminUnitsDashboard.tsx` (seção Compras expandida)
+
+### Novas Seções no Menu Compras
+
+| Seção | Ícone | Descrição |
+|-------|-------|-----------|
+| Aprovações Gestor | CheckSquare | Aprovação 1ª camada de solicitações da área (badge com pendências) |
+| Aprovações Diretoria | ClipboardList | Aprovação 2ª camada (já existente) |
+| Histórico Aprovações | History | Decisões tomadas pelo gestor com timeline |
+| Acompanhamento | Search | Rastreamento completo de todas as solicitações |
+| Fornecedores | Building2 | Gestão de fornecedores (já existente) |
+| Centros de Custo | Landmark | Gestão de centros de custo (já existente) |
+| Contratos | FileText | Gestão de contratos (já existente) |
+
+### Componentes Utilizados
+
+#### `ManagerPurchaseRequestsPanel` (reutilizado)
+- Filtra solicitações `pending_manager` da unidade do admin
+- Exclui solicitações feitas pelo próprio admin
+- Botões de Aprovar/Rejeitar com dialog de confirmação
+- Rejeição exige justificativa (mínimo 10 caracteres)
+- Aprovação envia para 2ª camada (`pending_director`)
+
+#### `ManagerApprovalHistoryPanel` (reutilizado)
+- Lista solicitações onde o admin participou como aprovador
+- Ordenação por data de atualização (mais recentes primeiro)
+- Timeline de aprovação com ícones visuais
+
+#### `AdminRequestTrackingPanel` (novo)
+- **KPIs clicáveis:** Total, Pendentes, Em Andamento, Concluídas, Rejeitadas
+- Funciona como filtro rápido ao clicar nos cards
+- **Lista detalhada** de cada solicitação com:
+  - Status badge colorido
+  - Dados do solicitante, unidade, centro de custo
+  - Itens solicitados (quantidade e unidade de medida)
+  - Contrato associado com barra de progresso
+  - Timeline completa de aprovações
+
+### Fluxo de Aprovação em 2 Camadas
+
+```
+Solicitante cria solicitação
+        ↓
+  [pending_manager]
+        ↓
+  Admin/Gestor aprova (1ª camada)  →  Rejeita → [rejected_manager]
+        ↓
+  [pending_director]
+        ↓
+  Diretoria aprova (2ª camada)     →  Rejeita → [rejected_director]
+        ↓
+  [in_quotation] → [quotation_completed] → [in_purchase] → [completed]
+```
+
+### Badge de Pendências
+
+O menu "Aprovações Gestor" exibe um badge com a contagem de solicitações pendentes da unidade do admin, facilitando identificação rápida de demandas.
+
+## 📝 Requester — Funcionalidades de Compras Expandidas
+
+### Visão Geral
+
+O perfil `requester` já existia no sistema de estoque. Suas funcionalidades de compras foram expandidas para cobrir todo o ciclo: criação, acompanhamento detalhado, e visibilidade sobre cotações e pedidos.
+
+**Role:** `requester` (existente)  
+**Componente principal:** `RequesterDashboard.tsx`
+
+### Seções de Navegação (Compras)
+
+| Seção | Componente | Descrição |
+|-------|-----------|-----------|
+| Nova Solicitação | `CreatePurchaseRequestPanel` | Formulário com centro de custo, contrato, justificativa e itens |
+| Minhas Solicitações | `MyPurchaseRequestsPanel` | Acompanhamento completo com filtros, KPIs e ciclo de vida |
+
+### `MyPurchaseRequestsPanel` — Funcionalidades Expandidas
+
+#### KPIs Clicáveis (filtros rápidos)
+- **Pendentes** — solicitações aguardando aprovação (gestor ou diretoria)
+- **Em Andamento** — em cotação, cotação concluída ou em compra
+- **Concluídas** — finalizadas com sucesso
+- **Rejeitadas** — rejeitadas por gestor ou diretoria
+
+#### Detalhes por Solicitação (Accordion)
+- **Status badge** colorido com label em português
+- **Justificativa** da solicitação
+- **Motivo da rejeição** — destacado em card vermelho quando rejeitada
+- **Centro de custo e contrato** — informações vinculadas
+- **Saldo do contrato** — barra de progresso com valores (consumido/saldo)
+- **Itens solicitados** — lista com quantidade e unidade de medida
+- **Progresso visual** — `RequestFlowProgress` com 6 etapas:
+  1. Criada → 2. Gestor → 3. Diretoria → 4. Cotação → 5. Compra → 6. Concluída
+  - Etapas concluídas em azul, rejeitadas em vermelho, pendentes em cinza
+- **Cotações vinculadas** — status, prazo de entrega, valores por item
+- **Pedidos de compra** — número Omie, valor total, notas fiscais
+- **Timeline de aprovações** — histórico de decisões com datas
+
+#### Dados Consumidos (PurchaseContext)
+- `purchaseRequests` — solicitações do usuário
+- `quotations` — cotações vinculadas via `solicitacaoId`
+- `purchaseOrders` — pedidos vinculados via `cotacaoId`
+- `contracts` — barra de progresso do contrato
+- `costCenters` — nome do centro de custo
+
+### `CreatePurchaseRequestPanel` — Já existente
+
+- Formulário com campos: Centro de Custo, Contrato (opcional), Justificativa
+- Itens dinâmicos: descrição, quantidade, unidade de medida, observação
+- Validações: justificativa mín. 10 caracteres, ao menos 1 item válido
+- Status inicial: `pending_manager`
+
+---
+
 **Documentação gerada em:** 10/12/2024  
 **Versão do sistema:** 1.0.0 - Produção  
-**Última atualização:** 10/12/2024
+**Última atualização:** 25/02/2026
+
+---
+
+*Módulo Sistema de Compras documentado em 24/02/2025. Perfil Financeiro documentado em 25/02/2026. Gestor integrado ao Admin em 25/02/2026. Requester expandido em 25/02/2026. Stack: React + TypeScript + Supabase. Integrações: Omie ERP + N8N.*

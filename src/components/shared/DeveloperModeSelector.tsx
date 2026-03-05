@@ -69,6 +69,18 @@ const roleConfig: Partial<Record<UserRole, { label: string; icon: React.ReactNod
     color: 'bg-slate-500',
     description: 'Consumo de itens para serviços'
   },
+  buyer: {
+    label: 'Comprador',
+    icon: <ShieldCheck className="w-4 h-4" />,
+    color: 'bg-orange-500',
+    description: 'Cotações, pedidos e fornecedores'
+  },
+  financial: {
+    label: 'Financeiro',
+    icon: <UserCog className="w-4 h-4" />,
+    color: 'bg-emerald-600',
+    description: 'Contratos, centros de custo, relatórios'
+  },
 };
 
 export function DeveloperModeSelector({ currentViewRole, onSelectRole }: DeveloperModeSelectorProps) {
