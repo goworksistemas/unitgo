@@ -40,7 +40,7 @@ export function DailyCodeDisplay() {
         </TooltipTrigger>
         <TooltipContent>
           <p className="text-xs">Seu código diário de confirmação</p>
-          <p className="text-xs text-gray-500">Válido por 24h • Renova a cada novo dia</p>
+          <p className="text-xs text-muted-foreground">Válido por 24h • Renova a cada novo dia</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

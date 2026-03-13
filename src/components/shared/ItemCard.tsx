@@ -26,7 +26,7 @@ export function ItemCard({ item, stock, onClick }: ItemCardProps) {
     >
       <CardContent className="p-4">
         <div className="flex gap-4">
-          <div className="w-20 h-20 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
             {item.imageUrl ? (
               <ImageWithFallback
                 src={item.imageUrl}
@@ -34,7 +34,7 @@ export function ItemCard({ item, stock, onClick }: ItemCardProps) {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <Package className="w-8 h-8 text-slate-400" />
+              <Package className="w-8 h-8 text-muted-foreground" />
             )}
           </div>
 
@@ -67,14 +67,14 @@ export function ItemCard({ item, stock, onClick }: ItemCardProps) {
                     Disponível: 
                   </span>
                   <span className={`${
-                    isOutOfStock ? 'text-red-600' : 
-                    isBelowMinimum ? 'text-orange-600' : 
-                    'text-green-600'
+                    isOutOfStock ? 'text-red-600 dark:text-red-400' : 
+                    isBelowMinimum ? 'text-orange-600 dark:text-orange-400' : 
+                    'text-green-600 dark:text-green-400'
                   }`}>
                     {stock.quantity} {item.unitOfMeasure}
                   </span>
                   {isBelowMinimum && !isOutOfStock && (
-                    <AlertTriangle className="w-4 h-4 text-orange-500" />
+                    <AlertTriangle className="w-4 h-4 text-orange-500 dark:text-orange-400" />
                   )}
                 </div>
                 {stock.location && (

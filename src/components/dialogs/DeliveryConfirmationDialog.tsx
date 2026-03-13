@@ -64,7 +64,7 @@ export function DeliveryConfirmationDialog({ batch, open, onClose }: DeliveryCon
             </AlertDescription>
           </Alert>
 
-          <div className="flex justify-center py-4">
+          <div className="flex justify-center items-center w-full py-4">
             <DeliveryQRCode code={batch.qrCode} size={220} />
           </div>
 

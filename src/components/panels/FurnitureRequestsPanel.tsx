@@ -209,7 +209,7 @@ export function FurnitureRequestsPanel() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base md:text-lg flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
+              <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
               Solicitações Pendentes
               {pendingRequests.length > 0 && (
                 <Badge variant="destructive" className="ml-2">{pendingRequests.length}</Badge>
@@ -240,7 +240,7 @@ export function FurnitureRequestsPanel() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base md:text-lg flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                 Aprovadas
               </CardTitle>
               <CardDescription className="text-xs md:text-sm">
@@ -293,12 +293,12 @@ export function FurnitureRequestsPanel() {
             <DialogTitle className="flex items-center gap-2">
               {reviewDialog.action === 'approve' ? (
                 <>
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                   Aprovar Solicitação
                 </>
               ) : (
                 <>
-                  <XCircle className="h-5 w-5 text-red-600" />
+                  <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
                   Rejeitar Solicitação
                 </>
               )}

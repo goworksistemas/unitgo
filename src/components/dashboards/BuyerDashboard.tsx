@@ -35,18 +35,19 @@ export function BuyerDashboard() {
     default:
       return (
         <Tabs defaultValue="solicitacoes" className="w-full">
-          <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0">
+          <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0 w-full justify-start">
             <TabsTrigger
               value="solicitacoes"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
             >
+              <ClipboardList className="h-4 w-4 shrink-0" />
               Solicitações Aprovadas
             </TabsTrigger>
             <TabsTrigger
               value="historico"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium flex items-center gap-1.5"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
             >
-              <ScrollText className="h-3.5 w-3.5" />
+              <ScrollText className="h-4 w-4 shrink-0" />
               Histórico
             </TabsTrigger>
           </TabsList>

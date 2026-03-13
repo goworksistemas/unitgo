@@ -94,7 +94,7 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
                 <div className="flex items-center justify-between text-xs mb-2">
                   <span className="text-muted-foreground truncate flex-1 mr-2">{stock.location}</span>
                   <div className="flex gap-2 items-center flex-shrink-0">
-                    <span className={`font-semibold ${isLow ? 'text-red-600' : 'text-green-600'}`}>
+                    <span className={`font-semibold ${isLow ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                       {stock.quantity}
                     </span>
                     <span className="text-muted-foreground">/</span>
@@ -150,7 +150,7 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
                       <span className="text-sm text-muted-foreground">{stock.location}</span>
                     </TableCell>
                     <TableCell className="text-center">
-                      <span className={`font-semibold ${isLow ? 'text-red-600' : 'text-green-600'}`}>
+                      <span className={`font-semibold ${isLow ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                         {stock.quantity}
                       </span>
                     </TableCell>
@@ -234,7 +234,7 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
               <Card>
                 <CardContent className="pt-4 sm:pt-6 pb-3 sm:pb-6">
                   <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-semibold text-green-600">
+                    <div className="text-xl sm:text-2xl font-semibold text-green-600 dark:text-green-400">
                       {furnitureStock.filter(s => s.quantity >= s.minimumQuantity).length}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">Estoque OK</p>
@@ -244,7 +244,7 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
               <Card>
                 <CardContent className="pt-4 sm:pt-6 pb-3 sm:pb-6">
                   <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-semibold text-red-600">{lowStockFurniture.length}</div>
+                    <div className="text-xl sm:text-2xl font-semibold text-red-600 dark:text-red-400">{lowStockFurniture.length}</div>
                     <p className="text-xs text-muted-foreground mt-1">Baixo Estoque</p>
                   </div>
                 </CardContent>
@@ -267,7 +267,7 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
             {lowStockFurniture.length === 0 ? (
               <div className="text-center py-8 sm:py-12">
                 <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-green-100 mb-3 sm:mb-4">
-                  <Armchair className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
+                  <Armchair className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 dark:text-green-400" />
                 </div>
                 <h3 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">Estoque de Móveis OK</h3>
                 <p className="text-sm text-muted-foreground">Todos os móveis estão com quantidade adequada</p>
@@ -276,10 +276,10 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
               <>
                 <div className="bg-red-50 dark:bg-red-900/20 p-3 sm:p-4 rounded-lg border border-red-200 dark:border-red-800 mb-3 sm:mb-4">
                   <div className="flex items-start gap-2 sm:gap-3">
-                    <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                     <div>
-                      <h4 className="font-semibold text-sm sm:text-base text-red-900">Atenção: Reposição Necessária</h4>
-                      <p className="text-xs sm:text-sm text-red-700 mt-1">
+                      <h4 className="font-semibold text-sm sm:text-base text-red-900 dark:text-red-400">Atenção: Reposição Necessária</h4>
+                      <p className="text-xs sm:text-sm text-red-700 dark:text-red-300 mt-1">
                         {lowStockFurniture.length} {lowStockFurniture.length === 1 ? 'móvel está' : 'móveis estão'} abaixo do estoque mínimo
                       </p>
                     </div>
@@ -298,7 +298,7 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
                       >
                         <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
                           <div className="p-2 sm:p-3 rounded-lg bg-red-50 dark:bg-red-900/30 flex-shrink-0">
-                            <Armchair className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
+                            <Armchair className="h-5 w-5 sm:h-6 sm:w-6 text-red-600 dark:text-red-400" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold text-sm sm:text-lg truncate">{item?.name}</div>
@@ -318,13 +318,13 @@ export function FurnitureStockPanel({ onAddFurniture }: FurnitureStockPanelProps
                         </div>
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                           <div className="text-right flex-shrink-0">
-                            <div className="text-2xl sm:text-3xl font-bold text-red-600">
+                            <div className="text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400">
                               {stock.quantity}
                             </div>
                             <div className="text-xs sm:text-sm text-muted-foreground">
                               de {stock.minimumQuantity} mínimo
                             </div>
-                            <div className="text-xs text-red-600 font-medium mt-1">
+                            <div className="text-xs text-red-600 dark:text-red-400 font-medium mt-1">
                               Faltam {stock.minimumQuantity - stock.quantity}
                             </div>
                           </div>

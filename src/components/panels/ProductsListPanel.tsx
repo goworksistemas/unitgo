@@ -97,7 +97,7 @@ export function ProductsListPanel() {
           {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar produto..."
                 value={searchTerm}
@@ -144,7 +144,7 @@ export function ProductsListPanel() {
                         <div>
                           <div className="font-medium">{item.name}</div>
                           {(item.brand || item.model) && (
-                            <div className="text-xs text-slate-500">
+                            <div className="text-xs text-muted-foreground">
                               {item.brand} {item.model}
                             </div>
                           )}
@@ -202,25 +202,25 @@ export function ProductsListPanel() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4 border-t">
             <div className="text-center">
               <div className="text-2xl font-semibold">{items.length}</div>
-              <div className="text-xs text-slate-500">Total de Produtos</div>
+              <div className="text-xs text-muted-foreground">Total de Produtos</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-semibold">
                 {items.filter(i => i.active).length}
               </div>
-              <div className="text-xs text-slate-500">Ativos</div>
+              <div className="text-xs text-muted-foreground">Ativos</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-semibold">
                 {items.filter(i => i.isUniqueProduct).length}
               </div>
-              <div className="text-xs text-slate-500">Com ID Único</div>
+              <div className="text-xs text-muted-foreground">Com ID Único</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-semibold">
                 {items.filter(i => i.isConsumable).length}
               </div>
-              <div className="text-xs text-slate-500">Consumíveis</div>
+              <div className="text-xs text-muted-foreground">Consumíveis</div>
             </div>
           </div>
         </CardContent>

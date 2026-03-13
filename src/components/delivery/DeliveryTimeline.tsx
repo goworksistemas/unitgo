@@ -35,7 +35,7 @@ export function DeliveryTimeline({ batch, confirmations }: DeliveryTimelineProps
       case 'received_confirmed': return 'bg-secondary';
       case 'delivery_confirmed': return 'bg-primary';
       case 'in_transit': return 'bg-yellow-500';
-      default: return 'bg-gray-400';
+      default: return 'bg-muted-foreground';
     }
   };
 
@@ -89,7 +89,7 @@ export function DeliveryTimeline({ batch, confirmations }: DeliveryTimelineProps
       const item = getItemById(request.itemId);
       return (
         <div key={`request-${request.id}`} className="flex items-center gap-2 text-sm">
-          <Package className="h-3 w-3 text-gray-400" />
+          <Package className="h-3 w-3 text-muted-foreground" />
           <span>{item?.name}</span>
           <Badge variant="secondary" className="ml-auto">{request.quantity}x</Badge>
         </div>
@@ -99,7 +99,7 @@ export function DeliveryTimeline({ batch, confirmations }: DeliveryTimelineProps
       const item = getItemById(request.itemId);
       return (
         <div key={`furniture-${request.id}`} className="flex items-center gap-2 text-sm">
-          <Armchair className="h-3 w-3 text-gray-400" />
+          <Armchair className="h-3 w-3 text-muted-foreground" />
           <span>{item?.name}</span>
           <Badge variant="secondary" className="ml-auto">{request.quantity}x</Badge>
         </div>
@@ -115,10 +115,10 @@ export function DeliveryTimeline({ batch, confirmations }: DeliveryTimelineProps
           {/* Criação do Lote */}
           <div className="flex gap-3">
             <div className="flex flex-col items-center">
-              <div className="rounded-full bg-gray-200 p-2">
+              <div className="rounded-full bg-muted p-2">
                 <Package className="h-4 w-4 text-muted-foreground" />
               </div>
-              <div className="w-px bg-gray-300 flex-1 min-h-8" />
+              <div className="w-px bg-border flex-1 min-h-8" />
             </div>
             <div className="flex-1 pb-4">
               <p className="text-sm">Lote Criado</p>
@@ -132,10 +132,10 @@ export function DeliveryTimeline({ batch, confirmations }: DeliveryTimelineProps
           {batch.dispatchedAt && (
             <div className="flex gap-3">
               <div className="flex flex-col items-center">
-                <div className="rounded-full bg-blue-100 p-2">
+                <div className="rounded-full bg-primary/10 p-2">
                   <Truck className="h-4 w-4 text-primary" />
                 </div>
-                <div className="w-px bg-gray-300 flex-1 min-h-8" />
+                <div className="w-px bg-border flex-1 min-h-8" />
               </div>
               <div className="flex-1 pb-4">
                 <p className="text-sm">Saiu para Entrega</p>
@@ -151,10 +151,10 @@ export function DeliveryTimeline({ batch, confirmations }: DeliveryTimelineProps
           {deliveryConfirmation && (
             <div className="flex gap-3">
               <div className="flex flex-col items-center">
-                <div className="rounded-full bg-blue-100 p-2">
+                <div className="rounded-full bg-primary/10 p-2">
                   <Camera className="h-4 w-4 text-primary" />
                 </div>
-                {receiptConfirmation && <div className="w-px bg-gray-300 flex-1 min-h-8" />}
+                {receiptConfirmation && <div className="w-px bg-border flex-1 min-h-8" />}
               </div>
               <div className="flex-1 pb-4">
                 <p className="text-sm">Entrega Confirmada</p>

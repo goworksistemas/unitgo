@@ -248,7 +248,7 @@ export function ItemDetailDialog({ item, stock, open, onClose, showControllerAct
         <div className="space-y-4 sm:space-y-6">
           {/* Item Image and Basic Info */}
           <div className="flex gap-3 sm:gap-4">
-            <div className="w-20 h-20 sm:w-32 sm:h-32 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+            <div className="w-20 h-20 sm:w-32 sm:h-32 bg-muted rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
               {item.imageUrl ? (
                 <ImageWithFallback
                   src={item.imageUrl}

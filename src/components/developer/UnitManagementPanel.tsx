@@ -125,7 +125,7 @@ export function UnitManagementPanel({
                       variant="ghost"
                       size="icon"
                       onClick={() => handleEditUnit(unit)}
-                      className="h-8 w-8 text-slate-500 hover:text-slate-900"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>

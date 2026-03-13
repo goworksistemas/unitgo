@@ -106,41 +106,41 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
         return {
           label: 'Entrada',
           icon: ArrowDown,
-          color: 'text-green-600',
-          bgColor: 'bg-green-100',
-          borderColor: 'border-green-200',
+          color: 'text-green-600 dark:text-green-400',
+          bgColor: 'bg-green-100 dark:bg-green-900/30',
+          borderColor: 'border-green-200 dark:border-green-800',
         };
       case 'consumption':
         return {
           label: 'Consumo',
           icon: Package,
-          color: 'text-blue-600',
-          bgColor: 'bg-blue-100',
-          borderColor: 'border-blue-200',
+          color: 'text-blue-600 dark:text-blue-400',
+          bgColor: 'bg-blue-100 dark:bg-blue-900/30',
+          borderColor: 'border-blue-200 dark:border-blue-800',
         };
       case 'loan':
         return {
           label: 'Empréstimo',
           icon: ArrowRightLeft,
-          color: 'text-purple-600',
-          bgColor: 'bg-purple-100',
-          borderColor: 'border-purple-200',
+          color: 'text-purple-600 dark:text-purple-400',
+          bgColor: 'bg-purple-100 dark:bg-purple-900/30',
+          borderColor: 'border-purple-200 dark:border-purple-800',
         };
       case 'return':
         return {
           label: 'Devolução',
           icon: RotateCcw,
-          color: 'text-orange-600',
-          bgColor: 'bg-orange-100',
-          borderColor: 'border-orange-200',
+          color: 'text-orange-600 dark:text-orange-400',
+          bgColor: 'bg-orange-100 dark:bg-orange-900/30',
+          borderColor: 'border-orange-200 dark:border-orange-800',
         };
       default:
         return {
           label: type,
           icon: Package,
-          color: 'text-slate-600',
-          bgColor: 'bg-slate-100',
-          borderColor: 'border-slate-200',
+          color: 'text-muted-foreground',
+          bgColor: 'bg-muted',
+          borderColor: 'border-border',
         };
     }
   };
@@ -176,7 +176,7 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
 
   if (!effectiveUnitId) {
     return (
-      <div className="text-center py-12 text-slate-500">
+      <div className="text-center py-12 text-muted-foreground">
         <p className="text-sm">Selecione uma unidade para visualizar</p>
       </div>
     );
@@ -189,32 +189,32 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
         <Card>
           <CardContent className="pt-4 md:pt-6 pb-4">
             <div className="space-y-2">
-              <p className="text-xs md:text-sm text-slate-600">Total</p>
-              <p className="text-2xl md:text-3xl text-slate-900">{totalMovements}</p>
+              <p className="text-xs md:text-sm text-muted-foreground">Total</p>
+              <p className="text-2xl md:text-3xl font-bold text-foreground">{totalMovements}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 md:pt-6 pb-4">
             <div className="space-y-2">
-              <p className="text-xs md:text-sm text-green-600">Entradas</p>
-              <p className="text-2xl md:text-3xl text-green-600">{totalEntries}</p>
+              <p className="text-xs md:text-sm text-green-600 dark:text-green-400">Entradas</p>
+              <p className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-400">{totalEntries}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 md:pt-6 pb-4">
             <div className="space-y-2">
-              <p className="text-xs md:text-sm text-blue-600">Consumos</p>
-              <p className="text-2xl md:text-3xl text-blue-600">{totalConsumptions}</p>
+              <p className="text-xs md:text-sm text-blue-600 dark:text-blue-400">Consumos</p>
+              <p className="text-2xl md:text-3xl font-bold text-blue-600 dark:text-blue-400">{totalConsumptions}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 md:pt-6 pb-4">
             <div className="space-y-2">
-              <p className="text-xs md:text-sm text-purple-600">Empréstimos</p>
-              <p className="text-2xl md:text-3xl text-purple-600">{totalLoans}</p>
+              <p className="text-xs md:text-sm text-purple-600 dark:text-purple-400">Empréstimos</p>
+              <p className="text-2xl md:text-3xl font-bold text-purple-600 dark:text-purple-400">{totalLoans}</p>
             </div>
           </CardContent>
         </Card>
@@ -231,9 +231,9 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
             <div className="space-y-2">
-              <label className="text-xs md:text-sm font-medium">Buscar</label>
+              <label className="text-xs md:text-sm font-medium text-foreground">Buscar</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Item, usuário, OS..."
                   value={searchTerm}
@@ -243,7 +243,7 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-xs md:text-sm font-medium">Tipo de Movimento</label>
+              <label className="text-xs md:text-sm font-medium text-foreground">Tipo de Movimento</label>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
@@ -258,7 +258,7 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs md:text-sm font-medium">Período</label>
+              <label className="text-xs md:text-sm font-medium text-foreground">Período</label>
               <Select value={dateFilter} onValueChange={setDateFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
@@ -285,7 +285,7 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
               >
                 Limpar Filtros
               </Button>
-              <span className="text-xs text-slate-600">
+              <span className="text-xs text-muted-foreground">
                 {totalMovements} {totalMovements === 1 ? 'resultado' : 'resultados'}
               </span>
             </div>
@@ -306,8 +306,8 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
         </CardHeader>
         <CardContent>
           {filteredMovements.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">
-              <Package className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+            <div className="text-center py-12 text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
               <p>Nenhuma movimentação encontrada</p>
               {(searchTerm || typeFilter !== 'all' || dateFilter !== 'all') && (
                 <p className="text-xs mt-2">Tente ajustar os filtros</p>
@@ -326,7 +326,7 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
                 return (
                   <div
                     key={movement.id}
-                    className={`border-l-4 ${typeInfo.borderColor} bg-muted p-3 md:p-4 rounded-r-lg hover:bg-slate-100 transition-colors`}
+                    className={`border-l-4 ${typeInfo.borderColor} bg-muted p-3 md:p-4 rounded-r-lg hover:bg-muted/80 transition-colors`}
                   >
                     <div className="flex items-start gap-3">
                       {/* Icon */}
@@ -343,11 +343,11 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
                               <Badge variant="outline" className={typeInfo.color}>
                                 {typeInfo.label}
                               </Badge>
-                              <span className="text-sm font-medium text-slate-900 truncate">
+                              <span className="text-sm font-medium text-foreground truncate">
                                 {item.name}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-muted-foreground">
                               {formatDate(String((movement as any).timestamp ?? (movement as any).createdAt ?? ''))}
                             </p>
                           </div>
@@ -359,20 +359,20 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
 
                         {/* Details Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                          <div className="flex items-center gap-2 text-slate-600">
+                          <div className="flex items-center gap-2 text-muted-foreground">
                             <User className="h-3 w-3" />
                             <span className="truncate">{user.name}</span>
                           </div>
                           
                           {movement.workOrder && (
-                            <div className="flex items-center gap-2 text-slate-600">
+                            <div className="flex items-center gap-2 text-muted-foreground">
                               <FileText className="h-3 w-3" />
                               <span className="truncate">OS: {movement.workOrder}</span>
                             </div>
                           )}
 
                           {movement.borrowerUnitId && (
-                            <div className="flex items-center gap-2 text-slate-600">
+                            <div className="flex items-center gap-2 text-muted-foreground">
                               <Building2 className="h-3 w-3" />
                               <span className="truncate">
                                 Para: {getUnitById(movement.borrowerUnitId)?.name || 'Unidade'}
@@ -383,8 +383,8 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
 
                         {/* Notes */}
                         {movement.notes && (
-                          <div className="mt-2 p-2 bg-card rounded border border-border">
-                            <p className="text-xs text-slate-700">{movement.notes}</p>
+                          <div className="mt-2 p-2 bg-muted/50 rounded border border-border">
+                            <p className="text-xs text-foreground">{movement.notes}</p>
                           </div>
                         )}
                       </div>

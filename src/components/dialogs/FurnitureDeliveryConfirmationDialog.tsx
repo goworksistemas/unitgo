@@ -264,7 +264,7 @@ export function FurnitureDeliveryConfirmationDialog({ request, open, onClose }: 
               maxLength={4}
               className="text-center text-2xl tracking-widest"
             />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               O recebedor deve fornecer seu código diário de 4 dígitos
             </p>
           </div>
@@ -346,7 +346,7 @@ export function FurnitureDeliveryConfirmationDialog({ request, open, onClose }: 
               {location ? 'Localização Capturada ✓' : 'Capturar Localização (opcional)'}
             </Button>
             {location && (
-              <p className="text-xs text-slate-500 text-center">
+              <p className="text-xs text-muted-foreground text-center">
                 Lat: {location.latitude.toFixed(6)}, Long: {location.longitude.toFixed(6)}
               </p>
             )}

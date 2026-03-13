@@ -28,7 +28,7 @@ export function ItemDetailConsumeForm({
   return (
     <div className="space-y-4 bg-muted p-4 rounded-lg">
       <div className="flex items-center justify-between gap-2">
-        <h4 className="text-slate-900 text-sm sm:text-base">
+        <h4 className="text-foreground text-sm sm:text-base">
           {currentUserRole === 'executor' ? 'Consumir Item para Serviço' : (item.isConsumable ? 'Consumir Item' : 'Usar Item (Definitivo)')}
         </h4>
         <Button variant="ghost" size="sm" onClick={onCancel} className="flex-shrink-0">
@@ -49,7 +49,7 @@ export function ItemDetailConsumeForm({
               onChange={(e) => onServiceOrderChange(e.target.value)}
               required
             />
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Informe a OS ou descrição do serviço que está realizando
             </p>
           </div>

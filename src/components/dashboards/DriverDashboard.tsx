@@ -306,18 +306,19 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
       case 'overview':
         return (
           <Tabs defaultValue="resumo" className="w-full">
-            <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0">
+            <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0 w-full justify-start">
               <TabsTrigger
                 value="resumo"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
               >
+                <LayoutDashboard className="h-4 w-4 shrink-0" />
                 Resumo
               </TabsTrigger>
               <TabsTrigger
                 value="historico"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium flex items-center gap-1.5"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
               >
-                <ScrollText className="h-3.5 w-3.5" />
+                <ScrollText className="h-4 w-4 shrink-0" />
                 Histórico
               </TabsTrigger>
             </TabsList>
@@ -330,17 +331,17 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                     <Package className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                     <div className="text-2xl md:text-4xl font-bold text-primary">{totalToPickup}</div>
                   </div>
-                  <p className="text-xs md:text-sm font-medium">Para Retirar</p>
+                  <p className="text-xs md:text-sm font-medium text-foreground">Para Retirar</p>
                 </CardContent>
               </Card>
 
-              <Card className="border-2 border-purple-600">
+              <Card className="border-2 border-purple-600 dark:border-purple-500">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between mb-1 md:mb-2">
-                    <Truck className="h-6 w-6 md:h-8 md:w-8 text-purple-600" />
-                    <div className="text-2xl md:text-4xl font-bold text-purple-600">{totalInTransit}</div>
+                    <Truck className="h-6 w-6 md:h-8 md:w-8 text-purple-600 dark:text-purple-400" />
+                    <div className="text-2xl md:text-4xl font-bold text-purple-600 dark:text-purple-400">{totalInTransit}</div>
                   </div>
-                  <p className="text-xs md:text-sm font-medium">Em Trânsito</p>
+                  <p className="text-xs md:text-sm font-medium text-foreground">Em Trânsito</p>
                 </CardContent>
               </Card>
             </div>
@@ -443,7 +444,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
               {(furnitureInTransit.length > 0 || furnitureDeliveryInTransit.length > 0) && (
                 <div>
                   <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <Truck className="h-5 w-5 text-purple-600" />
+                    <Truck className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                     Em Trânsito
                   </h2>
                   <div className="space-y-3">

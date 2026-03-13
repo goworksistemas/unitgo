@@ -17,7 +17,7 @@ import { ptBR } from 'date-fns/locale';
 import type { QuotationStatus } from '@/types/purchases';
 
 const STATUS_LABELS: Record<QuotationStatus, { label: string; className: string }> = {
-  draft: { label: 'Rascunho', className: 'bg-gray-100 text-gray-700 border-gray-300' },
+  draft: { label: 'Rascunho', className: 'bg-muted text-muted-foreground border-border' },
   sent: { label: 'Enviada', className: 'bg-blue-50 text-blue-700 border-blue-300' },
   responded: { label: 'Respondida', className: 'bg-green-50 text-green-700 border-green-300' },
   approved: { label: 'Aprovada', className: 'bg-emerald-50 text-emerald-700 border-emerald-300' },

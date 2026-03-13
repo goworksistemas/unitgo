@@ -1,7 +1,11 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useContext } from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Moon, Sun } from 'lucide-react';
 import { AppSidebar } from './AppSidebar';
+import { ThemeContext } from '@/App';
 import { NavigationContext, type NavigationSection, type NavigationState } from '@/hooks/useNavigation';
 
 interface AppLayoutProps {
@@ -9,6 +13,7 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  const { theme, toggleTheme } = useContext(ThemeContext);
   const [navState, setNavState] = useState<NavigationState>({
     sections: [],
     activeSection: '',
@@ -63,6 +68,17 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <p className="text-xs text-muted-foreground truncate">{navState.subtitle}</p>
               )}
             </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={toggleTheme} className="shrink-0">
+                  {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  <span className="sr-only">{theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {theme === 'dark' ? 'Alternar para modo claro' : 'Alternar para modo escuro'}
+              </TooltipContent>
+            </Tooltip>
           </header>
           <main className="flex-1 overflow-auto p-4 md:p-6">
             {children}

@@ -246,8 +246,8 @@ export function ReceiptConfirmationDialog({ batch, open, onClose }: ReceiptConfi
               </div>
             ) : (
               <div className="flex items-center justify-center gap-2 py-3">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-                <span className="text-green-600">Código Verificado ✓</span>
+                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <span className="text-green-600 dark:text-green-400">Código Verificado ✓</span>
               </div>
             )}
           </div>

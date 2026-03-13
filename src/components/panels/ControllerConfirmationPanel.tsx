@@ -123,7 +123,7 @@ export function ControllerConfirmationPanel() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-yellow-600" />
+                <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                 <CardTitle className="text-base md:text-lg">Entregas Aguardando Confirmação</CardTitle>
               </div>
               <Badge className="bg-yellow-600">

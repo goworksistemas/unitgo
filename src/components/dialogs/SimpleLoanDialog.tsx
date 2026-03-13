@@ -187,7 +187,7 @@ export function SimpleLoanDialog({ open, onOpenChange }: SimpleLoanDialogProps) 
                           />
                           <div className="flex flex-col">
                             <span>{user.name}</span>
-                            <span className="text-xs text-slate-500">{user.email}</span>
+                            <span className="text-xs text-muted-foreground">{user.email}</span>
                           </div>
                         </CommandItem>
                       ))}
@@ -232,7 +232,7 @@ export function SimpleLoanDialog({ open, onOpenChange }: SimpleLoanDialogProps) 
                 min={new Date().toISOString().split('T')[0]}
                 required
               />
-              <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             </div>
           </div>
 

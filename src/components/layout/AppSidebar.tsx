@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -27,12 +27,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Building2, ChevronDown, ChevronRight, LogOut, Moon, Sun, KeyRound, ChevronsUpDown } from 'lucide-react';
+import { Building2, ChevronDown, ChevronRight, LogOut, KeyRound, ChevronsUpDown } from 'lucide-react';
 import { GoworkLogo } from '@/components/shared/GoworkLogo';
 import { DailyCodeDisplay } from '@/components/shared/DailyCodeDisplay';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useApp } from '@/contexts/AppContext';
-import { ThemeContext } from '@/App';
 import { cn } from '@/lib/utils';
 import type { Unit, User } from '@/types';
 
@@ -60,7 +59,6 @@ export function AppSidebar() {
   const { state, setActiveSection } = useNavigation();
   const { sections, activeSection, activeItem } = state;
   const { currentUser, currentUnit, getAvailableUnits, setCurrentUnit, logout } = useApp();
-  const { theme, toggleTheme } = useContext(ThemeContext);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set([activeSection]));
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [appVersion, setAppVersion] = useState<string | null>(null);
@@ -90,8 +88,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border bg-background transition-all duration-200">
-      <SidebarHeader className="px-4 py-4 flex items-center gap-2">
-        <GoworkLogo variant="full" size="medium" className="group-data-[collapsible=icon]:hidden" />
+      <SidebarHeader className="px-4 py-4 flex items-center justify-center gap-2 min-w-0 overflow-hidden group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
+        <GoworkLogo variant="full" size="medium" className="shrink-0 group-data-[collapsible=icon]:hidden" />
       </SidebarHeader>
 
       <SidebarSeparator />
@@ -99,13 +97,13 @@ export function AppSidebar() {
       {/* Unit selector */}
       {shouldShowUnitSelector && (
         <>
-          <div className="px-4 py-4">
+          <div className="px-4 py-4 group-data-[collapsible=icon]:hidden">
             <label className="text-xs font-medium text-sidebar-foreground/70 flex items-center gap-2 mb-2">
-              <Building2 className="h-3 w-3" />
+              <Building2 className="h-3 w-3 shrink-0" />
               Unidade
             </label>
             <Select value={currentUnit?.id || ''} onValueChange={setCurrentUnit}>
-              <SelectTrigger className="w-full h-9 text-sm">
+              <SelectTrigger className="w-full h-9 text-sm min-w-0">
                 <SelectValue placeholder={
                   currentUser?.role === 'designer' || currentUser?.role === 'developer'
                     ? 'Selecione uma unidade'
@@ -119,17 +117,17 @@ export function AppSidebar() {
               </SelectContent>
             </Select>
           </div>
-          <SidebarSeparator />
+          <SidebarSeparator className="group-data-[collapsible=icon]:hidden" />
         </>
       )}
 
       {!shouldShowUnitSelector && availableUnits.length === 1 && currentUnit && (
         <>
-          <div className="px-4 py-4 flex items-center gap-2 text-sidebar-foreground/70">
-            <Building2 className="h-3 w-3" />
-            <span className="text-xs font-medium">{currentUnit.name}</span>
+          <div className="px-4 py-4 flex items-center gap-2 text-sidebar-foreground/70 min-w-0 overflow-hidden group-data-[collapsible=icon]:hidden">
+            <Building2 className="h-3 w-3 shrink-0" />
+            <span className="text-xs font-medium truncate">{currentUnit.name}</span>
           </div>
-          <SidebarSeparator />
+          <SidebarSeparator className="group-data-[collapsible=icon]:hidden" />
         </>
       )}
 
@@ -226,8 +224,8 @@ export function AppSidebar() {
         {/* Daily code for warehouse/controller roles */}
         {currentUser && ['controller', 'warehouse'].includes(currentUser.role) && (
           <>
-            <SidebarSeparator />
-            <SidebarGroup>
+            <SidebarSeparator className="group-data-[collapsible=icon]:hidden" />
+            <SidebarGroup className="group-data-[collapsible=icon]:hidden">
               <SidebarGroupLabel>Código Diário</SidebarGroupLabel>
               <SidebarGroupContent>
                 <div className="px-2">
@@ -240,25 +238,25 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* Footer: user info + actions */}
-      <SidebarFooter>
+      <SidebarFooter className="min-w-0 overflow-hidden shrink-0">
         <SidebarSeparator />
         {appVersion && (
-          <div className="px-4 pt-3">
-            <p className="text-xs text-sidebar-foreground/50">v{appVersion}</p>
+          <div className="px-4 pt-3 group-data-[collapsible=icon]:hidden">
+            <p className="text-xs text-sidebar-foreground/50 truncate">v{appVersion}</p>
           </div>
         )}
-        <div className="p-3">
+        <div className="p-3 min-w-0">
           <DropdownMenu>
             <Tooltip>
               <TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-3 w-full rounded-lg p-2 hover:bg-sidebar-accent transition-colors text-left">
+                  <button className="flex items-center gap-3 w-full rounded-lg p-2 hover:bg-sidebar-accent transition-colors text-left min-w-0 overflow-hidden">
                 <Avatar className="h-8 w-8 shrink-0">
                   <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                     {currentUser ? getInitials(currentUser.name) : '??'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-hidden group-data-[collapsible=icon]:hidden">
                   <p className="text-sm font-medium text-sidebar-foreground truncate">
                     {currentUser?.name}
                   </p>
@@ -266,7 +264,7 @@ export function AppSidebar() {
                     {currentUser ? ROLE_LABELS[currentUser.role] || currentUser.role : ''}
                   </p>
                 </div>
-                <ChevronsUpDown className="h-4 w-4 text-sidebar-foreground/40 shrink-0" />
+                <ChevronsUpDown className="h-4 w-4 text-sidebar-foreground/40 shrink-0 group-data-[collapsible=icon]:hidden" />
                   </button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
@@ -280,10 +278,6 @@ export function AppSidebar() {
                 <p className="text-xs text-muted-foreground">{currentUser?.email}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={toggleTheme}>
-                {theme === 'dark' ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
-                {theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowChangePassword(true)}>
                 <KeyRound className="h-4 w-4 mr-2" />
                 Alterar Senha

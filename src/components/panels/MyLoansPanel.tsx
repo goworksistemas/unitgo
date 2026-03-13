@@ -94,7 +94,7 @@ export function MyLoansPanel() {
                 <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
                   <div className="flex gap-3 flex-1 min-w-0">
                     <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Package className="w-6 h-6 text-slate-400" />
+                      <Package className="w-6 h-6 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-foreground mb-1 text-sm sm:text-base">{item.name}</h4>

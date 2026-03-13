@@ -119,7 +119,7 @@ function ItemsTable({ items, categories, handleEditItem }: Pick<Props, 'items' |
                     variant="ghost"
                     size="icon"
                     onClick={() => handleEditItem(item)}
-                    className="h-8 w-8 text-slate-500 hover:text-slate-900"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>

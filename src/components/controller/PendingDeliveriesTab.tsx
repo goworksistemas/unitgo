@@ -28,7 +28,7 @@ export function PendingDeliveriesTab({
   if (pendingBatches.length === 0 && pendingFurnitureDeliveries.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <CheckCircle className="h-10 w-10 mx-auto mb-2 text-slate-300" />
+        <CheckCircle className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
         <p className="text-sm">Todas as entregas confirmadas!</p>
       </div>
     );
@@ -73,7 +73,7 @@ export function PendingDeliveriesTab({
                   const requester = getUserById(req.requestedByUserId);
                   return (
                     <div key={req.id} className="flex items-center gap-2 p-2 bg-muted rounded text-xs">
-                      <Package className="h-3 w-3 text-slate-400" />
+                      <Package className="h-3 w-3 text-muted-foreground" />
                       <div className="flex-1">
                         <p className="font-medium">{item?.name}</p>
                         <p className="text-muted-foreground">Qtd: {req.quantity} • Solicitante: {requester?.name}</p>
@@ -86,7 +86,7 @@ export function PendingDeliveriesTab({
                   const requester = getUserById(req.requestedByUserId);
                   return (
                     <div key={req.id} className="flex items-center gap-2 p-2 bg-muted rounded text-xs">
-                      <Armchair className="h-3 w-3 text-slate-400" />
+                      <Armchair className="h-3 w-3 text-muted-foreground" />
                       <div className="flex-1">
                         <p className="font-medium">{item?.name}</p>
                         <p className="text-muted-foreground">Qtd: {req.quantity} • Solicitante: {requester?.name}</p>
@@ -136,7 +136,7 @@ export function PendingDeliveriesTab({
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">Detalhes:</p>
                 <div className="flex items-center gap-2 p-2 bg-muted rounded text-xs">
-                  <Armchair className="h-3 w-3 text-slate-400" />
+                  <Armchair className="h-3 w-3 text-muted-foreground" />
                   <div className="flex-1">
                     <p className="font-medium">{item?.name}</p>
                     <p className="text-muted-foreground">Qtd: {furnitureReq.quantity} • Local: {furnitureReq.location}</p>

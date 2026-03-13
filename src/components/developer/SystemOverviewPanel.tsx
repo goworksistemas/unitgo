@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -24,6 +25,7 @@ import {
   ClipboardList,
   TrendingUp,
   Layers,
+  LayoutDashboard,
   CalendarIcon,
   ArrowUpRight,
   ArrowDownRight,
@@ -509,257 +511,314 @@ export function SystemOverviewPanel() {
         </CardContent>
       </Card>
 
-      {/* ═══ KPIs ═══ */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <KpiCard title="Unidades Ativas" value={stats.activeUnits} sub={`${stats.inactiveUnits} inativas`} icon={<Building2 className="h-4 w-4 text-primary" />} />
-        <KpiCard title="Usuários" value={stats.totalUsers} icon={<Users className="h-4 w-4 text-primary" />} />
-        <KpiCard title="Materiais" value={stats.totalMaterials} sub={`${stats.inactiveItems} inativos`} icon={<Package className="h-4 w-4 text-primary" />} />
-        <KpiCard title="Móveis" value={stats.totalFurniture} icon={<Armchair className="h-4 w-4 text-primary" />} />
-        <KpiCard title="Categorias" value={stats.totalCategories} icon={<ClipboardList className="h-4 w-4 text-primary" />} />
-        <KpiCard
-          title="Solicitações"
-          value={stats.totalRequests}
-          sub={`${stats.pendingRequests} pendentes`}
-          icon={<TrendingUp className="h-4 w-4 text-primary" />}
-          variation={prevStats ? calcVariation(stats.totalRequests, prevStats.totalRequests) : undefined}
-        />
-      </div>
+      {/* ═══ TAB BAR POR TIPO ═══ */}
+      <Tabs defaultValue="resumo" className="w-full">
+        <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0 w-full justify-start overflow-x-auto">
+          <TabsTrigger
+            value="resumo"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2"
+          >
+            <LayoutDashboard className="h-4 w-4 shrink-0" />
+            Resumo
+          </TabsTrigger>
+          <TabsTrigger
+            value="solicitacoes"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2"
+          >
+            <ClipboardList className="h-4 w-4 shrink-0" />
+            Solicitações
+          </TabsTrigger>
+          <TabsTrigger
+            value="estoque"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2"
+          >
+            <Package className="h-4 w-4 shrink-0" />
+            Estoque
+          </TabsTrigger>
+          <TabsTrigger
+            value="logistica"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2"
+          >
+            <Truck className="h-4 w-4 shrink-0" />
+            Logística
+          </TabsTrigger>
+          <TabsTrigger
+            value="usuarios"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2"
+          >
+            <Users className="h-4 w-4 shrink-0" />
+            Usuários
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <KpiCard
-          title="Aprovados"
-          value={stats.approvedRequests}
-          icon={<CheckCircle className="h-4 w-4 text-primary" />}
-          variation={prevStats ? calcVariation(stats.approvedRequests, prevStats.approvedRequests) : undefined}
-        />
-        <KpiCard
-          title="Concluídos"
-          value={stats.completedRequests}
-          icon={<CheckCircle className="h-4 w-4 text-secondary" />}
-          variation={prevStats ? calcVariation(stats.completedRequests, prevStats.completedRequests) : undefined}
-        />
-        <KpiCard
-          title="Rejeitados"
-          value={stats.rejectedRequests}
-          icon={<XCircle className="h-4 w-4 text-destructive" />}
-          variation={prevStats ? calcVariation(stats.rejectedRequests, prevStats.rejectedRequests) : undefined}
-          invertColor
-        />
-        <KpiCard title="Estoque Baixo" value={stats.lowStockItems} sub={`${stats.outOfStockItems} zerados`} icon={<AlertTriangle className="h-4 w-4 text-yellow-600" />} />
-        <KpiCard
-          title="Empréstimos"
-          value={stats.activeLoans}
-          sub={`${stats.overdueLoans} atrasados`}
-          icon={<Clock className="h-4 w-4 text-yellow-600" />}
-          variation={prevStats ? calcVariation(stats.totalLoans, prevStats.totalLoans) : undefined}
-        />
-        <KpiCard
-          title="Lotes Entrega"
-          value={stats.totalBatches}
-          sub={`${stats.batchesInTransit} em trânsito`}
-          icon={<Truck className="h-4 w-4 text-primary" />}
-          variation={prevStats ? calcVariation(stats.totalBatches, prevStats.totalBatches) : undefined}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <KpiCard
-          title="Transferências"
-          value={stats.totalTransfers}
-          sub={`${stats.pendingTransfers} pendentes`}
-          icon={<ArrowRightLeft className="h-4 w-4 text-secondary" />}
-          variation={prevStats ? calcVariation(stats.totalTransfers, prevStats.totalTransfers) : undefined}
-        />
-        <KpiCard
-          title="Solic. Designer"
-          value={stats.totalDesignerRequests}
-          sub={`${stats.pendingDesignerRequests} pendentes`}
-          icon={<Palette className="h-4 w-4 text-secondary" />}
-          variation={prevStats ? calcVariation(stats.totalDesignerRequests, prevStats.totalDesignerRequests) : undefined}
-        />
-        <KpiCard
-          title="Remoções"
-          value={stats.totalRemovals}
-          sub={`${stats.pendingRemovals} pendentes`}
-          icon={<AlertTriangle className="h-4 w-4 text-orange-600" />}
-          variation={prevStats ? calcVariation(stats.totalRemovals, prevStats.totalRemovals) : undefined}
-        />
-        <KpiCard
-          title="Entregas OK"
-          value={stats.batchesCompleted}
-          sub={`de ${stats.totalBatches} lotes`}
-          icon={<CheckCircle className="h-4 w-4 text-secondary" />}
-          variation={prevStats ? calcVariation(stats.batchesCompleted, prevStats.batchesCompleted) : undefined}
-        />
-      </div>
-
-      {/* ═══ GRÁFICOS ═══ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {usersByRole.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><UserCog className="h-5 w-5 text-primary" />Usuários por Perfil</CardTitle>
-              <CardDescription>{stats.totalUsers} usuários cadastrados</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <HorizontalBarChart data={usersByRole} dataKey="count" nameKey="name" height={250} />
-            </CardContent>
-          </Card>
-        )}
-
-        {requestsByStatus.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><ClipboardList className="h-5 w-5 text-primary" />Solicitações por Status</CardTitle>
-              <CardDescription>{stats.totalRequests} solicitações {isFiltered ? 'no período' : 'no sistema'}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <VerticalBarChart data={requestsByStatus} dataKey="count" nameKey="name" height={250} fontSize={10} />
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {requestsByItem.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary" />Top 10 Itens Mais Solicitados</CardTitle>
-              <CardDescription>Volume de pedidos por item {isFiltered ? 'no período' : ''}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <HorizontalBarChart data={requestsByItem} dataKey="count" nameKey="name" />
-            </CardContent>
-          </Card>
-        )}
-
-        {requestsByUnit.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Building2 className="h-5 w-5 text-primary" />Solicitações por Unidade</CardTitle>
-              <CardDescription>Volume de pedidos por unidade operacional {isFiltered ? 'no período' : ''}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <HorizontalBarChart data={requestsByUnit} dataKey="count" nameKey="name" />
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {requestsByUrgency.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-primary" />Urgência dos Pedidos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <VerticalBarChart data={requestsByUrgency} dataKey="count" nameKey="name" height={220} fontSize={12} />
-            </CardContent>
-          </Card>
-        )}
-
-        {loansByStatus.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-primary" />Empréstimos por Status</CardTitle>
-              <CardDescription>{stats.totalLoans} empréstimos {isFiltered ? 'no período' : 'registrados'}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <VerticalBarChart data={loansByStatus} dataKey="count" nameKey="name" height={220} fontSize={12} />
-            </CardContent>
-          </Card>
-        )}
-
-        {itemsByCategory.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Package className="h-5 w-5 text-primary" />Itens por Categoria</CardTitle>
-              <CardDescription>{stats.totalCategories} categorias</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <VerticalBarChart data={itemsByCategory} dataKey="count" nameKey="name" height={220} fontSize={10} />
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {stockByUnit.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" />Estoque Total por Unidade</CardTitle>
-              <CardDescription>Quantidade total de itens em cada unidade</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <HorizontalBarChart data={stockByUnit} dataKey="total" nameKey="name" />
-            </CardContent>
-          </Card>
-        )}
-
-        {batchesByStatus.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" />Lotes de Entrega por Status</CardTitle>
-              <CardDescription>{stats.totalBatches} lotes de entrega {isFiltered ? 'no período' : ''}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <VerticalBarChart data={batchesByStatus} dataKey="count" nameKey="name" height={300} fontSize={10} />
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {transfersByStatus.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><ArrowRightLeft className="h-5 w-5 text-primary" />Transferências de Móveis</CardTitle>
-              <CardDescription>{stats.totalTransfers} transferências {isFiltered ? 'no período' : 'registradas'}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <VerticalBarChart data={transfersByStatus} dataKey="count" nameKey="name" fontSize={12} />
-            </CardContent>
-          </Card>
-        )}
-
-        {removalsByStatus.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Armchair className="h-5 w-5 text-primary" />Remoções de Móveis</CardTitle>
-              <CardDescription>{stats.totalRemovals} remoções {isFiltered ? 'no período' : 'registradas'}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <VerticalBarChart data={removalsByStatus} dataKey="count" nameKey="name" fontSize={10} />
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Resumo do Sistema */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Layers className="h-5 w-5 text-primary" />Resumo do Sistema</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
-            {[
-              { icon: Building2, label: 'Unidades Operacionais', value: operationalUnits.length },
-              { icon: Users, label: 'Total de Usuários', value: stats.totalUsers },
-              { icon: Package, label: 'Itens Cadastrados', value: stats.totalMaterials + stats.totalFurniture },
-              { icon: TrendingUp, label: `Solicitações${isFiltered ? ' (período)' : ' Totais'}`, value: stats.totalRequests },
-              { icon: Truck, label: `Lotes de Entrega${isFiltered ? ' (período)' : ''}`, value: stats.totalBatches },
-            ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="flex flex-col items-center text-center gap-2">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-                  <Icon className="h-5 w-5 text-white" />
-                </div>
-                <span className="font-bold text-lg">{value}</span>
-                <span className="text-xs text-muted-foreground">{label}</span>
-              </div>
-            ))}
+        {/* Tab Resumo */}
+        <TabsContent value="resumo" className="mt-4 space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <KpiCard title="Unidades Ativas" value={stats.activeUnits} sub={`${stats.inactiveUnits} inativas`} icon={<Building2 className="h-4 w-4 text-primary" />} />
+            <KpiCard title="Usuários" value={stats.totalUsers} icon={<Users className="h-4 w-4 text-primary" />} />
+            <KpiCard title="Materiais" value={stats.totalMaterials} sub={`${stats.inactiveItems} inativos`} icon={<Package className="h-4 w-4 text-primary" />} />
+            <KpiCard title="Móveis" value={stats.totalFurniture} icon={<Armchair className="h-4 w-4 text-primary" />} />
+            <KpiCard title="Categorias" value={stats.totalCategories} icon={<ClipboardList className="h-4 w-4 text-primary" />} />
+            <KpiCard
+              title="Solicitações"
+              value={stats.totalRequests}
+              sub={`${stats.pendingRequests} pendentes`}
+              icon={<TrendingUp className="h-4 w-4 text-primary" />}
+              variation={prevStats ? calcVariation(stats.totalRequests, prevStats.totalRequests) : undefined}
+            />
           </div>
-        </CardContent>
-      </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Layers className="h-5 w-5 text-primary" />Resumo do Sistema</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+                {[
+                  { icon: Building2, label: 'Unidades Operacionais', value: operationalUnits.length },
+                  { icon: Users, label: 'Total de Usuários', value: stats.totalUsers },
+                  { icon: Package, label: 'Itens Cadastrados', value: stats.totalMaterials + stats.totalFurniture },
+                  { icon: TrendingUp, label: `Solicitações${isFiltered ? ' (período)' : ' Totais'}`, value: stats.totalRequests },
+                  { icon: Truck, label: `Lotes de Entrega${isFiltered ? ' (período)' : ''}`, value: stats.totalBatches },
+                ].map(({ icon: Icon, label, value }) => (
+                  <div key={label} className="flex flex-col items-center text-center gap-2">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+                      <Icon className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="font-bold text-lg">{value}</span>
+                    <span className="text-xs text-muted-foreground">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab Solicitações */}
+        <TabsContent value="solicitacoes" className="mt-4 space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <KpiCard
+              title="Aprovados"
+              value={stats.approvedRequests}
+              icon={<CheckCircle className="h-4 w-4 text-primary" />}
+              variation={prevStats ? calcVariation(stats.approvedRequests, prevStats.approvedRequests) : undefined}
+            />
+            <KpiCard
+              title="Concluídos"
+              value={stats.completedRequests}
+              icon={<CheckCircle className="h-4 w-4 text-secondary" />}
+              variation={prevStats ? calcVariation(stats.completedRequests, prevStats.completedRequests) : undefined}
+            />
+            <KpiCard
+              title="Rejeitados"
+              value={stats.rejectedRequests}
+              icon={<XCircle className="h-4 w-4 text-destructive" />}
+              variation={prevStats ? calcVariation(stats.rejectedRequests, prevStats.rejectedRequests) : undefined}
+              invertColor
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {requestsByStatus.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><ClipboardList className="h-5 w-5 text-primary" />Solicitações por Status</CardTitle>
+                  <CardDescription>{stats.totalRequests} solicitações {isFiltered ? 'no período' : 'no sistema'}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <VerticalBarChart data={requestsByStatus} dataKey="count" nameKey="name" height={250} fontSize={10} />
+                </CardContent>
+              </Card>
+            )}
+            {requestsByItem.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary" />Top 10 Itens Mais Solicitados</CardTitle>
+                  <CardDescription>Volume de pedidos por item {isFiltered ? 'no período' : ''}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <HorizontalBarChart data={requestsByItem} dataKey="count" nameKey="name" />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {requestsByUnit.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Building2 className="h-5 w-5 text-primary" />Solicitações por Unidade</CardTitle>
+                  <CardDescription>Volume de pedidos por unidade operacional {isFiltered ? 'no período' : ''}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <HorizontalBarChart data={requestsByUnit} dataKey="count" nameKey="name" />
+                </CardContent>
+              </Card>
+            )}
+            {requestsByUrgency.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-primary" />Urgência dos Pedidos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <VerticalBarChart data={requestsByUrgency} dataKey="count" nameKey="name" height={250} fontSize={12} />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Tab Estoque */}
+        <TabsContent value="estoque" className="mt-4 space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <KpiCard title="Estoque Baixo" value={stats.lowStockItems} sub={`${stats.outOfStockItems} zerados`} icon={<AlertTriangle className="h-4 w-4 text-yellow-600" />} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {stockByUnit.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" />Estoque Total por Unidade</CardTitle>
+                  <CardDescription>Quantidade total de itens em cada unidade</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <HorizontalBarChart data={stockByUnit} dataKey="total" nameKey="name" />
+                </CardContent>
+              </Card>
+            )}
+            {itemsByCategory.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Package className="h-5 w-5 text-primary" />Itens por Categoria</CardTitle>
+                  <CardDescription>{stats.totalCategories} categorias</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <VerticalBarChart data={itemsByCategory} dataKey="count" nameKey="name" height={300} fontSize={10} />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Tab Logística */}
+        <TabsContent value="logistica" className="mt-4 space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <KpiCard
+              title="Empréstimos"
+              value={stats.activeLoans}
+              sub={`${stats.overdueLoans} atrasados`}
+              icon={<Clock className="h-4 w-4 text-yellow-600" />}
+              variation={prevStats ? calcVariation(stats.totalLoans, prevStats.totalLoans) : undefined}
+            />
+            <KpiCard
+              title="Lotes Entrega"
+              value={stats.totalBatches}
+              sub={`${stats.batchesInTransit} em trânsito`}
+              icon={<Truck className="h-4 w-4 text-primary" />}
+              variation={prevStats ? calcVariation(stats.totalBatches, prevStats.totalBatches) : undefined}
+            />
+            <KpiCard
+              title="Transferências"
+              value={stats.totalTransfers}
+              sub={`${stats.pendingTransfers} pendentes`}
+              icon={<ArrowRightLeft className="h-4 w-4 text-secondary" />}
+              variation={prevStats ? calcVariation(stats.totalTransfers, prevStats.totalTransfers) : undefined}
+            />
+            <KpiCard
+              title="Remoções"
+              value={stats.totalRemovals}
+              sub={`${stats.pendingRemovals} pendentes`}
+              icon={<AlertTriangle className="h-4 w-4 text-orange-600" />}
+              variation={prevStats ? calcVariation(stats.totalRemovals, prevStats.totalRemovals) : undefined}
+            />
+            <KpiCard
+              title="Solic. Designer"
+              value={stats.totalDesignerRequests}
+              sub={`${stats.pendingDesignerRequests} pendentes`}
+              icon={<Palette className="h-4 w-4 text-secondary" />}
+              variation={prevStats ? calcVariation(stats.totalDesignerRequests, prevStats.totalDesignerRequests) : undefined}
+            />
+            <KpiCard
+              title="Entregas OK"
+              value={stats.batchesCompleted}
+              sub={`de ${stats.totalBatches} lotes`}
+              icon={<CheckCircle className="h-4 w-4 text-secondary" />}
+              variation={prevStats ? calcVariation(stats.batchesCompleted, prevStats.batchesCompleted) : undefined}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {batchesByStatus.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5 text-primary" />Lotes de Entrega por Status</CardTitle>
+                  <CardDescription>{stats.totalBatches} lotes de entrega {isFiltered ? 'no período' : ''}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <VerticalBarChart data={batchesByStatus} dataKey="count" nameKey="name" height={300} fontSize={10} />
+                </CardContent>
+              </Card>
+            )}
+            {loansByStatus.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-primary" />Empréstimos por Status</CardTitle>
+                  <CardDescription>{stats.totalLoans} empréstimos {isFiltered ? 'no período' : 'registrados'}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <VerticalBarChart data={loansByStatus} dataKey="count" nameKey="name" height={300} fontSize={12} />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {transfersByStatus.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><ArrowRightLeft className="h-5 w-5 text-primary" />Transferências de Móveis</CardTitle>
+                  <CardDescription>{stats.totalTransfers} transferências {isFiltered ? 'no período' : 'registradas'}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <VerticalBarChart data={transfersByStatus} dataKey="count" nameKey="name" fontSize={12} />
+                </CardContent>
+              </Card>
+            )}
+            {removalsByStatus.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Armchair className="h-5 w-5 text-primary" />Remoções de Móveis</CardTitle>
+                  <CardDescription>{stats.totalRemovals} remoções {isFiltered ? 'no período' : 'registradas'}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <VerticalBarChart data={removalsByStatus} dataKey="count" nameKey="name" fontSize={10} />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Tab Usuários */}
+        <TabsContent value="usuarios" className="mt-4 space-y-6">
+          {usersByRole.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><UserCog className="h-5 w-5 text-primary" />Usuários por Perfil</CardTitle>
+                <CardDescription>{stats.totalUsers} usuários cadastrados</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <HorizontalBarChart data={usersByRole} dataKey="count" nameKey="name" height={300} />
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                Nenhum usuário cadastrado no sistema.
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

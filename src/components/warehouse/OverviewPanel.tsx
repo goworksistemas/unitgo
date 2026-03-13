@@ -21,7 +21,7 @@ export function OverviewPanel({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs sm:text-sm">Pendentes</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
+            <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl">{pendingCount}</div>
@@ -32,7 +32,7 @@ export function OverviewPanel({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs sm:text-sm">Para Separar</CardTitle>
-            <Package className="h-4 w-4 text-blue-600" />
+            <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl">{approvedCount}</div>
@@ -43,7 +43,7 @@ export function OverviewPanel({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs sm:text-sm">Aguardando</CardTitle>
-            <PackageCheck className="h-4 w-4 text-purple-600" />
+            <PackageCheck className="h-4 w-4 text-purple-600 dark:text-purple-400" />
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl">{awaitingPickupCount}</div>
@@ -54,7 +54,7 @@ export function OverviewPanel({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs sm:text-sm">Em Rota</CardTitle>
-            <Truck className="h-4 w-4 text-orange-600" />
+            <Truck className="h-4 w-4 text-orange-600 dark:text-orange-400" />
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl">{outForDeliveryCount}</div>
@@ -65,7 +65,7 @@ export function OverviewPanel({
         <Card className="col-span-2 sm:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs sm:text-sm">Estoque Baixo</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
           </CardHeader>
           <CardContent>
             <div className="text-xl sm:text-2xl">{lowStockItems.length}</div>

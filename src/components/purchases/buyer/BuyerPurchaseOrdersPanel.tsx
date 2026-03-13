@@ -11,7 +11,7 @@ import { ptBR } from 'date-fns/locale';
 import type { PurchaseOrderStatus } from '@/types/purchases';
 
 const STATUS_CONFIG: Record<PurchaseOrderStatus, { label: string; className: string }> = {
-  created: { label: 'Criado', className: 'bg-gray-100 text-gray-700 border-gray-300' },
+  created: { label: 'Criado', className: 'bg-muted text-muted-foreground border-border' },
   awaiting_nf: { label: 'Aguardando NF', className: 'bg-amber-50 text-amber-700 border-amber-300' },
   nf_issued: { label: 'NF Emitida', className: 'bg-blue-50 text-blue-700 border-blue-300' },
   in_transit: { label: 'Em Trânsito', className: 'bg-purple-50 text-purple-700 border-purple-300' },

@@ -229,17 +229,19 @@ export function ControllerDashboard() {
         <div className="bg-muted/30 p-4 md:p-5 -mx-4 -mb-4 md:-mx-6 md:-mb-6 mt-0">
           {isPurchasesWithSubTabs ? (
             <Tabs value={activeItem || 'manager-requests'} onValueChange={(v) => setActiveSection('purchases', v as 'manager-requests' | 'approval-history')}>
-              <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0">
+              <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0 w-full justify-start">
                 <TabsTrigger
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
                   value="manager-requests"
                 >
+                  <ClipboardList className="h-4 w-4 shrink-0" />
                   Solicitações da Área
                 </TabsTrigger>
                 <TabsTrigger
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
                   value="approval-history"
                 >
+                  <History className="h-4 w-4 shrink-0" />
                   Histórico Aprovações
                 </TabsTrigger>
               </TabsList>

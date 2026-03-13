@@ -5,7 +5,7 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Search, Filter, Plus, History } from 'lucide-react';
+import { Search, Filter, Plus, Boxes, ScrollText } from 'lucide-react';
 import { ItemCard } from '../shared/ItemCard';
 import { ItemDetailDialog } from '../dialogs/ItemDetailDialog';
 import { AddToUnitDialog } from '../dialogs/AddToUnitDialog';
@@ -88,18 +88,19 @@ export function ItemSearchPanel({ title = 'Buscar Itens', description }: ItemSea
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="estoque" className="w-full">
-            <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0">
+            <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0 w-full justify-start">
               <TabsTrigger
                 value="estoque"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
               >
+                <Boxes className="h-4 w-4 shrink-0" />
                 Estoque
               </TabsTrigger>
               <TabsTrigger
                 value="historico"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium flex items-center gap-1.5"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
               >
-                <History className="h-3.5 w-3.5" />
+                <ScrollText className="h-4 w-4 shrink-0" />
                 Histórico
               </TabsTrigger>
             </TabsList>
@@ -108,7 +109,7 @@ export function ItemSearchPanel({ title = 'Buscar Itens', description }: ItemSea
               {/* Search and Filters */}
               <div className="flex gap-3 flex-col sm:flex-row">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     placeholder="Buscar por nome, descrição ou serial..."
                     value={searchTerm}
@@ -137,7 +138,7 @@ export function ItemSearchPanel({ title = 'Buscar Itens', description }: ItemSea
               {/* Results */}
               <div className="space-y-3">
                 {filteredItems.length === 0 ? (
-                  <div className="text-center py-12 text-slate-500">
+                  <div className="text-center py-12 text-muted-foreground">
                     <p>Nenhum material no estoque desta unidade</p>
                     {searchTerm || selectedCategory !== 'all' ? (
                       <p className="text-sm mt-1">Tente ajustar os filtros de busca</p>
@@ -147,7 +148,7 @@ export function ItemSearchPanel({ title = 'Buscar Itens', description }: ItemSea
                   </div>
                 ) : (
                   <>
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-muted-foreground">
                       {filteredItems.length} item(ns) no estoque da unidade
                     </p>
                     {filteredItems.map(item => {

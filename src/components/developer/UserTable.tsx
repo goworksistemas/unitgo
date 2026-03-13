@@ -54,7 +54,7 @@ export function UserTable({
               <TableCell className="text-right">
                 <div className="flex justify-end gap-1">
                   <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)}
-                    title="Editar usuário" className="h-8 w-8 text-slate-500 hover:text-slate-900">
+                    title="Editar usuário" className="h-8 w-8 text-muted-foreground hover:text-foreground">
                     <Edit className="w-4 h-4" />
                   </Button>
                   <Button variant="ghost" size="icon" title="Redefinir senha"

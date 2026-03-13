@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Separator } from '../ui/separator';
-import { Armchair, Plus, Trash2, MoreHorizontal, Clock, History } from 'lucide-react';
+import { Armchair, Plus, Trash2, MoreHorizontal, Clock, History, Palette, ScrollText } from 'lucide-react';
 import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
 
 type RemovalRequestWithOrigin = FurnitureRemovalRequest & { originUnitId?: string };
@@ -66,17 +66,19 @@ export function FurniturePanel({
   return (
     <div className="space-y-4">
       <Tabs defaultValue={pendingToDesigner.length > 0 ? 'designer' : 'moveis'} className="w-full">
-        <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 w-full justify-start gap-0">
+        <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0 w-full justify-start">
           <TabsTrigger
             value="moveis"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
           >
+            <Armchair className="h-4 w-4 shrink-0" />
             Móveis da Unidade
           </TabsTrigger>
           <TabsTrigger
             value="designer"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium flex items-center gap-1.5"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
           >
+            <Palette className="h-4 w-4 shrink-0" />
             Solicitações ao Designer
             {pendingToDesigner.length > 0 && (
               <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-yellow-300 bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
@@ -86,9 +88,9 @@ export function FurniturePanel({
           </TabsTrigger>
           <TabsTrigger
             value="historico"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium flex items-center gap-1.5"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
           >
-            <History className="h-3.5 w-3.5" />
+            <ScrollText className="h-4 w-4 shrink-0" />
             Histórico
           </TabsTrigger>
         </TabsList>

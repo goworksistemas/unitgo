@@ -254,7 +254,7 @@ export function SelectItemForStockDialog({
                 placeholder="Digite a quantidade"
               />
               {warehouseStock && (
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Novo total: {warehouseStock.quantity + parseInt(quantity || '0')}
                 </p>
               )}

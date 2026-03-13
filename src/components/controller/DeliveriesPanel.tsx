@@ -1,7 +1,7 @@
 import type { Unit, DeliveryBatch, DeliveryConfirmation, Request, FurnitureRequestToDesigner, Item, User } from '@/types';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Package, Scan } from 'lucide-react';
+import { Package, Scan, Clock, CheckCircle } from 'lucide-react';
 import { PendingDeliveriesTab } from './PendingDeliveriesTab';
 import { CompletedDeliveriesTab } from './CompletedDeliveriesTab';
 
@@ -80,17 +80,19 @@ export function DeliveriesPanel({
         </div>
       ) : (
         <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 w-full justify-start">
+          <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0 w-full justify-start">
             <TabsTrigger
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
               value="pending"
             >
+              <Clock className="h-4 w-4 shrink-0" />
               Aguardando ({allPendingConfirmation.length + pendingFurnitureDeliveries.length})
             </TabsTrigger>
             <TabsTrigger
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
               value="completed"
             >
+              <CheckCircle className="h-4 w-4 shrink-0" />
               Confirmados ({completedBatches.length + completedFurniture.length})
             </TabsTrigger>
           </TabsList>

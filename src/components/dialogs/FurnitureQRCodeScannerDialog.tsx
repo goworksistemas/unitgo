@@ -66,7 +66,7 @@ export function FurnitureQRCodeScannerDialog({ request, open, onClose }: Furnitu
             </AlertDescription>
           </Alert>
 
-          <div className="flex justify-center py-4">
+          <div className="flex justify-center items-center w-full py-4">
             <DeliveryQRCode code={qrCodeValue} size={220} />
           </div>
 

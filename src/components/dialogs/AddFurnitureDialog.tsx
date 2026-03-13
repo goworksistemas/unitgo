@@ -551,14 +551,14 @@ export function AddFurnitureDialog({ open, onOpenChange }: AddFurnitureDialogPro
                   disabled={isLoading}
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <Camera className="w-8 h-8 text-slate-400" />
+                    <Camera className="w-8 h-8 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">Tirar Foto</span>
                   </div>
                 </Button>
                 
                 <label className="cursor-pointer">
                   <div className="h-32 border-2 border-dashed rounded-md hover:bg-muted transition-colors flex flex-col items-center justify-center gap-2">
-                    <Package className="w-8 h-8 text-slate-400" />
+                    <Package className="w-8 h-8 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">Fazer Upload</span>
                   </div>
                   <input 

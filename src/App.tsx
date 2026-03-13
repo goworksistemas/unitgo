@@ -20,11 +20,13 @@ import { useInactivityLogout } from './hooks/useInactivityLogout';
 import { toast } from 'sonner';
 import type { UserRole } from './types';
 
+const THEME_STORAGE_KEY = 'gowork_theme';
+
 export const ThemeContext = React.createContext<{
   theme: 'light' | 'dark';
   toggleTheme: () => void;
 }>({
-  theme: 'light',
+  theme: 'dark',
   toggleTheme: () => {},
 });
 
@@ -158,12 +160,19 @@ function AppContent() {
 }
 
 export default function App() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY) as 'light' | 'dark' | null;
+    return stored === 'light' || stored === 'dark' ? stored : 'dark';
+  });
 
   useEffect(() => {
-    // Sempre inicia em light mode
-    document.documentElement.classList.remove('dark');
-  }, []);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
 
   useEffect(() => {
     // CRITICAL: Capture hash before React Router processes it
@@ -174,15 +183,7 @@ export default function App() {
   }, []);
 
   const toggleTheme = () => {
-    setTheme(prev => {
-      const newTheme = prev === 'light' ? 'dark' : 'light';
-      if (newTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      return newTheme;
-    });
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
   return (

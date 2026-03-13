@@ -17,7 +17,7 @@ export function OverviewPanel({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm">Transferências Pendentes</CardTitle>
-          <Clock className="h-4 w-4 text-yellow-600" />
+          <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl">{pendingCount}</div>
@@ -28,7 +28,7 @@ export function OverviewPanel({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm">Aprovadas</CardTitle>
-          <CheckCircle className="h-4 w-4 text-green-600" />
+          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl">{approvedCount}</div>
@@ -39,7 +39,7 @@ export function OverviewPanel({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm">Concluídas</CardTitle>
-          <Armchair className="h-4 w-4 text-blue-600" />
+          <Armchair className="h-4 w-4 text-blue-600 dark:text-blue-400" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl">{completedCount}</div>

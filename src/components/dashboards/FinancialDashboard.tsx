@@ -128,18 +128,19 @@ export function FinancialDashboard() {
     default:
       return (
         <Tabs defaultValue="resumo" className="w-full">
-          <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0">
+          <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0 w-full justify-start">
             <TabsTrigger
               value="resumo"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
             >
+              <BarChart3 className="h-4 w-4 shrink-0" />
               Visão Executiva
             </TabsTrigger>
             <TabsTrigger
               value="historico"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium flex items-center gap-1.5"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
             >
-              <ScrollText className="h-3.5 w-3.5" />
+              <ScrollText className="h-4 w-4 shrink-0" />
               Histórico
             </TabsTrigger>
           </TabsList>
@@ -335,7 +336,7 @@ function OverviewSection({ contracts, costCenters, purchaseRequests = [], purcha
           <CardContent>
             {criticalContracts.length === 0 && expiringContracts.length === 0 ? (
               <div className="py-8 text-center">
-                <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                <CheckCircle2 className="h-8 w-8 text-green-500 dark:text-green-400 mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">Nenhum alerta no momento</p>
               </div>
             ) : (
@@ -518,7 +519,7 @@ function ContractsSection({ contracts, costCenters }: SectionProps) {
                       </div>
                       <div>
                         <span className="text-xs text-muted-foreground block">Saldo</span>
-                        <span className={`font-medium ${c.saldo <= 0 ? 'text-red-600' : ''}`}>
+                        <span className={`font-medium ${c.saldo <= 0 ? 'text-red-600 dark:text-red-400' : ''}`}>
                           {fmt(c.saldo)}
                         </span>
                       </div>
@@ -686,7 +687,7 @@ function CostCentersSection({ contracts, costCenters }: SectionProps) {
                   </div>
                   <div>
                     <span className="text-xs text-muted-foreground block">Saldo</span>
-                    <span className={`font-semibold ${cc.totalSaldo <= 0 ? 'text-red-600' : ''}`}>
+                    <span className={`font-semibold ${cc.totalSaldo <= 0 ? 'text-red-600 dark:text-red-400' : ''}`}>
                       {fmtCompact(cc.totalSaldo)}
                     </span>
                   </div>
@@ -749,7 +750,7 @@ function AlertsSection({ contracts, costCenters }: SectionProps) {
       {totalAlerts === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
-            <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-3" />
+            <CheckCircle2 className="h-12 w-12 text-green-500 dark:text-green-400 mx-auto mb-3" />
             <p className="text-lg font-medium">Tudo em ordem!</p>
             <p className="text-sm text-muted-foreground mt-1">
               Nenhum contrato requer atenção no momento
