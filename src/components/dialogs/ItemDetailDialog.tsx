@@ -30,9 +30,11 @@ interface ItemDetailDialogProps {
   stock: UnitStock | undefined;
   open: boolean;
   onClose: () => void;
+  /** Força exibição das ações de controller (usado no painel de materiais) */
+  showControllerActions?: boolean;
 }
 
-export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialogProps) {
+export function ItemDetailDialog({ item, stock, open, onClose, showControllerActions = false }: ItemDetailDialogProps) {
   const { currentUser, currentUnit, getCategoryById, addMovement, addLoan, updateStock } = useApp();
   const [actionType, setActionType] = useState<'none' | 'consume' | 'add' | 'remove' | 'loanToUser'>('none');
   const [quantity, setQuantity] = useState(1);
@@ -46,7 +48,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
   const isBelowMinimum = stock && stock.quantity < stock.minimumQuantity;
   const isOutOfStock = stock && stock.quantity === 0;
 
-  const isController = currentUser?.role === 'controller' || currentUser?.role === 'admin';
+  const isController = showControllerActions || ['controller', 'admin', 'warehouse', 'developer'].includes((currentUser?.role || '').toLowerCase());
 
   // Filter users from current unit for loan assignment
   const unitUsers = users.filter(u => 
@@ -331,16 +333,16 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
           )}
 
           {/* Actions */}
-          {(stock || actionType === 'add') && (
+          {(stock || actionType === 'add' || isController) && (
             <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4">
               <h3 className="text-foreground text-sm sm:text-base">
                 {actionType === 'add' ? 'Adicionar ao Estoque' : 'Ações Disponíveis'}
               </h3>
 
-              {actionType === 'none' && stock && (
+              {actionType === 'none' && (stock || isController) && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {/* Executor Actions */}
-                  {currentUser?.role === 'executor' && stock.quantity > 0 && (
+                  {currentUser?.role === 'executor' && stock && stock.quantity > 0 && (
                     <Button
                       onClick={() => setActionType('consume')}
                       variant="outline"
@@ -362,33 +364,37 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
                         <Plus className="w-5 h-5" />
                         <span className="text-center">Adicionar Estoque</span>
                       </Button>
-                      <Button
-                        onClick={() => setActionType('remove')}
-                        variant="outline"
-                        className="h-auto py-4 flex-col gap-2"
-                      >
-                        <Minus className="w-5 h-5" />
-                        <span className="text-center">Remover Estoque</span>
-                      </Button>
-                      {!item.isConsumable && stock.quantity > 0 && (
-                        <Button
-                          onClick={() => setActionType('loanToUser')}
-                          variant="outline"
-                          className="h-auto py-4 flex-col gap-2"
-                        >
-                          <UserPlus className="w-5 h-5" />
-                          <span className="text-center">Emprestar p/ Usuário</span>
-                        </Button>
-                      )}
-                      {stock.quantity > 0 && (
-                        <Button
-                          onClick={() => setActionType('consume')}
-                          variant="outline"
-                          className="h-auto py-4 flex-col gap-2"
-                        >
-                          <ShoppingCart className="w-5 h-5" />
-                          <span className="text-center">Registrar Consumo</span>
-                        </Button>
+                      {stock && (
+                        <>
+                          <Button
+                            onClick={() => setActionType('remove')}
+                            variant="outline"
+                            className="h-auto py-4 flex-col gap-2"
+                          >
+                            <Minus className="w-5 h-5" />
+                            <span className="text-center">Remover Estoque</span>
+                          </Button>
+                          {!item.isConsumable && stock.quantity > 0 && (
+                            <Button
+                              onClick={() => setActionType('loanToUser')}
+                              variant="outline"
+                              className="h-auto py-4 flex-col gap-2"
+                            >
+                              <UserPlus className="w-5 h-5" />
+                              <span className="text-center">Emprestar p/ Usuário</span>
+                            </Button>
+                          )}
+                          {stock.quantity > 0 && (
+                            <Button
+                              onClick={() => setActionType('consume')}
+                              variant="outline"
+                              className="h-auto py-4 flex-col gap-2"
+                            >
+                              <ShoppingCart className="w-5 h-5" />
+                              <span className="text-center">Registrar Consumo</span>
+                            </Button>
+                          )}
+                        </>
                       )}
                     </>
                   )}
@@ -654,22 +660,11 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
             </div>
           )}
 
-          {(!stock || isOutOfStock) && actionType !== 'add' && (
+          {(!stock || isOutOfStock) && actionType !== 'add' && !isController && (
             <div className="space-y-3 text-center py-4">
               <p className="text-xs sm:text-sm text-muted-foreground">
                 {stock ? 'Item sem estoque disponível nesta unidade' : 'Item ainda não possui estoque nesta unidade'}
               </p>
-              {isController && (
-                <Button
-                  onClick={() => setActionType('add')}
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Adicionar ao estoque
-                </Button>
-              )}
             </div>
           )}
         </div>

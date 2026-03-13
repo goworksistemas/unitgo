@@ -23,20 +23,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 interface UnitMovementsHistoryProps {
   /** Se true, filtra apenas móveis. Se false, filtra apenas materiais (não móveis). Se undefined, mostra todos. */
   filterByFurniture?: boolean;
+  /** ID da unidade. Se não informado, usa currentUnit do contexto. */
+  unitId?: string;
 }
 
 export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
-  const { filterByFurniture } = props;
-  const { currentUnit, movements, getItemById, getUnitById, getUserById, items } = useApp();
+  const { filterByFurniture, unitId } = props;
+  const { currentUnit, units, movements, getItemById, getUnitById, getUserById } = useApp();
+  const effectiveUnitId = unitId ?? currentUnit?.id;
+  const effectiveUnit = effectiveUnitId ? (units.find(u => u.id === effectiveUnitId) ?? currentUnit) : currentUnit;
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
 
   const filteredMovements = useMemo(() => {
-    if (!currentUnit) return [];
+    if (!effectiveUnitId) return [];
 
     // Get all movements related to this unit
-    let unitMovements = movements.filter(m => m.unitId === currentUnit.id);
+    let unitMovements = movements.filter(m => m.unitId === effectiveUnitId);
 
     // Filter by item type (furniture vs materials)
     if (filterByFurniture !== undefined) {
@@ -94,7 +98,7 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
       const tsB = (b as any).timestamp ?? (b as any).createdAt;
       return new Date(tsB).getTime() - new Date(tsA).getTime();
     });
-  }, [currentUnit, movements, searchTerm, typeFilter, dateFilter, getItemById, getUserById, filterByFurniture]);
+  }, [effectiveUnitId, movements, searchTerm, typeFilter, dateFilter, getItemById, getUserById, filterByFurniture]);
 
   const getMovementTypeInfo = (type: string) => {
     switch (type) {
@@ -170,7 +174,7 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
   const totalConsumptions = filteredMovements.filter(m => m.type === 'consumption').length;
   const totalLoans = filteredMovements.filter(m => m.type === 'loan').length;
 
-  if (!currentUnit) {
+  if (!effectiveUnitId) {
     return (
       <div className="text-center py-12 text-slate-500">
         <p className="text-sm">Selecione uma unidade para visualizar</p>

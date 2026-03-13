@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
-import { Package, History, CheckCircle2, Scan, ShoppingCart, FileText } from 'lucide-react';
+import { Package, History, CheckCircle2, Scan, ShoppingCart, FileText, ScrollText } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { RequesterConfirmationPanel } from '../panels/RequesterConfirmationPanel';
 import { QRCodeScanner } from '../shared/QRCodeScanner';
 import { ReceiptConfirmationWithCode } from '../panels/ReceiptConfirmationWithCode';
@@ -10,6 +11,7 @@ import { RequestsPanel } from '../requester/RequestsPanel';
 import { NewRequestDialog } from '../requester/NewRequestDialog';
 import { CreatePurchaseRequestPanel } from '../purchases/requester/CreatePurchaseRequestPanel';
 import { MyPurchaseRequestsPanel } from '../purchases/requester/MyPurchaseRequestsPanel';
+import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
 import { toast } from 'sonner';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
@@ -68,13 +70,37 @@ export function RequesterDashboard() {
       </div>
 
       {activeSection === 'stock' && (
-        <StockPanel
-          availableItems={availableItems}
-          requests={requests}
-          getWarehouseUnitId={getWarehouseUnitId}
-          getStockForItem={getStockForItem}
-          onRequestItem={(itemId) => { setIsNewRequestOpen(true); }}
-        />
+        <div className="space-y-4">
+          <Tabs defaultValue="estoque" className="w-full">
+            <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0">
+              <TabsTrigger
+                value="estoque"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+              >
+                Estoque Disponível
+              </TabsTrigger>
+              <TabsTrigger
+                value="historico"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium flex items-center gap-1.5"
+              >
+                <ScrollText className="h-3.5 w-3.5" />
+                Histórico
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="estoque" className="mt-4">
+              <StockPanel
+                availableItems={availableItems}
+                requests={requests}
+                getWarehouseUnitId={getWarehouseUnitId}
+                getStockForItem={getStockForItem}
+                onRequestItem={(itemId) => { setIsNewRequestOpen(true); }}
+              />
+            </TabsContent>
+            <TabsContent value="historico" className="mt-4">
+              <UnitMovementsHistory filterByFurniture={false} />
+            </TabsContent>
+          </Tabs>
+        </div>
       )}
       {activeSection === 'requests' && (
         <RequestsPanel myRequests={myRequests} getItemById={getItemById} onNewRequest={() => setIsNewRequestOpen(true)} />

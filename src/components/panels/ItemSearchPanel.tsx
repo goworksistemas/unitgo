@@ -26,8 +26,14 @@ export function ItemSearchPanel({ title = 'Buscar Itens', description }: ItemSea
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   const filteredItems = useMemo(() => {
+    if (!currentUnit) return [];
     // Excluir móveis da busca geral (móveis têm seção própria para designers)
-    let result = items.filter(item => item.active && !item.isFurniture);
+    // Mostrar APENAS itens que têm estoque na unidade atual (não o catálogo completo)
+    let result = items.filter(item => {
+      if (!item.active || item.isFurniture) return false;
+      const stock = getStockForItem(item.id, currentUnit.id);
+      return stock !== undefined;
+    });
 
     // Filter by search term
     if (searchTerm) {
@@ -46,7 +52,7 @@ export function ItemSearchPanel({ title = 'Buscar Itens', description }: ItemSea
     }
 
     return result;
-  }, [items, searchTerm, selectedCategory]);
+  }, [items, searchTerm, selectedCategory, currentUnit, getStockForItem]);
 
   const handleItemClick = (item: Item) => {
     setSelectedItem(item);
@@ -132,15 +138,17 @@ export function ItemSearchPanel({ title = 'Buscar Itens', description }: ItemSea
               <div className="space-y-3">
                 {filteredItems.length === 0 ? (
                   <div className="text-center py-12 text-slate-500">
-                    <p>Nenhum item encontrado</p>
-                    {searchTerm && (
+                    <p>Nenhum material no estoque desta unidade</p>
+                    {searchTerm || selectedCategory !== 'all' ? (
                       <p className="text-sm mt-1">Tente ajustar os filtros de busca</p>
+                    ) : (
+                      <p className="text-sm mt-1">Use o botão Adicionar para registrar entrada de materiais</p>
                     )}
                   </div>
                 ) : (
                   <>
                     <p className="text-sm text-slate-600">
-                      {filteredItems.length} item(ns) encontrado(s)
+                      {filteredItems.length} item(ns) no estoque da unidade
                     </p>
                     {filteredItems.map(item => {
                       const stock = getStockForItem(item.id, currentUnit.id);
@@ -173,6 +181,7 @@ export function ItemSearchPanel({ title = 'Buscar Itens', description }: ItemSea
           stock={getStockForItem(selectedItem.id, currentUnit.id)}
           open={!!selectedItem}
           onClose={handleCloseDialog}
+          showControllerActions
         />
       )}
     </>

@@ -8,6 +8,7 @@ import {
   BarChart3,
   Bell,
   Download,
+  ScrollText,
   TrendingUp,
   TrendingDown,
   AlertTriangle,
@@ -52,6 +53,8 @@ import { format, differenceInDays, isAfter, isBefore, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Contract, CostCenter } from '@/types/purchases';
 import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -124,12 +127,34 @@ export function FinancialDashboard() {
     case 'overview':
     default:
       return (
-        <OverviewSection
-          contracts={contracts}
-          costCenters={costCenters}
-          purchaseRequests={purchaseRequests}
-          purchaseOrders={purchaseOrders}
-        />
+        <Tabs defaultValue="resumo" className="w-full">
+          <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0">
+            <TabsTrigger
+              value="resumo"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+            >
+              Visão Executiva
+            </TabsTrigger>
+            <TabsTrigger
+              value="historico"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium flex items-center gap-1.5"
+            >
+              <ScrollText className="h-3.5 w-3.5" />
+              Histórico
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="resumo" className="mt-4">
+            <OverviewSection
+              contracts={contracts}
+              costCenters={costCenters}
+              purchaseRequests={purchaseRequests}
+              purchaseOrders={purchaseOrders}
+            />
+          </TabsContent>
+          <TabsContent value="historico" className="mt-4">
+            <UnitMovementsHistory />
+          </TabsContent>
+        </Tabs>
       );
   }
 }

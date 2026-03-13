@@ -12,7 +12,8 @@ import {
   Building2, 
   Clock, 
   QrCode,
-  LayoutDashboard
+  LayoutDashboard,
+  ScrollText
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -32,6 +33,8 @@ import { DeliveryTimeline } from '../delivery/DeliveryTimeline';
 import { MarkDeliveryPendingDialog } from '../dialogs/MarkDeliveryPendingDialog';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
 
 interface DriverDashboardProps {
   isDeveloperMode?: boolean;
@@ -43,6 +46,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
     requests, 
     getItemById, 
     getUnitById, 
+    getWarehouseUnitId,
     updateRequest,
     furnitureRemovalRequests,
     updateFurnitureRemovalRequest,
@@ -65,7 +69,8 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
     return !hasSeenTutorial;
   });
 
-  // Tudo junto em Visão Geral
+  const warehouseUnitId = getWarehouseUnitId();
+
   const navigationSections: NavigationSection[] = useMemo(() => [
     { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
   ], []);
@@ -300,7 +305,24 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
     switch (activeSection) {
       case 'overview':
         return (
-          <div className="space-y-4 md:space-y-6">
+          <Tabs defaultValue="resumo" className="w-full">
+            <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0">
+              <TabsTrigger
+                value="resumo"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+              >
+                Resumo
+              </TabsTrigger>
+              <TabsTrigger
+                value="historico"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium flex items-center gap-1.5"
+              >
+                <ScrollText className="h-3.5 w-3.5" />
+                Histórico
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="resumo" className="mt-4">
+              <div className="space-y-4 md:space-y-6">
             <div className="grid grid-cols-2 gap-2 md:gap-3">
               <Card className="border-2 border-primary">
                 <CardContent className="p-3 md:p-4">
@@ -437,7 +459,18 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                 </div>
               )}
             </div>
-          </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="historico" className="mt-4">
+              {warehouseUnitId ? (
+                <UnitMovementsHistory unitId={warehouseUnitId} />
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p className="text-sm">Almoxarifado não configurado</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         );
       default:
         return null;

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
-import { LayoutDashboard, ClipboardList, Truck, Scan } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Truck, Scan, ScrollText } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { toast } from 'sonner';
 import { AddFurnitureDialog } from '../dialogs/AddFurnitureDialog';
 import { SelectItemForStockDialog } from '../dialogs/SelectItemForStockDialog';
@@ -16,6 +17,7 @@ import { LogisticsPanel } from '../warehouse/LogisticsPanel';
 import { StockPanel } from '../warehouse/StockPanel';
 import { ConfirmActionDialog } from '../warehouse/ConfirmActionDialog';
 import { FinalizeBatchDialog } from '../warehouse/FinalizeBatchDialog';
+import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
 
 interface WarehouseDashboardProps {
   isDeveloperMode?: boolean;
@@ -81,12 +83,34 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
     switch (activeSection) {
       case 'overview':
         return (
-          <div className="space-y-6">
-            <OverviewPanel pendingCount={pendingRequests.length} approvedCount={approvedRequests.length}
-              awaitingPickupCount={awaitingPickupRequests.length} outForDeliveryCount={outForDeliveryRequests.length}
-              lowStockItems={lowStockItems} getItemById={getItemById} />
-            <StockPanel onAddFurniture={() => setShowAddFurniture(true)} onAddStock={() => setShowAddStock(true)} />
-          </div>
+          <Tabs defaultValue="resumo" className="w-full">
+            <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0">
+              <TabsTrigger
+                value="resumo"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+              >
+                Resumo e Estoque
+              </TabsTrigger>
+              <TabsTrigger
+                value="historico"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium flex items-center gap-1.5"
+              >
+                <ScrollText className="h-3.5 w-3.5" />
+                Histórico
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="resumo" className="mt-4">
+              <div className="space-y-6">
+                <OverviewPanel pendingCount={pendingRequests.length} approvedCount={approvedRequests.length}
+                  awaitingPickupCount={awaitingPickupRequests.length} outForDeliveryCount={outForDeliveryRequests.length}
+                  lowStockItems={lowStockItems} getItemById={getItemById} />
+                <StockPanel onAddFurniture={() => setShowAddFurniture(true)} onAddStock={() => setShowAddStock(true)} />
+              </div>
+            </TabsContent>
+            <TabsContent value="historico" className="mt-4">
+              <UnitMovementsHistory unitId={actions.warehouseUnitId} />
+            </TabsContent>
+          </Tabs>
         );
       case 'requests':
         return (
