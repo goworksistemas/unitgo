@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useRef } from 'react';
-import { Users, Building2, Package, List, TestTube2, Eye, LayoutDashboard, Settings2, ArrowLeft, ShoppingCart, ClipboardList, FileText, Landmark, Truck, BarChart3 } from 'lucide-react';
+import { Users, Building2, Package, List, TestTube2, Eye, LayoutDashboard, Settings2, ShoppingCart, ClipboardList, FileText, Landmark, Truck, BarChart3 } from 'lucide-react';
 import { ProductsListPanel } from '../panels/ProductsListPanel';
 import { TestFlowPanel } from '../panels/TestFlowPanel';
 import { AdminResetPasswordDialog } from '../auth/AdminResetPasswordDialog';
@@ -27,7 +27,7 @@ import { QuotationManagementPanel } from '../purchases/buyer/QuotationManagement
 import { BuyerPurchaseOrdersPanel } from '../purchases/buyer/BuyerPurchaseOrdersPanel';
 import { CreatePurchaseRequestPanel } from '../purchases/requester/CreatePurchaseRequestPanel';
 import { MyPurchaseRequestsPanel } from '../purchases/requester/MyPurchaseRequestsPanel';
-import { Button } from '../ui/button';
+import { ViewModePopup } from '../shared/ViewModePopup';
 
 const roleLabels: Record<string, string> = {
   controller: 'Controlador',
@@ -99,33 +99,12 @@ export function DeveloperDashboard() {
   if (state.viewAsRole) {
     return (
       <div className="relative">
-        <div className="sticky top-0 z-40 bg-gradient-to-r from-primary to-secondary text-white shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Eye className="h-5 w-5" />
-                <div>
-                  <p className="text-sm font-medium">Modo de Visualização Ativo</p>
-                  <p className="text-xs opacity-90">
-                    Visualizando como: <span className="font-bold">{roleLabels[state.viewAsRole] || state.viewAsRole}</span>
-                  </p>
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="gap-2 bg-white dark:bg-card text-primary hover:bg-white/90 dark:hover:bg-card/90"
-                onClick={() => state.setViewAsRole(null)}
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Voltar ao Dev
-              </Button>
-            </div>
-          </div>
-        </div>
-        <div className="mt-4">
-          <ViewAsPanel viewAsRole={state.viewAsRole} setViewAsRole={state.setViewAsRole} />
-        </div>
+        <ViewModePopup
+          label={`Visualizando como ${roleLabels[state.viewAsRole] || state.viewAsRole}`}
+          backLabel="Voltar ao Dev"
+          onClose={() => state.setViewAsRole(null)}
+        />
+        <ViewAsPanel viewAsRole={state.viewAsRole} setViewAsRole={state.setViewAsRole} />
       </div>
     );
   }

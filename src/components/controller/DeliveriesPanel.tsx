@@ -1,5 +1,4 @@
 import type { Unit, DeliveryBatch, DeliveryConfirmation, Request, FurnitureRequestToDesigner, Item, User } from '@/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Package, Scan } from 'lucide-react';
@@ -53,70 +52,71 @@ export function DeliveriesPanel({
     completedFurniture.length === 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-base md:text-lg flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Meus Recebimentos
-            </CardTitle>
-            <CardDescription className="text-xs md:text-sm">
-              Entregas recebidas em {currentUnit.name}
-            </CardDescription>
-          </div>
-          <Button onClick={onShowQRScanner} className="bg-primary hover:bg-primary/90 relative" size="sm">
-            {pendingControllerConfirmation.length > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              </span>
-            )}
-            <Scan className="h-4 w-4 mr-2" />
-            Escanear QR Code
-          </Button>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          <Package className="h-3.5 w-3.5 text-muted-foreground" />
+          <h3 className="text-xs font-medium text-foreground">Meus Recebimentos</h3>
+          <span className="text-xs text-muted-foreground">
+            {allPendingConfirmation.length + pendingFurnitureDeliveries.length + completedBatches.length + completedFurniture.length} itens
+          </span>
         </div>
-      </CardHeader>
-      <CardContent>
-        {hasNoDeliveries ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Package className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p>Nenhum lote recebido nesta unidade</p>
-          </div>
-        ) : (
-          <Tabs defaultValue="pending" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="pending">
-                Aguardando Confirmação ({allPendingConfirmation.length + pendingFurnitureDeliveries.length})
-              </TabsTrigger>
-              <TabsTrigger value="completed">
-                Confirmados ({completedBatches.length + completedFurniture.length})
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="pending" className="space-y-3 mt-4">
-              <PendingDeliveriesTab
-                pendingBatches={allPendingConfirmation}
-                pendingFurnitureDeliveries={pendingFurnitureDeliveries}
-                requests={requests}
-                furnitureRequestsToDesigner={furnitureRequestsToDesigner}
-                getItemById={getItemById}
-                getUserById={getUserById}
-                onSelectBatchForReceipt={onSelectBatchForReceipt}
-              />
-            </TabsContent>
-            <TabsContent value="completed" className="space-y-3 mt-4">
-              <CompletedDeliveriesTab
-                completedBatches={completedBatches}
-                completedFurniture={completedFurniture}
-                requests={requests}
-                getItemById={getItemById}
-                getUserById={getUserById}
-                getConfirmationsForBatch={getConfirmationsForBatch}
-              />
-            </TabsContent>
-          </Tabs>
-        )}
-      </CardContent>
-    </Card>
+        <Button onClick={onShowQRScanner} size="sm" className="relative">
+          {pendingControllerConfirmation.length > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            </span>
+          )}
+          <Scan className="h-3.5 w-3.5 mr-1.5" />
+          Escanear QR
+        </Button>
+      </div>
+
+      {hasNoDeliveries ? (
+        <div className="flex flex-col items-center justify-center py-10 gap-2 text-center">
+          <Package className="h-6 w-6 text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground">Nenhum item encontrado</p>
+        </div>
+      ) : (
+        <Tabs defaultValue="pending" className="w-full">
+          <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 w-full justify-start">
+            <TabsTrigger
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+              value="pending"
+            >
+              Aguardando ({allPendingConfirmation.length + pendingFurnitureDeliveries.length})
+            </TabsTrigger>
+            <TabsTrigger
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+              value="completed"
+            >
+              Confirmados ({completedBatches.length + completedFurniture.length})
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="pending" className="space-y-3 mt-4">
+            <PendingDeliveriesTab
+              pendingBatches={allPendingConfirmation}
+              pendingFurnitureDeliveries={pendingFurnitureDeliveries}
+              requests={requests}
+              furnitureRequestsToDesigner={furnitureRequestsToDesigner}
+              getItemById={getItemById}
+              getUserById={getUserById}
+              onSelectBatchForReceipt={onSelectBatchForReceipt}
+            />
+          </TabsContent>
+          <TabsContent value="completed" className="space-y-3 mt-4">
+            <CompletedDeliveriesTab
+              completedBatches={completedBatches}
+              completedFurniture={completedFurniture}
+              requests={requests}
+              getItemById={getItemById}
+              getUserById={getUserById}
+              getConfirmationsForBatch={getConfirmationsForBatch}
+            />
+          </TabsContent>
+        </Tabs>
+      )}
+    </div>
   );
 }

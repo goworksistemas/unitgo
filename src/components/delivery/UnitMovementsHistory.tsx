@@ -20,8 +20,14 @@ import {
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 
-export function UnitMovementsHistory() {
-  const { currentUnit, movements, getItemById, getUnitById, getUserById } = useApp();
+interface UnitMovementsHistoryProps {
+  /** Se true, filtra apenas móveis. Se false, filtra apenas materiais (não móveis). Se undefined, mostra todos. */
+  filterByFurniture?: boolean;
+}
+
+export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
+  const { filterByFurniture } = props;
+  const { currentUnit, movements, getItemById, getUnitById, getUserById, items } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
@@ -31,6 +37,15 @@ export function UnitMovementsHistory() {
 
     // Get all movements related to this unit
     let unitMovements = movements.filter(m => m.unitId === currentUnit.id);
+
+    // Filter by item type (furniture vs materials)
+    if (filterByFurniture !== undefined) {
+      unitMovements = unitMovements.filter(m => {
+        const item = getItemById(m.itemId);
+        const isFurniture = !!item?.isFurniture;
+        return filterByFurniture ? isFurniture : !isFurniture;
+      });
+    }
 
     // Apply search filter
     if (searchTerm) {
@@ -55,28 +70,31 @@ export function UnitMovementsHistory() {
     if (dateFilter !== 'all') {
       const now = new Date();
       const filterDate = new Date();
-      
+      const getTs = (m: any) => m.timestamp ?? m.createdAt ?? '';
+
       switch (dateFilter) {
         case 'today':
           filterDate.setHours(0, 0, 0, 0);
-          unitMovements = unitMovements.filter(m => new Date(m.timestamp) >= filterDate);
+          unitMovements = unitMovements.filter(m => new Date(getTs(m)) >= filterDate);
           break;
         case 'week':
           filterDate.setDate(now.getDate() - 7);
-          unitMovements = unitMovements.filter(m => new Date(m.timestamp) >= filterDate);
+          unitMovements = unitMovements.filter(m => new Date(getTs(m)) >= filterDate);
           break;
         case 'month':
           filterDate.setMonth(now.getMonth() - 1);
-          unitMovements = unitMovements.filter(m => new Date(m.timestamp) >= filterDate);
+          unitMovements = unitMovements.filter(m => new Date(getTs(m)) >= filterDate);
           break;
       }
     }
 
     // Sort by most recent first
-    return unitMovements.sort((a, b) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
-  }, [currentUnit, movements, searchTerm, typeFilter, dateFilter, getItemById, getUserById]);
+    return unitMovements.sort((a, b) => {
+      const tsA = (a as any).timestamp ?? (a as any).createdAt;
+      const tsB = (b as any).timestamp ?? (b as any).createdAt;
+      return new Date(tsB).getTime() - new Date(tsA).getTime();
+    });
+  }, [currentUnit, movements, searchTerm, typeFilter, dateFilter, getItemById, getUserById, filterByFurniture]);
 
   const getMovementTypeInfo = (type: string) => {
     switch (type) {
@@ -326,7 +344,7 @@ export function UnitMovementsHistory() {
                               </span>
                             </div>
                             <p className="text-xs text-slate-500">
-                              {formatDate(movement.createdAt instanceof Date ? movement.createdAt.toISOString() : String(movement.createdAt))}
+                              {formatDate(String((movement as any).timestamp ?? (movement as any).createdAt ?? ''))}
                             </p>
                           </div>
                           <Badge variant="secondary" className="flex-shrink-0">

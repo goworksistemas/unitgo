@@ -1,8 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { usePurchases } from '@/contexts/PurchaseContext';
+import { api } from '@/utils/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Package } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Package, Database } from 'lucide-react';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { PurchaseOrderStatus } from '@/types/purchases';
@@ -17,12 +20,27 @@ const STATUS_CONFIG: Record<PurchaseOrderStatus, { label: string; className: str
 };
 
 export function BuyerPurchaseOrdersPanel() {
-  const { purchaseOrders, quotations, suppliers, isLoadingPurchases } = usePurchases();
+  const { purchaseOrders, quotations, suppliers, isLoadingPurchases, refreshPurchases } = usePurchases();
+  const [isSeeding, setIsSeeding] = useState(false);
 
   const sortedOrders = useMemo(
     () => [...purchaseOrders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     [purchaseOrders]
   );
+
+  const handleSeedPurchases = async () => {
+    setIsSeeding(true);
+    try {
+      await api.purchases.seed();
+      toast.success('Dados de compras populados com sucesso');
+      await refreshPurchases();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : (e as { details?: { error?: string } })?.details?.error ?? 'Erro ao popular dados';
+      toast.error(msg);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const getSupplierForOrder = (order: typeof purchaseOrders[0]) => {
     const quotation = quotations.find((q) => q.id === order.cotacaoId);
@@ -53,6 +71,10 @@ export function BuyerPurchaseOrdersPanel() {
             <p className="text-xs text-muted-foreground mt-1">
               Pedidos são criados a partir de cotações aprovadas
             </p>
+            <Button variant="outline" className="mt-4" onClick={handleSeedPurchases} disabled={isSeeding}>
+              <Database className="h-4 w-4 mr-2" />
+              {isSeeding ? 'Populando...' : 'Popular dados de demonstração'}
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">

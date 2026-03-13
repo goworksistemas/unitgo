@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { usePurchases } from '@/contexts/PurchaseContext';
+import { api } from '@/utils/api';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,10 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Send, Eye, FileText } from 'lucide-react';
+import { Plus, Send, Eye, FileText, Database } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { toast } from 'sonner';
 import type { QuotationStatus } from '@/types/purchases';
 
 const STATUS_LABELS: Record<QuotationStatus, { label: string; className: string }> = {
@@ -27,9 +28,10 @@ export function QuotationManagementPanel() {
   const { getUserById } = useApp();
   const {
     quotations, suppliers, currencies, purchaseRequests,
-    createQuotation, isLoadingPurchases,
+    createQuotation, isLoadingPurchases, refreshPurchases,
   } = usePurchases();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const [form, setForm] = useState({
     solicitacaoId: '',
     fornecedorId: '',
@@ -52,6 +54,20 @@ export function QuotationManagementPanel() {
 
   const getSupplierName = (id: string) => suppliers.find((s) => s.id === id)?.razaoSocial ?? '—';
   const getRequestCode = (id: string) => purchaseRequests.find((r) => r.id === id)?.id.slice(0, 8) ?? '—';
+
+  const handleSeedPurchases = async () => {
+    setIsSeeding(true);
+    try {
+      await api.purchases.seed();
+      toast.success('Dados de compras populados com sucesso');
+      await refreshPurchases();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : (e as { details?: { error?: string } })?.details?.error ?? 'Erro ao popular dados';
+      toast.error(msg);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const handleCreate = async () => {
     if (!form.solicitacaoId || !form.fornecedorId) {
@@ -112,11 +128,17 @@ export function QuotationManagementPanel() {
           <div className="text-center py-12">
             <FileText className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
             <p className="text-sm text-muted-foreground">Nenhuma cotação criada</p>
-            {approvedRequests.length > 0 && (
-              <Button variant="outline" className="mt-3" onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" /> Criar primeira cotação
+            <div className="flex flex-col sm:flex-row gap-2 justify-center mt-3">
+              {approvedRequests.length > 0 && (
+                <Button variant="outline" onClick={() => setCreateDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" /> Criar primeira cotação
+                </Button>
+              )}
+              <Button variant="outline" onClick={handleSeedPurchases} disabled={isSeeding}>
+                <Database className="h-4 w-4 mr-2" />
+                {isSeeding ? 'Populando...' : 'Popular dados de demonstração'}
               </Button>
-            )}
+            </div>
           </div>
         ) : (
           <div className="space-y-3">

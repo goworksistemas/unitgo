@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { usePurchases } from '@/contexts/PurchaseContext';
+import { api } from '@/utils/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,11 +9,13 @@ import { PurchaseRequestStatusBadge } from '../shared/PurchaseRequestStatusBadge
 import { ApprovalTimeline } from '../shared/ApprovalTimeline';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { FileText, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { FileText, Plus, ChevronDown, ChevronUp, Database } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function ApprovedPurchaseRequestsPanel() {
   const { getUserById, getUnitById } = useApp();
-  const { purchaseRequests, isLoadingPurchases } = usePurchases();
+  const { purchaseRequests, isLoadingPurchases, refreshPurchases } = usePurchases();
+  const [isSeeding, setIsSeeding] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const approvedRequests = useMemo(
@@ -27,6 +30,20 @@ export function ApprovedPurchaseRequestsPanel() {
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
     [purchaseRequests]
   );
+
+  const handleSeedPurchases = async () => {
+    setIsSeeding(true);
+    try {
+      await api.purchases.seed();
+      toast.success('Dados de compras populados com sucesso');
+      await refreshPurchases();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : (e as { details?: { error?: string } })?.details?.error ?? 'Erro ao popular dados';
+      toast.error(msg);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   if (isLoadingPurchases) {
     return <Card><CardContent className="py-12 text-center text-muted-foreground">Carregando...</CardContent></Card>;
@@ -55,6 +72,15 @@ export function ApprovedPurchaseRequestsPanel() {
             <p className="text-xs text-muted-foreground mt-1">
               As solicitações aparecerão aqui após aprovação da diretoria
             </p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={handleSeedPurchases}
+              disabled={isSeeding}
+            >
+              <Database className="h-4 w-4 mr-2" />
+              {isSeeding ? 'Populando...' : 'Popular dados de demonstração'}
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">

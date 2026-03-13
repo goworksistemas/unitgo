@@ -2829,6 +2829,149 @@ app.get("/make-server-46b247d8/developer/check-furniture-table", async (c) => {
 
 // ========== MÓDULO DE COMPRAS ==========
 
+// --- Seed Purchase Mock Data ---
+app.post("/make-server-46b247d8/seed-purchases", async (c) => {
+  try {
+    // Verificar se tabelas existem
+    const { error: tableCheck } = await supabase.from('supplier_categories').select('id').limit(1);
+    if (tableCheck?.code === '42P01') {
+      return c.json({ error: "Tabelas de compras não existem. Execute SQL-MODULO-COMPRAS.sql no Supabase SQL Editor primeiro." }, 400);
+    }
+
+    // Obter primeiro usuário e unidade para solicitante_id e unidade_id
+    const { data: firstUser } = await supabase.from('users').select('id').limit(1).single();
+    const { data: firstUnit } = await supabase.from('units').select('id').limit(1).single();
+    const solicitanteId = firstUser?.id ?? '00000000-0000-0000-0000-000000000001';
+    const unidadeId = firstUnit?.id ?? '00000000-0000-0000-0000-000000000002';
+    const responsavelId = firstUser?.id ?? solicitanteId;
+
+    // 1. Categorias de fornecedor
+    const cats = [
+      { nome: 'Material de Escritório', descricao: 'Fornecedores de papelaria', status: 'active' },
+      { nome: 'Tecnologia', descricao: 'Equipamentos de TI', status: 'active' },
+      { nome: 'Limpeza', descricao: 'Produtos de limpeza', status: 'active' },
+    ];
+    const catIds = [];
+    for (const cat of cats) {
+      const { data: existing } = await supabase.from('supplier_categories').select('id').eq('nome', cat.nome).limit(1).maybeSingle();
+      if (existing) {
+        catIds.push(existing.id);
+      } else {
+        const { data: inserted } = await supabase.from('supplier_categories').insert(cat).select('id').single();
+        catIds.push(inserted?.id);
+      }
+    }
+    const [catMatId, catTechId, catLimpezaId] = catIds;
+    if (!catMatId) return c.json({ error: "Erro ao criar categorias" }, 500);
+
+    // 2. Fornecedores
+    const suppliersToInsert = [
+      { razao_social: 'Papelaria Central Ltda', cnpj: '12.345.678/0001-90', contato: 'João Silva', email: 'vendas@papelaria.com', telefone: '(11) 3333-4444', categoria_id: catMatId, endereco: 'Rua das Flores, 100', dados_bancarios: {}, status: 'active' },
+      { razao_social: 'Tech Solutions S.A.', cnpj: '98.765.432/0001-10', contato: 'Maria Santos', email: 'compras@tech.com', telefone: '(11) 5555-6666', categoria_id: catTechId, endereco: 'Av. Paulista, 1000', dados_bancarios: {}, status: 'active' },
+      { razao_social: 'Limpeza Pro Ltda', cnpj: '11.222.333/0001-44', contato: 'Pedro Oliveira', email: 'contato@limpeza.com', telefone: '(11) 7777-8888', categoria_id: catLimpezaId, endereco: 'Rua Augusta, 500', status: 'active' },
+    ];
+    for (const s of suppliersToInsert) {
+      const { data: existing } = await supabase.from('suppliers').select('id').eq('cnpj', s.cnpj).maybeSingle();
+      if (!existing) {
+        await supabase.from('suppliers').insert(s);
+      }
+    }
+    let supplier1Id = (await supabase.from('suppliers').select('id').eq('cnpj', '12.345.678/0001-90').maybeSingle()).data?.id;
+    if (!supplier1Id) {
+      const { data: anySupplier } = await supabase.from('suppliers').select('id').limit(1).maybeSingle();
+      supplier1Id = anySupplier?.id;
+    }
+    if (!supplier1Id) return c.json({ error: "Nenhum fornecedor encontrado. Verifique se os fornecedores foram inseridos." }, 500);
+
+    // 3. Centros de custo
+    const costCenters = [
+      { codigo: 'CC-001', nome: 'Administrativo', descricao: 'Despesas administrativas', status: 'active' },
+      { codigo: 'CC-002', nome: 'Operações', descricao: 'Operações gerais', status: 'active' },
+      { codigo: 'CC-003', nome: 'TI', descricao: 'Tecnologia', status: 'active' },
+    ];
+    for (const cc of costCenters) {
+      const { data: existing } = await supabase.from('cost_centers').select('id').eq('codigo', cc.codigo).maybeSingle();
+      if (!existing) await supabase.from('cost_centers').insert(cc);
+    }
+    const { data: cc1 } = await supabase.from('cost_centers').select('id').eq('codigo', 'CC-001').single();
+    const { data: cc3 } = await supabase.from('cost_centers').select('id').eq('codigo', 'CC-003').single();
+    if (!cc1?.id || !cc3?.id) return c.json({ error: "Erro ao criar centros de custo" }, 500);
+
+    // 4. Contrato
+    let contratoId = (await supabase.from('contracts').select('id').eq('numero', 'CT-2025-001').maybeSingle()).data?.id;
+    if (!contratoId) {
+      const { data: newContrato } = await supabase.from('contracts').insert({
+        numero: 'CT-2025-001', nome: 'Contrato Material Escritório', cnpj_cliente: '12.345.678/0001-99', valor_total: 80000, valor_consumido: 0, data_inicio: '2025-01-01', data_fim: '2025-12-31', centro_custo_id: cc1.id, status: 'active',
+      }).select('id').single();
+      contratoId = newContrato?.id;
+    }
+
+    // 5. Solicitações de compra (evitar duplicatas)
+    const existingPr = (await supabase.from('purchase_requests').select('id').ilike('justificativa', '%material de escritório%').limit(1).maybeSingle()).data;
+    let pr1Id = existingPr?.id;
+    if (!pr1Id) {
+      const itens1 = [{ id: 'item-1', solicitacao_id: '', descricao: 'Papel A4 75g 500 folhas', quantidade: 50, unidade_medida: 'resma', observacao: 'Branco' }, { id: 'item-2', solicitacao_id: '', descricao: 'Caneta esferográfica azul', quantidade: 100, unidade_medida: 'un', observacao: '' }];
+      const aprovacoes1 = [{ id: 'aprov-1', user_id: 'm1', user_name: 'Gerente', role: 'manager', action: 'approved', timestamp: new Date().toISOString() }, { id: 'aprov-2', user_id: 'd1', user_name: 'Diretor', role: 'director', action: 'approved', timestamp: new Date().toISOString() }];
+      const { data: pr1 } = await supabase.from('purchase_requests').insert({
+        solicitante_id: solicitanteId, unidade_id: unidadeId, centro_custo_id: cc1.id, cnpj_solicitante: '12.345.678/0001-99', contrato_id: contratoId,
+        justificativa: 'Necessário repor material de escritório para a equipe. Papel A4 e canetas em falta.',
+        status: 'in_quotation', itens: itens1, aprovacoes: aprovacoes1,
+      }).select('id').single();
+      pr1Id = pr1?.id;
+    }
+    if (!pr1Id) return c.json({ error: "Erro ao criar solicitação" }, 500);
+
+    const existingPr2 = (await supabase.from('purchase_requests').select('id').ilike('justificativa', '%notebooks%').limit(1).maybeSingle()).data;
+    if (!existingPr2) {
+      const itens2 = [{ id: 'item-3', solicitacao_id: '', descricao: 'Notebook 15 polegadas 16GB RAM', quantidade: 5, unidade_medida: 'un', observacao: 'SSD 512GB' }];
+      const aprovacoes2 = [{ id: 'aprov-3', user_id: 'm1', user_name: 'Gerente TI', role: 'manager', action: 'approved', timestamp: new Date().toISOString() }];
+      await supabase.from('purchase_requests').insert({
+        solicitante_id: solicitanteId, unidade_id: unidadeId, centro_custo_id: cc3.id,
+        justificativa: 'Aquisição de notebooks para novos colaboradores do time de TI. Total de 5 unidades.',
+        status: 'pending_director', itens: itens2, aprovacoes: aprovacoes2,
+      });
+    }
+
+    // 6. Cotação (evitar duplicata)
+    let cotacaoId = (await supabase.from('quotations').select('id').eq('solicitacao_id', pr1Id).eq('status', 'approved').limit(1).maybeSingle()).data?.id;
+    if (!cotacaoId) {
+      const { data: moedaBrl } = await supabase.from('currencies').select('id').eq('codigo', 'BRL').limit(1).maybeSingle();
+      const qItens = [{ id: 'qitem-1', cotacao_id: '', item_solicitacao_id: 'item-1', descricao: 'Papel A4 75g 500 folhas', quantidade: 50, unidade_medida: 'resma', preco_unitario: 18.90, valor_total: 945 }, { id: 'qitem-2', cotacao_id: '', item_solicitacao_id: 'item-2', descricao: 'Caneta esferográfica azul', quantidade: 100, unidade_medida: 'un', preco_unitario: 1.50, valor_total: 150 }];
+      const { data: cotacao } = await supabase.from('quotations').insert({
+        solicitacao_id: pr1Id, fornecedor_id: supplier1Id, moeda_id: moedaBrl?.id, forma_pagamento: 'Boleto', condicoes_pagamento: '30 dias', prazo_entrega: 5,
+        status: 'approved', itens: qItens, enviado_em: new Date().toISOString(), respondido_em: new Date().toISOString(),
+      }).select('id').single();
+      cotacaoId = cotacao?.id;
+    }
+    if (!cotacaoId) return c.json({ error: "Erro ao criar cotação" }, 500);
+
+    // 7. Pedido de compra (evitar duplicata)
+    let pedidoId = (await supabase.from('purchase_orders').select('id').eq('numero_omie', 'PC-2025-001').maybeSingle()).data?.id;
+    if (!pedidoId) {
+      const { data: pedido } = await supabase.from('purchase_orders').insert({
+        cotacao_id: cotacaoId, numero_omie: 'PC-2025-001', valor_total: 1095, status: 'fully_received',
+        notas_fiscais: [{ numero: '123456', valor: 1095, data_emissao: '2025-02-25', chave_acesso: '35250212345678000199550010001234561123456789' }], observacoes: 'Entrega realizada',
+      }).select('id').single();
+      pedidoId = pedido?.id;
+    }
+    if (!pedidoId) return c.json({ error: "Erro ao criar pedido" }, 500);
+
+    // 8. Recebimentos (evitar duplicata)
+    const existingRec = (await supabase.from('receivings').select('id').eq('pedido_id', pedidoId).limit(1).maybeSingle()).data;
+    if (!existingRec) {
+      await supabase.from('receivings').insert([
+        { pedido_id: pedidoId, item_id: 'item-1', quantidade_esperada: 50, quantidade_recebida: 50, responsavel_id: responsavelId, local_entrega: 'Recepção', status: 'fully_received' },
+        { pedido_id: pedidoId, item_id: 'item-2', quantidade_esperada: 100, quantidade_recebida: 100, responsavel_id: responsavelId, local_entrega: 'Recepção', status: 'fully_received' },
+      ]);
+    }
+
+    return c.json({ message: "Dados de compras populados com sucesso", solicitanteId, unidadeId }, 201);
+  } catch (error) {
+    console.error("Error seeding purchases:", error);
+    return c.json({ error: "Failed to seed purchases", details: String(error) }, 500);
+  }
+});
+
 // --- Supplier Categories ---
 app.get("/make-server-46b247d8/supplier-categories", async (c) => {
   try {

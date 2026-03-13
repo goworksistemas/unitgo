@@ -154,31 +154,29 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
     onClose();
   };
 
-  const handleAddStock = () => {
-    if (!currentUser || !currentUnit || !stock) return;
+  const handleAddStock = async () => {
+    if (!currentUser || !currentUnit) return;
 
     if (quantity <= 0) {
       toast.error('Quantidade deve ser maior que zero');
       return;
     }
 
-    // Add movement
-    addMovement({
-      type: 'entry',
-      itemId: item.id,
-      unitId: currentUnit.id,
-      userId: currentUser.id,
-      quantity,
-      notes: documentNumber ? `Doc: ${documentNumber}` : 'Entrada de estoque',
-    });
-
-    // Update stock
-    updateStock(stock.id, stock.quantity + quantity);
-
-    toast.success(`${quantity} ${item.unitOfMeasure} de "${item.name}" adicionado(s) ao estoque`);
-    
-    resetForm();
-    onClose();
+    try {
+      await addMovement({
+        type: 'entry',
+        itemId: item.id,
+        unitId: currentUnit.id,
+        userId: currentUser.id,
+        quantity,
+        notes: documentNumber ? `Doc: ${documentNumber}` : (observations || 'Entrada de estoque'),
+      });
+      toast.success(`${quantity} ${item.unitOfMeasure} de "${item.name}" adicionado(s) ao estoque`);
+      resetForm();
+      onClose();
+    } catch (err) {
+      toast.error('Erro ao adicionar ao estoque');
+    }
   };
 
   const handleRemoveStock = () => {
@@ -333,11 +331,13 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
           )}
 
           {/* Actions */}
-          {stock && (
+          {(stock || actionType === 'add') && (
             <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4">
-              <h3 className="text-foreground text-sm sm:text-base">Ações Disponíveis</h3>
+              <h3 className="text-foreground text-sm sm:text-base">
+                {actionType === 'add' ? 'Adicionar ao Estoque' : 'Ações Disponíveis'}
+              </h3>
 
-              {actionType === 'none' && (
+              {actionType === 'none' && stock && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {/* Executor Actions */}
                   {currentUser?.role === 'executor' && stock.quantity > 0 && (
@@ -439,7 +439,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
                     </div>
 
                     <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded text-sm text-green-800 dark:text-green-300">
-                      Novo saldo: {stock.quantity + quantity} {item.unitOfMeasure}
+                      Novo saldo: {(stock?.quantity ?? 0) + quantity} {item.unitOfMeasure}
                     </div>
 
                     <Button onClick={handleAddStock} className="w-full">
@@ -593,10 +593,10 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
                   </div>
 
                   <div className="space-y-3">
-                    {currentUser?.role === 'executor' && (
+                    {(currentUser?.role === 'executor' || currentUser?.role === 'controller') && (
                       <div>
                         <Label htmlFor="service-order">
-                          Ordem de Serviço / Tipo de Serviço <span className="text-red-500">*</span>
+                          Ordem de Serviço / Motivo do uso <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="service-order"
@@ -606,7 +606,7 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
                           required
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          Informe a OS ou descrição do serviço que está realizando
+                          Informe a OS ou descrição do serviço/motivo do consumo
                         </p>
                       </div>
                     )}
@@ -654,9 +654,22 @@ export function ItemDetailDialog({ item, stock, open, onClose }: ItemDetailDialo
             </div>
           )}
 
-          {isOutOfStock && (
-            <div className="text-center py-4 text-muted-foreground">
-              <p className="text-xs sm:text-sm">Item sem estoque disponível nesta unidade</p>
+          {(!stock || isOutOfStock) && actionType !== 'add' && (
+            <div className="space-y-3 text-center py-4">
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                {stock ? 'Item sem estoque disponível nesta unidade' : 'Item ainda não possui estoque nesta unidade'}
+              </p>
+              {isController && (
+                <Button
+                  onClick={() => setActionType('add')}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar ao estoque
+                </Button>
+              )}
             </div>
           )}
         </div>

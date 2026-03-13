@@ -33,6 +33,7 @@ import { DailyCodeDisplay } from '@/components/shared/DailyCodeDisplay';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useApp } from '@/contexts/AppContext';
 import { ThemeContext } from '@/App';
+import { cn } from '@/lib/utils';
 import type { Unit, User } from '@/types';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -88,9 +89,9 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="offcanvas">
-      <SidebarHeader className="p-4">
-        <GoworkLogo variant="full" size="medium" />
+    <Sidebar collapsible="icon" className="border-r border-border bg-background transition-all duration-200">
+      <SidebarHeader className="px-4 py-4 flex items-center gap-2">
+        <GoworkLogo variant="full" size="medium" className="group-data-[collapsible=icon]:hidden" />
       </SidebarHeader>
 
       <SidebarSeparator />
@@ -98,7 +99,7 @@ export function AppSidebar() {
       {/* Unit selector */}
       {shouldShowUnitSelector && (
         <>
-          <div className="px-4 py-3">
+          <div className="px-4 py-4">
             <label className="text-xs font-medium text-sidebar-foreground/70 flex items-center gap-2 mb-2">
               <Building2 className="h-3 w-3" />
               Unidade
@@ -124,7 +125,7 @@ export function AppSidebar() {
 
       {!shouldShowUnitSelector && availableUnits.length === 1 && currentUnit && (
         <>
-          <div className="px-4 py-3 flex items-center gap-2 text-sidebar-foreground/70">
+          <div className="px-4 py-4 flex items-center gap-2 text-sidebar-foreground/70">
             <Building2 className="h-3 w-3" />
             <span className="text-xs font-medium">{currentUnit.name}</span>
           </div>
@@ -134,7 +135,7 @@ export function AppSidebar() {
 
       {/* Navigation */}
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup className="p-3">
           <SidebarGroupLabel>Navegação</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -150,19 +151,23 @@ export function AppSidebar() {
                         <SidebarMenuButton
                           onClick={() => toggleSection(section.id)}
                           isActive={isActive}
-                          className="w-full"
+                          className={cn(
+                            "w-full",
+                            isActive && "bg-purple-50 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100 [&>svg]:text-purple-600 dark:[&>svg]:text-purple-400",
+                            "text-foreground hover:bg-muted"
+                          )}
                         >
-                          <section.icon className="h-4 w-4" />
-                          <span>{section.label}</span>
+                          <section.icon className="h-4 w-4 shrink-0" />
+                          <span className="group-data-[collapsible=icon]:hidden">{section.label}</span>
                           {section.badge != null && (
-                            <span className="ml-auto bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
+                            <span className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 text-xs px-2 py-0.5 rounded-full group-data-[collapsible=icon]:hidden">
                               {section.badge}
                             </span>
                           )}
                           {isExpanded ? (
-                            <ChevronDown className="ml-auto h-4 w-4" />
+                            <ChevronDown className="ml-auto h-4 w-4 group-data-[collapsible=icon]:hidden" />
                           ) : (
-                            <ChevronRight className="ml-auto h-4 w-4" />
+                            <ChevronRight className="ml-auto h-4 w-4 group-data-[collapsible=icon]:hidden" />
                           )}
                         </SidebarMenuButton>
                         {isExpanded && (
@@ -174,11 +179,15 @@ export function AppSidebar() {
                                   <SidebarMenuSubButton
                                     isActive={isItemActive}
                                     onClick={() => setActiveSection(section.id, item.id)}
+                                    className={cn(
+                                      isItemActive && "bg-purple-50 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100 [&>svg]:text-purple-600 dark:[&>svg]:text-purple-400",
+                                      "text-foreground hover:bg-muted"
+                                    )}
                                   >
-                                    {item.icon && <item.icon className="h-4 w-4" />}
+                                    {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
                                     <span>{item.label}</span>
                                     {item.badge != null && (
-                                      <span className="ml-auto bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
+                                      <span className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 text-xs px-2 py-0.5 rounded-full">
                                         {item.badge}
                                       </span>
                                     )}
@@ -193,11 +202,15 @@ export function AppSidebar() {
                       <SidebarMenuButton
                         onClick={() => setActiveSection(section.id)}
                         isActive={isActive}
+                        className={cn(
+                          isActive && "bg-purple-50 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100 [&>svg]:text-purple-600 dark:[&>svg]:text-purple-400",
+                          "text-foreground hover:bg-muted"
+                        )}
                       >
-                        <section.icon className="h-4 w-4" />
-                        <span>{section.label}</span>
+                        <section.icon className="h-4 w-4 shrink-0" />
+                        <span className="group-data-[collapsible=icon]:hidden">{section.label}</span>
                         {section.badge != null && (
-                          <span className="ml-auto bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
+                          <span className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 text-xs px-2 py-0.5 rounded-full group-data-[collapsible=icon]:hidden">
                             {section.badge}
                           </span>
                         )}

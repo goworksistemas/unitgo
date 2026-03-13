@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Package, Calendar, AlertCircle, CheckCircle, User, Plus } from 'lucide-react';
+import { Separator } from '../ui/separator';
+import { Package, AlertCircle, CheckCircle, User, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { SimpleLoanDialog } from '../dialogs/SimpleLoanDialog';
+import { cn } from '@/lib/utils';
 
 export function UnitLoansPanel() {
   const { currentUnit, currentUser, loans, getItemById, getUserById, updateLoan } = useApp();
@@ -66,108 +67,77 @@ export function UnitLoansPanel() {
     const diffDays = Math.ceil((expectedReturn.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
     if (loan.status === 'overdue' || diffDays < 0) {
-      return { label: 'Atrasado', color: 'bg-red-100 text-red-800', icon: AlertCircle };
+      return { label: 'Atrasado', status: 'overdue' as const, icon: AlertCircle };
     } else if (diffDays === 0) {
-      return { label: 'Vence hoje', color: 'bg-orange-100 text-orange-800', icon: AlertCircle };
+      return { label: 'Vence hoje', status: 'pending' as const, icon: AlertCircle };
     } else if (diffDays <= 2) {
-      return { label: `Vence em ${diffDays}d`, color: 'bg-yellow-100 text-yellow-800', icon: Calendar };
+      return { label: `Vence em ${diffDays}d`, status: 'pending' as const, icon: AlertCircle };
     } else {
-      return { label: 'No prazo', color: 'bg-green-100 text-green-800', icon: CheckCircle };
+      return { label: 'No prazo', status: 'ok' as const, icon: CheckCircle };
     }
   };
 
   if (activeLoans.length === 0) {
     return (
       <>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <CardTitle>Empréstimos Ativos da Unidade</CardTitle>
-              <CardDescription>Nenhum empréstimo ativo no momento</CardDescription>
-            </div>
-            <Button 
-              onClick={() => setLoanDialogOpen(true)}
-              size="sm"
-              variant="default"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Emprestar
-            </Button>
-          </div>
-        </CardHeader>
-      </Card>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          <Package className="h-3.5 w-3.5 text-muted-foreground" />
+          <h3 className="text-xs font-medium text-foreground">Empréstimos Ativos</h3>
+          <span className="text-xs text-muted-foreground">0 itens</span>
+        </div>
+        <Button onClick={() => setLoanDialogOpen(true)} size="sm">
+          <Plus className="h-3.5 w-3.5 mr-1.5" />
+          Emprestar
+        </Button>
+      </div>
+      <div className="flex flex-col items-center justify-center py-10 gap-2 text-center">
+        <Package className="h-6 w-6 text-muted-foreground/30" />
+        <p className="text-sm text-muted-foreground">Nenhum item encontrado</p>
+      </div>
 
-      {/* Histórico de Devoluções */}
       {sortedReturnedLoans.length > 0 && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Histórico de Devoluções</CardTitle>
-            <CardDescription>{sortedReturnedLoans.length} item(ns) devolvido(s)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {sortedReturnedLoans.map(loan => {
+        <>
+          <Separator className="my-4" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-xs font-medium text-foreground">Histórico de Devoluções</h3>
+              <span className="text-xs text-muted-foreground">{sortedReturnedLoans.length} itens</span>
+            </div>
+          </div>
+          <div className="rounded-md border border-border overflow-hidden divide-y divide-border bg-background">
+            {sortedReturnedLoans.map(loan => {
                 const item = getItemById(loan.itemId);
                 const responsible = getUserById(loan.responsibleUserId);
 
                 if (!item) return null;
                 
                 const responsibleDisplayName = responsible?.name || 'Não informado';
+                const detail = `${new Date(loan.withdrawalDate).toLocaleDateString('pt-BR')} → ${loan.returnDate ? new Date(loan.returnDate).toLocaleDateString('pt-BR') : 'N/A'} • ${responsibleDisplayName}`;
 
                 return (
                   <div
                     key={loan.id}
-                    className="border border-border rounded-lg p-3 md:p-4 bg-muted/50 opacity-80"
+                    className="flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors border-l-[3px] border-emerald-500"
                   >
-                    <div className="flex gap-3 flex-1 min-w-0">
-                      <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Package className="w-6 h-6 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-foreground mb-1 text-sm sm:text-base">{item.name}</h4>
-                        
-                        <div className="flex items-center gap-2 mb-2 text-xs sm:text-sm text-muted-foreground">
-                          <User className="w-4 h-4 flex-shrink-0" />
-                          <span className="truncate">{responsibleDisplayName}</span>
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          <Badge className="bg-green-100 text-green-800 text-xs">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Devolvido
-                          </Badge>
-                          {loan.quantity && loan.quantity > 1 && (
-                            <Badge variant="outline" className="text-xs">
-                              Qtd: {loan.quantity}
-                            </Badge>
-                          )}
-                          {loan.serialNumber && (
-                            <Badge variant="outline" className="text-xs">
-                              Serial: {loan.serialNumber}
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                          <p>
-                            Retirada: {new Date(loan.withdrawalDate).toLocaleDateString('pt-BR')} às {new Date(loan.withdrawalDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                          <p>
-                            Devolução: {loan.returnDate ? new Date(loan.returnDate).toLocaleDateString('pt-BR') : 'N/A'} {loan.returnDate ? `às ${new Date(loan.returnDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : ''}
-                          </p>
-                          {loan.observations && (
-                            <p className="text-xs italic text-muted-foreground break-words">{loan.observations}</p>
-                          )}
-                        </div>
-                      </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{detail}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {loan.quantity && loan.quantity > 1 && (
+                        <span className="text-xs text-muted-foreground">×{loan.quantity}</span>
+                      )}
+                      <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Devolvido
+                      </Badge>
                     </div>
                   </div>
                 );
               })}
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </>
       )}
 
       {/* Dialog de Empréstimo Simples */}
@@ -192,175 +162,110 @@ export function UnitLoansPanel() {
 
   return (
     <>
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <CardTitle>Empréstimos Ativos da Unidade</CardTitle>
-            <CardDescription>{activeLoans.length} item(ns) emprestado(s) em {currentUnit.name}</CardDescription>
-          </div>
-          <Button 
-            onClick={() => setLoanDialogOpen(true)}
-            size="sm"
-            variant="default"
+    <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center gap-1.5">
+        <Package className="h-3.5 w-3.5 text-muted-foreground" />
+        <h3 className="text-xs font-medium text-foreground">Empréstimos Ativos</h3>
+        <span className="text-xs text-muted-foreground">{activeLoans.length} itens</span>
+      </div>
+      <Button onClick={() => setLoanDialogOpen(true)} size="sm">
+        <Plus className="h-3.5 w-3.5 mr-1.5" />
+        Emprestar
+      </Button>
+    </div>
+
+    <div className="rounded-md border border-border overflow-hidden divide-y divide-border bg-background">
+      {sortedLoans.map(loan => {
+        const item = getItemById(loan.itemId);
+        const responsible = getUserById(loan.responsibleUserId);
+        const status = getLoanStatus(loan);
+        const StatusIcon = status.icon;
+
+        if (!item) return null;
+        const responsibleDisplayName = responsible?.name || 'Não informado';
+        const detail = `${new Date(loan.withdrawalDate).toLocaleDateString('pt-BR')} → ${new Date(loan.expectedReturnDate).toLocaleDateString('pt-BR')} • ${responsibleDisplayName}`;
+
+        const statusBadgeClass = status.status === 'overdue'
+          ? 'border-red-300 bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300'
+          : status.status === 'pending'
+            ? 'border-yellow-300 bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
+            : 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300';
+
+        return (
+          <div
+            key={loan.id}
+            className={cn(
+              "flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors",
+              status.status === 'overdue' && "border-l-[3px] border-red-500",
+              status.status === 'pending' && "border-l-[3px] border-yellow-400",
+              status.status === 'ok' && "border-l-[3px] border-emerald-500"
+            )}
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Emprestar
-          </Button>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{detail}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {loan.quantity && loan.quantity > 1 && (
+                <span className="text-xs text-muted-foreground">×{loan.quantity}</span>
+              )}
+              <Badge variant="outline" className={cn('flex items-center gap-1', statusBadgeClass)}>
+                <StatusIcon className="w-3 h-3" />
+                {status.label}
+              </Badge>
+              <Button
+                size="sm"
+                onClick={() => handleReturn(loan.id)}
+              >
+                Registrar Devolução
+              </Button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    {sortedReturnedLoans.length > 0 && (
+      <>
+        <Separator className="my-4" />
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-xs font-medium text-foreground">Histórico de Devoluções</h3>
+            <span className="text-xs text-muted-foreground">{sortedReturnedLoans.length} itens</span>
+          </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {sortedLoans.map(loan => {
+        <div className="rounded-md border border-border overflow-hidden divide-y divide-border bg-background">
+          {sortedReturnedLoans.map(loan => {
             const item = getItemById(loan.itemId);
             const responsible = getUserById(loan.responsibleUserId);
-            const status = getLoanStatus(loan);
-            const StatusIcon = status.icon;
 
             if (!item) return null;
-            
-            // Buscar o nome do usuário responsável
             const responsibleDisplayName = responsible?.name || 'Não informado';
+            const detail = `${new Date(loan.withdrawalDate).toLocaleDateString('pt-BR')} → ${loan.returnDate ? new Date(loan.returnDate).toLocaleDateString('pt-BR') : 'N/A'} • ${responsibleDisplayName}`;
 
             return (
               <div
                 key={loan.id}
-                className="border border-border rounded-lg p-3 md:p-4 hover:shadow-md transition-shadow"
+                className="flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors border-l-[3px] border-emerald-500"
               >
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
-                  <div className="flex gap-3 flex-1 min-w-0">
-                    <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Package className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-foreground mb-1 text-sm sm:text-base">{item.name}</h4>
-                      
-                      <div className="flex items-center gap-2 mb-2 text-xs sm:text-sm text-muted-foreground">
-                        <User className="w-4 h-4 flex-shrink-0" />
-                        <span className="truncate">{responsibleDisplayName}</span>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        <Badge className={`${status.color} text-xs`}>
-                          <StatusIcon className="w-3 h-3 mr-1" />
-                          {status.label}
-                        </Badge>
-                        {loan.quantity && loan.quantity > 1 && (
-                          <Badge variant="outline" className="text-xs">
-                            Qtd: {loan.quantity}
-                          </Badge>
-                        )}
-                        {loan.serialNumber && (
-                          <Badge variant="outline" className="text-xs">
-                            Serial: {loan.serialNumber}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                        <p>
-                          Retirada: {new Date(loan.withdrawalDate).toLocaleDateString('pt-BR')} às {new Date(loan.withdrawalDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                        <p>
-                          Devolução prevista: {new Date(loan.expectedReturnDate).toLocaleDateString('pt-BR')}
-                        </p>
-                        {loan.observations && (
-                          <p className="text-xs italic text-muted-foreground break-words">{loan.observations}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="w-full sm:w-auto sm:flex-shrink-0">
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        console.log('🖱️ BOTÃO CLICADO! loan.id =', loan.id);
-                        handleReturn(loan.id);
-                      }}
-                      className="w-full sm:w-auto whitespace-nowrap"
-                    >
-                      Registrar Devolução
-                    </Button>
-                  </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{detail}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {loan.quantity && loan.quantity > 1 && (
+                    <span className="text-xs text-muted-foreground">×{loan.quantity}</span>
+                  )}
+                  <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Devolvido
+                  </Badge>
                 </div>
               </div>
             );
           })}
         </div>
-      </CardContent>
-    </Card>
-
-    {/* Histórico de Devoluções */}
-    {sortedReturnedLoans.length > 0 && (
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Histórico de Devoluções</CardTitle>
-          <CardDescription>{sortedReturnedLoans.length} item(ns) devolvido(s)</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {sortedReturnedLoans.map(loan => {
-              const item = getItemById(loan.itemId);
-              const responsible = getUserById(loan.responsibleUserId);
-
-              if (!item) return null;
-              
-              const responsibleDisplayName = responsible?.name || 'Não informado';
-
-              return (
-                <div
-                  key={loan.id}
-                  className="border border-border rounded-lg p-3 md:p-4 bg-muted/50 opacity-80"
-                >
-                  <div className="flex gap-3 flex-1 min-w-0">
-                    <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Package className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-foreground mb-1 text-sm sm:text-base">{item.name}</h4>
-                      
-                      <div className="flex items-center gap-2 mb-2 text-xs sm:text-sm text-muted-foreground">
-                        <User className="w-4 h-4 flex-shrink-0" />
-                        <span className="truncate">{responsibleDisplayName}</span>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        <Badge className="bg-green-100 text-green-800 text-xs">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Devolvido
-                        </Badge>
-                        {loan.quantity && loan.quantity > 1 && (
-                          <Badge variant="outline" className="text-xs">
-                            Qtd: {loan.quantity}
-                          </Badge>
-                        )}
-                        {loan.serialNumber && (
-                          <Badge variant="outline" className="text-xs">
-                            Serial: {loan.serialNumber}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-                        <p>
-                          Retirada: {new Date(loan.withdrawalDate).toLocaleDateString('pt-BR')} às {new Date(loan.withdrawalDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                        <p>
-                          Devolução: {loan.returnDate ? new Date(loan.returnDate).toLocaleDateString('pt-BR') : 'N/A'} {loan.returnDate ? `às ${new Date(loan.returnDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : ''}
-                        </p>
-                        {loan.observations && (
-                          <p className="text-xs italic text-muted-foreground break-words">{loan.observations}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+      </>
     )}
 
     {/* Dialog de Empréstimo Simples */}

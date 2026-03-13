@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { usePurchases } from '@/contexts/PurchaseContext';
+import { api } from '@/utils/api';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Database } from 'lucide-react';
 import type { Supplier } from '@/types/purchases';
 
 const emptySupplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'> = {
@@ -35,8 +37,9 @@ const emptySupplier: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'> = {
 };
 
 export function SupplierManagementPanel() {
-  const { suppliers, supplierCategories, createSupplier, updateSupplier, isLoadingPurchases } = usePurchases();
+  const { suppliers, supplierCategories, createSupplier, updateSupplier, isLoadingPurchases, refreshPurchases } = usePurchases();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptySupplier);
 
@@ -76,6 +79,20 @@ export function SupplierManagementPanel() {
     setDialogOpen(false);
   };
 
+  const handleSeedPurchases = async () => {
+    setIsSeeding(true);
+    try {
+      await api.purchases.seed();
+      toast.success('Dados de compras populados com sucesso');
+      await refreshPurchases();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : (e as { details?: { error?: string } })?.details?.error ?? 'Erro ao popular dados';
+      toast.error(msg);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
   if (isLoadingPurchases) {
     return (
       <Card>
@@ -99,9 +116,15 @@ export function SupplierManagementPanel() {
       </CardHeader>
       <CardContent>
         {suppliers.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">
-            Nenhum fornecedor cadastrado. Clique em Novo para adicionar.
-          </p>
+          <div className="py-8 text-center space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Nenhum fornecedor cadastrado. Clique em Novo para adicionar.
+            </p>
+            <Button variant="outline" onClick={handleSeedPurchases} disabled={isSeeding}>
+              <Database className="h-4 w-4 mr-2" />
+              {isSeeding ? 'Populando...' : 'Popular dados de demonstração'}
+            </Button>
+          </div>
         ) : (
           <Table>
             <TableHeader>

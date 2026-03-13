@@ -342,6 +342,9 @@ export const api = {
     getAll: () => apiRequest('/receivings'),
     create: (data: any) => apiRequest('/receivings', { method: 'POST', body: JSON.stringify(data) }),
   },
+  purchases: {
+    seed: () => apiRequest('/seed-purchases', { method: 'POST' }),
+  },
 };
 
 // Manter exports separados para compatibilidade com código existente

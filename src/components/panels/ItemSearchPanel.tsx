@@ -2,17 +2,28 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
+import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Search, Filter } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Search, Filter, Plus, History } from 'lucide-react';
 import { ItemCard } from '../shared/ItemCard';
 import { ItemDetailDialog } from '../dialogs/ItemDetailDialog';
+import { AddToUnitDialog } from '../dialogs/AddToUnitDialog';
+import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
 import { Item } from '../../types';
 
-export function ItemSearchPanel() {
+interface ItemSearchPanelProps {
+  title?: string;
+  description?: string;
+}
+
+export function ItemSearchPanel({ title = 'Buscar Itens', description }: ItemSearchPanelProps) {
   const { currentUnit, items, categories, getStockForItem } = useApp();
+  const desc = description ?? (currentUnit ? `Encontre itens disponíveis no estoque de ${currentUnit.name}` : '');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   const filteredItems = useMemo(() => {
     // Excluir móveis da busca geral (móveis têm seção própria para designers)
@@ -59,72 +70,102 @@ export function ItemSearchPanel() {
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle>Buscar Itens</CardTitle>
-          <CardDescription>Encontre itens disponíveis no estoque de {currentUnit.name}</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{desc}</CardDescription>
+          </div>
+          <Button onClick={() => setAddDialogOpen(true)} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar
+          </Button>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {/* Search and Filters */}
-            <div className="flex gap-3 flex-col sm:flex-row">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  placeholder="Buscar por nome, descrição ou serial..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as categorias</SelectItem>
-                  {categories
-                    .filter(cat => cat.name !== 'Móveis')
-                    .map(cat => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <Tabs defaultValue="estoque" className="w-full">
+            <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0">
+              <TabsTrigger
+                value="estoque"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium"
+              >
+                Estoque
+              </TabsTrigger>
+              <TabsTrigger
+                value="historico"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-600 data-[state=active]:text-foreground text-muted-foreground px-3 py-2 text-xs data-[state=active]:font-medium flex items-center gap-1.5"
+              >
+                <History className="h-3.5 w-3.5" />
+                Histórico
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Results */}
-            <div className="space-y-3">
-              {filteredItems.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
-                  <p>Nenhum item encontrado</p>
-                  {searchTerm && (
-                    <p className="text-sm mt-1">Tente ajustar os filtros de busca</p>
-                  )}
+            <TabsContent value="estoque" className="mt-4 space-y-4">
+              {/* Search and Filters */}
+              <div className="flex gap-3 flex-col sm:flex-row">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    placeholder="Buscar por nome, descrição ou serial..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
-              ) : (
-                <>
-                  <p className="text-sm text-slate-600">
-                    {filteredItems.length} item(ns) encontrado(s)
-                  </p>
-                  {filteredItems.map(item => {
-                    const stock = getStockForItem(item.id, currentUnit.id);
-                    return (
-                      <ItemCard
-                        key={item.id}
-                        item={item}
-                        stock={stock}
-                        onClick={() => handleItemClick(item)}
-                      />
-                    );
-                  })}
-                </>
-              )}
-            </div>
-          </div>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-full sm:w-[200px]">
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as categorias</SelectItem>
+                    {categories
+                      .filter(cat => cat.name !== 'Móveis')
+                      .map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Results */}
+              <div className="space-y-3">
+                {filteredItems.length === 0 ? (
+                  <div className="text-center py-12 text-slate-500">
+                    <p>Nenhum item encontrado</p>
+                    {searchTerm && (
+                      <p className="text-sm mt-1">Tente ajustar os filtros de busca</p>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-slate-600">
+                      {filteredItems.length} item(ns) encontrado(s)
+                    </p>
+                    {filteredItems.map(item => {
+                      const stock = getStockForItem(item.id, currentUnit.id);
+                      return (
+                        <ItemCard
+                          key={item.id}
+                          item={item}
+                          stock={stock}
+                          onClick={() => handleItemClick(item)}
+                        />
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="historico" className="mt-4">
+              <UnitMovementsHistory filterByFurniture={false} />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
+
+      <AddToUnitDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
 
       {selectedItem && (
         <ItemDetailDialog
