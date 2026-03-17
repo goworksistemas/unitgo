@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useContext } from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { DialogContainerProvider } from '@/contexts/DialogContainerContext';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -58,6 +59,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
       <SidebarProvider defaultOpen>
         <AppSidebar />
+        <DialogContainerProvider>
         <SidebarInset className="bg-background/80">
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
@@ -84,6 +86,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             {children}
           </main>
         </SidebarInset>
+        </DialogContainerProvider>
       </SidebarProvider>
     </NavigationContext.Provider>
   );

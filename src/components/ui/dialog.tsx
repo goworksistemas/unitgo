@@ -23,7 +23,7 @@ const DialogOverlay = React.forwardRef<
       ref={ref}
       data-slot="dialog-overlay"
       className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50 backdrop-blur-sm",
         className,
       )}
       {...props}
@@ -34,11 +34,11 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { container?: HTMLElement | null }
+>(({ className, children, container, ...props }, ref) => {
   return (
-    <DialogPortal>
-      <DialogOverlay />
+    <DialogPortal container={container ?? undefined}>
+      <DialogOverlay className={container ? '!absolute inset-0' : undefined} />
       <DialogPrimitive.Content
         ref={ref}
         data-slot="dialog-content"

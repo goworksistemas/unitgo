@@ -16,9 +16,9 @@ export function RoleSpecificFields({ userForm, setUserForm, units, idPrefix = ''
   return (
     <>
       {userForm.role === 'controller' && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label>Unidades Adicionais ({userForm.additionalUnitIds.length} selecionadas)</Label>
+            <Label className="text-xs font-medium">Unidades Adicionais ({userForm.additionalUnitIds.length})</Label>
             <div className="flex gap-2">
               <Button
                 type="button"
@@ -41,7 +41,7 @@ export function RoleSpecificFields({ userForm, setUserForm, units, idPrefix = ''
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 border rounded-lg bg-muted max-h-52 overflow-y-auto">
+          <div className="grid grid-cols-3 gap-2 p-2 border rounded-md bg-muted/50">
             {units.filter(u => u.id !== userForm.primaryUnitId).map((unit) => (
               <div key={unit.id} className="flex items-center space-x-2">
                 <Checkbox
@@ -64,20 +64,17 @@ export function RoleSpecificFields({ userForm, setUserForm, units, idPrefix = ''
               </div>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">
-            💡 O controlador poderá alternar entre a unidade primária e as unidades adicionais
-          </p>
         </div>
       )}
 
       {userForm.role === 'warehouse' && (
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}warehouseType`}>Tipo de Almoxarifado</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor={`${idPrefix}warehouseType`} className="text-xs font-medium">Tipo de Almoxarifado</Label>
           <Select
             value={userForm.warehouseType}
             onValueChange={(value) => setUserForm({ ...userForm, warehouseType: value as 'storage' | 'delivery' })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-9">
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>
@@ -89,13 +86,13 @@ export function RoleSpecificFields({ userForm, setUserForm, units, idPrefix = ''
       )}
 
       {userForm.role === 'admin' && (
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}adminType`}>Tipo de Administrador *</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor={`${idPrefix}adminType`} className="text-xs font-medium">Tipo de Administrador *</Label>
           <Select
             value={userForm.adminType}
             onValueChange={(value) => setUserForm({ ...userForm, adminType: value as 'units' | 'warehouse' })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="h-9">
               <SelectValue placeholder="Selecione o tipo de admin" />
             </SelectTrigger>
             <SelectContent>

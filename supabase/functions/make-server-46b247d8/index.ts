@@ -24,7 +24,6 @@
  */
 
 import { Hono } from "npm:hono";
-import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -44,17 +43,21 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 // Enable logger
 app.use('*', logger(console.log));
 
-// Enable CORS for all routes and methods
-app.use(
-  "/*",
-  cors({
-    origin: "*",
-    allowHeaders: ["Content-Type", "Authorization"],
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    exposeHeaders: ["Content-Length"],
-    maxAge: 600,
-  }),
-);
+const corsHeaders: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Max-Age": "86400",
+};
+
+// CORS hardening: responde preflight e injeta headers em TODAS as respostas
+app.use("*", async (c, next) => {
+  if (c.req.method === "OPTIONS") {
+    return c.newResponse(null, 204, corsHeaders);
+  }
+  await next();
+  Object.entries(corsHeaders).forEach(([key, value]) => c.header(key, value));
+});
 
 // ========== HELPER FUNCTIONS FOR CASE CONVERSION ==========
 // Parse floors field from database (handles JSON string or array)
