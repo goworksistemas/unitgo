@@ -333,10 +333,49 @@ export const api = {
     create: (data: any) => apiRequest('/quotations', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, updates: any) => apiRequest(`/quotations/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
   },
+  uploadQuotationAttachment: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = getAuthToken();
+    const res = await fetch(`${API_URL}/upload-quotation-attachment`, {
+      method: 'POST',
+      body: formData,
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Falha no upload');
+    }
+    const data = await res.json();
+    return data.url as string;
+  },
   purchaseOrders: {
     getAll: () => apiRequest('/purchase-orders'),
     create: (data: any) => apiRequest('/purchase-orders', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, updates: any) => apiRequest(`/purchase-orders/${id}`, { method: 'PUT', body: JSON.stringify(updates) }),
+    approve: (id: string, data: { approverId: string; approverName: string }) =>
+      apiRequest(`/purchase-orders/${id}/approve`, { method: 'POST', body: JSON.stringify(data) }),
+    reject: (id: string, data: { approverId: string; approverName: string; observacao: string }) =>
+      apiRequest(`/purchase-orders/${id}/reject`, { method: 'POST', body: JSON.stringify(data) }),
+    resendForApproval: (id: string, data: { compradorId: string }) =>
+      apiRequest(`/purchase-orders/${id}/resend`, { method: 'POST', body: JSON.stringify(data) }),
+  },
+  accessGroups: {
+    getAll: () => apiRequest('/access-groups'),
+    create: (data: { codigo: string; nome: string; descricao?: string; tabs: string[] }) =>
+      apiRequest('/access-groups', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: { nome?: string; descricao?: string; tabs?: string[] }) =>
+      apiRequest(`/access-groups/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    remove: (id: string) =>
+      apiRequest(`/access-groups/${id}`, { method: 'DELETE' }),
+    addMember: (groupId: string, userId: string) =>
+      apiRequest(`/access-groups/${groupId}/members`, { method: 'POST', body: JSON.stringify({ userId }) }),
+    removeMember: (groupId: string, userId: string) =>
+      apiRequest(`/access-groups/${groupId}/members/${userId}`, { method: 'DELETE' }),
+    getUserTabs: (userId: string) => apiRequest(`/user-allowed-tabs/${userId}`),
+    getUserAccess: (userId: string) => apiRequest(`/user-access/${userId}`),
+    updateUserAccess: (userId: string, data: { groupIds: string[]; extraTabs: string[] }) =>
+      apiRequest(`/user-access/${userId}`, { method: 'PUT', body: JSON.stringify(data) }),
   },
   receivings: {
     getAll: () => apiRequest('/receivings'),
@@ -344,6 +383,13 @@ export const api = {
   },
   purchases: {
     seed: () => apiRequest('/seed-purchases', { method: 'POST' }),
+  },
+  purchaseAuditLogs: {
+    getByEntity: (entityId: string, type?: string) => {
+      const params = new URLSearchParams({ entity_id: entityId });
+      if (type) params.set('type', type);
+      return apiRequest(`/purchase-audit-logs?${params}`);
+    },
   },
 };
 

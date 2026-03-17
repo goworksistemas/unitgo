@@ -1,17 +1,11 @@
 import { useMemo, useState } from 'react';
-import { useApp } from '@/contexts/AppContext';
 import { usePurchases } from '@/contexts/PurchaseContext';
 import { api } from '@/utils/api';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Send, Eye, FileText, Database } from 'lucide-react';
+import { FileText, Plus, Send, Database } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { QuotationStatus } from '@/types/purchases';
@@ -24,36 +18,55 @@ const STATUS_LABELS: Record<QuotationStatus, { label: string; className: string 
   rejected: { label: 'Rejeitada', className: 'bg-red-50 text-red-700 border-red-300' },
 };
 
-export function QuotationManagementPanel() {
-  const { getUserById } = useApp();
+interface QuotationManagementPanelProps {
+  onNavigateToCreate?: (solicitacaoId?: string) => void;
+  onNavigateToDetail?: (quotationId: string) => void;
+}
+
+export function QuotationManagementPanel({
+  onNavigateToCreate,
+  onNavigateToDetail,
+}: QuotationManagementPanelProps) {
   const {
-    quotations, suppliers, currencies, purchaseRequests,
-    createQuotation, isLoadingPurchases, refreshPurchases,
+    quotations,
+    suppliers,
+    purchaseRequests,
+    isLoadingPurchases,
+    refreshPurchases,
+    updateQuotationStatus,
   } = usePurchases();
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
   const [isSeeding, setIsSeeding] = useState(false);
-  const [form, setForm] = useState({
-    solicitacaoId: '',
-    fornecedorId: '',
-    moedaId: '',
-    formaPagamento: '',
-    condicoesPagamento: '',
-    prazoEntrega: 0,
-    observacoes: '',
-  });
+
+  const quotationsBySolicitacao = useMemo(() => {
+    const map = new Map<string, typeof quotations>();
+    for (const q of quotations) {
+      const list = map.get(q.solicitacaoId) ?? [];
+      list.push(q);
+      map.set(q.solicitacaoId, list);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+    return map;
+  }, [quotations]);
 
   const approvedRequests = useMemo(
     () => purchaseRequests.filter((r) => r.status === 'in_quotation'),
     [purchaseRequests]
   );
 
-  const sortedQuotations = useMemo(
-    () => [...quotations].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    [quotations]
-  );
+  const solicitacoesComCotacoes = useMemo(() => {
+    const ids = new Set(quotations.map((q) => q.solicitacaoId));
+    return purchaseRequests
+      .filter((r) => ids.has(r.id))
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  }, [quotations, purchaseRequests]);
 
-  const getSupplierName = (id: string) => suppliers.find((s) => s.id === id)?.razaoSocial ?? '—';
-  const getRequestCode = (id: string) => purchaseRequests.find((r) => r.id === id)?.id.slice(0, 8) ?? '—';
+  const getSupplierName = (id: string) =>
+    suppliers.find((s) => s.id === id)?.razaoSocial ?? '—';
+  const getRequestCode = (id: string) =>
+    purchaseRequests.find((r) => r.id === id)?.id.slice(0, 8) ?? '—';
 
   const handleSeedPurchases = async () => {
     setIsSeeding(true);
@@ -62,49 +75,36 @@ export function QuotationManagementPanel() {
       toast.success('Dados de compras populados com sucesso');
       await refreshPurchases();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : (e as { details?: { error?: string } })?.details?.error ?? 'Erro ao popular dados';
+      const msg =
+        e instanceof Error
+          ? e.message
+          : (e as { details?: { error?: string } })?.details?.error ?? 'Erro ao popular dados';
       toast.error(msg);
     } finally {
       setIsSeeding(false);
     }
   };
 
-  const handleCreate = async () => {
-    if (!form.solicitacaoId || !form.fornecedorId) {
-      toast.error('Selecione a solicitação e o fornecedor');
-      return;
+  const handleEnviarParaFornecedor = async (q: (typeof quotations)[0]) => {
+    try {
+      await updateQuotationStatus(q.id, 'sent', {
+        linkPreenchimento: crypto.randomUUID(),
+      });
+      await refreshPurchases();
+      toast.success('Cotação enviada. Link gerado.');
+    } catch {
+      toast.error('Erro ao enviar cotação');
     }
-    const request = purchaseRequests.find((r) => r.id === form.solicitacaoId);
-    if (!request) return;
-
-    const itens = request.itens.map((i) => ({
-      id: crypto.randomUUID(),
-      cotacaoId: '',
-      itemSolicitacaoId: i.id,
-      descricao: i.descricao,
-      quantidade: i.quantidade,
-      unidadeMedida: i.unidadeMedida,
-    }));
-
-    await createQuotation({
-      solicitacaoId: form.solicitacaoId,
-      fornecedorId: form.fornecedorId,
-      moedaId: form.moedaId || currencies[0]?.id || '',
-      formaPagamento: form.formaPagamento,
-      condicoesPagamento: form.condicoesPagamento,
-      prazoEntrega: form.prazoEntrega,
-      observacoes: form.observacoes,
-      status: 'draft',
-      itens,
-      linkPreenchimento: crypto.randomUUID(),
-    });
-
-    setCreateDialogOpen(false);
-    setForm({ solicitacaoId: '', fornecedorId: '', moedaId: '', formaPagamento: '', condicoesPagamento: '', prazoEntrega: 0, observacoes: '' });
   };
 
   if (isLoadingPurchases) {
-    return <Card><CardContent className="py-12 text-center text-muted-foreground">Carregando...</CardContent></Card>;
+    return (
+      <Card>
+        <CardContent className="py-12 text-center text-muted-foreground">
+          Carregando...
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -116,21 +116,26 @@ export function QuotationManagementPanel() {
               <FileText className="h-5 w-5" />
               Cotações
             </CardTitle>
-            <CardDescription>{sortedQuotations.length} cotação(ões) registrada(s)</CardDescription>
+            <CardDescription>
+              {quotations.length} cotação(ões) registrada(s)
+            </CardDescription>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)} disabled={approvedRequests.length === 0}>
+          <Button
+            onClick={() => onNavigateToCreate?.()}
+            disabled={approvedRequests.length === 0}
+          >
             <Plus className="h-4 w-4 mr-2" /> Nova Cotação
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        {sortedQuotations.length === 0 ? (
+        {quotations.length === 0 ? (
           <div className="text-center py-12">
             <FileText className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
             <p className="text-sm text-muted-foreground">Nenhuma cotação criada</p>
             <div className="flex flex-col sm:flex-row gap-2 justify-center mt-3">
               {approvedRequests.length > 0 && (
-                <Button variant="outline" onClick={() => setCreateDialogOpen(true)}>
+                <Button variant="outline" onClick={() => onNavigateToCreate?.()}>
                   <Plus className="h-4 w-4 mr-2" /> Criar primeira cotação
                 </Button>
               )}
@@ -141,111 +146,109 @@ export function QuotationManagementPanel() {
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            {sortedQuotations.map((q) => {
-              const statusConfig = STATUS_LABELS[q.status];
+          <div className="space-y-6">
+            {solicitacoesComCotacoes.map((req) => {
+              const cots = quotationsBySolicitacao.get(req.id) ?? [];
+              const fornecedoresCount = new Set(cots.map((c) => c.fornecedorId)).size;
               return (
-                <div key={q.id} className="rounded-lg border p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <span className="font-medium">Cotação #{q.id.slice(0, 8)}</span>
-                      <span className="text-muted-foreground ml-2">→ Solicitação #{getRequestCode(q.solicitacaoId)}</span>
-                    </div>
-                    <Badge variant="outline" className={statusConfig.className}>{statusConfig.label}</Badge>
+                <div key={req.id} className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <span>Solicitação #{getRequestCode(req.id)}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {fornecedoresCount} fornecedor(es)
+                    </Badge>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Fornecedor:</span>{' '}
-                      <span className="font-medium">{getSupplierName(q.fornecedorId)}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Prazo:</span> {q.prazoEntrega ?? '—'} dias
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Itens:</span> {q.itens.length}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Criada:</span>{' '}
-                      {format(new Date(q.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
-                    </div>
+                  <div className="space-y-2 pl-2 border-l-2 border-muted">
+                    {cots.map((q) => {
+                      const statusConfig = STATUS_LABELS[q.status];
+                      const valorTotal =
+                        q.totalGeral ??
+                        q.itens.reduce(
+                          (s, i) => s + ((i.precoUnitario ?? 0) * i.quantidade),
+                          0
+                        );
+                      return (
+                        <div
+                          key={q.id}
+                          className="rounded-lg border p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => onNavigateToDetail?.(q.id)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              onNavigateToDetail?.(q.id);
+                            }
+                          }}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">
+                                Cotação #{q.id.slice(0, 8)}
+                              </span>
+                              <Badge variant="outline" className={statusConfig.className}>
+                                {statusConfig.label}
+                              </Badge>
+                              <span className="text-muted-foreground">
+                                {getSupplierName(q.fornecedorId)}
+                              </span>
+                            </div>
+                            {q.status === 'draft' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEnviarParaFornecedor(q);
+                                }}
+                              >
+                                <Send className="h-4 w-4 mr-1" /> Enviar para fornecedor
+                              </Button>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Valor total:</span>{' '}
+                              <span className="font-medium">
+                                {new Intl.NumberFormat('pt-BR', {
+                                  style: 'currency',
+                                  currency: 'BRL',
+                                }).format(valorTotal)}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Prazo:</span>{' '}
+                              {q.prazoEntrega ?? '—'} dias
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Previsão:</span>{' '}
+                              {q.dataPrevisaoEntrega
+                                ? format(new Date(q.dataPrevisaoEntrega), 'dd/MM/yyyy', {
+                                    locale: ptBR,
+                                  })
+                                : '—'}
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Criada:</span>{' '}
+                              {format(new Date(q.createdAt), 'dd/MM/yyyy', {
+                                locale: ptBR,
+                              })}
+                            </div>
+                          </div>
+                          {q.status === 'sent' && q.linkPreenchimento && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Link: ...{q.linkPreenchimento.slice(-8)}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                  {q.itens.some((i) => i.precoUnitario != null) && (
-                    <div className="mt-2 text-sm">
-                      <span className="text-muted-foreground">Valor total:</span>{' '}
-                      <span className="font-medium">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                          q.itens.reduce((s, i) => s + ((i.precoUnitario ?? 0) * i.quantidade), 0)
-                        )}
-                      </span>
-                    </div>
-                  )}
                 </div>
               );
             })}
           </div>
         )}
-
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Nova Cotação</DialogTitle>
-              <DialogDescription>Selecione a solicitação e o fornecedor para criar a cotação</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>Solicitação *</Label>
-                <Select value={form.solicitacaoId} onValueChange={(v) => setForm((f) => ({ ...f, solicitacaoId: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Selecione a solicitação" /></SelectTrigger>
-                  <SelectContent>
-                    {approvedRequests.map((r) => (
-                      <SelectItem key={r.id} value={r.id}>#{r.id.slice(0, 8)} — {r.itens.length} item(ns)</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label>Fornecedor *</Label>
-                <Select value={form.fornecedorId} onValueChange={(v) => setForm((f) => ({ ...f, fornecedorId: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Selecione o fornecedor" /></SelectTrigger>
-                  <SelectContent>
-                    {suppliers.filter((s) => s.status === 'active').map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.razaoSocial}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>Moeda</Label>
-                  <Select value={form.moedaId || currencies[0]?.id || 'none'} onValueChange={(v) => setForm((f) => ({ ...f, moedaId: v === 'none' ? '' : v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {currencies.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.simbolo} {c.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label>Prazo Entrega (dias)</Label>
-                  <Input type="number" min={0} value={form.prazoEntrega} onChange={(e) => setForm((f) => ({ ...f, prazoEntrega: parseInt(e.target.value) || 0 }))} />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label>Condições de Pagamento</Label>
-                <Input value={form.condicoesPagamento} onChange={(e) => setForm((f) => ({ ...f, condicoesPagamento: e.target.value }))} placeholder="Ex: 30/60/90 dias" />
-              </div>
-              <div className="grid gap-2">
-                <Label>Observações</Label>
-                <Textarea value={form.observacoes} onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))} rows={2} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleCreate} disabled={!form.solicitacaoId || !form.fornecedorId}>Criar Cotação</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </CardContent>
     </Card>
   );

@@ -10,6 +10,7 @@ import { CreateBatchDeliveryDialog } from '../dialogs/CreateBatchDeliveryDialog'
 import { QRCodeScanner } from '../shared/QRCodeScanner';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
+import { useAllowedTabs } from '@/hooks/useAllowedTabs';
 import { useWarehouseActions } from '../warehouse/useWarehouseActions';
 import { OverviewPanel } from '../warehouse/OverviewPanel';
 import { RequestsPanel } from '../warehouse/RequestsPanel';
@@ -38,11 +39,23 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
   const isDeliveryDriver = isDeveloperMode || currentUser?.warehouseType === 'delivery';
   const isStorageWorker = isDeveloperMode || currentUser?.warehouseType === 'storage';
 
-  const navigationSections: NavigationSection[] = useMemo(() => [
-    { id: 'overview', label: 'Visão Geral e Estoque', icon: LayoutDashboard },
-    { id: 'requests', label: 'Solicitações', icon: ClipboardList },
-    { id: 'logistics', label: 'Logística', icon: Truck },
-  ], []);
+  const { canAccessTab } = useAllowedTabs();
+  const navigationSections: NavigationSection[] = useMemo(() => {
+    const TAB_MAP: Record<string, string> = {
+      'overview': 'almox.visao',
+      'requests': 'almox.solicitacoes',
+      'logistics': 'almox.logistica',
+    };
+    const all: NavigationSection[] = [
+      { id: 'overview', label: 'Visão Geral e Estoque', icon: LayoutDashboard },
+      { id: 'requests', label: 'Solicitações', icon: ClipboardList },
+      { id: 'logistics', label: 'Logística', icon: Truck },
+    ];
+    return all.filter((s) => {
+      const tabId = TAB_MAP[s.id];
+      return !tabId || canAccessTab(tabId);
+    });
+  }, [canAccessTab]);
 
   const { activeSection } = useDashboardNav(
     navigationSections, 'Almoxarifado Central',

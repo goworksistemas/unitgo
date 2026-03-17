@@ -1,16 +1,26 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
+import { useAllowedTabs } from '@/hooks/useAllowedTabs';
 import { ClipboardList, FileText, Package, Building2, ScrollText } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { ApprovedPurchaseRequestsPanel } from '../purchases/buyer/ApprovedPurchaseRequestsPanel';
-import { QuotationManagementPanel } from '../purchases/buyer/QuotationManagementPanel';
+import { QuotationsView } from '../purchases/buyer/QuotationsView';
 import { BuyerPurchaseOrdersPanel } from '../purchases/buyer/BuyerPurchaseOrdersPanel';
 import { SupplierManagementPanel } from '../purchases/admin/SupplierManagementPanel';
 import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
 
+const SECTION_TAB_MAP: Record<string, string> = {
+  'approved-requests': 'compras.solicitacoes',
+  'quotations': 'compras.cotacoes',
+  'orders': 'compras.pedidos',
+  'suppliers': 'compras.fornecedores',
+};
+
 export function BuyerDashboard() {
-  const navigationSections: NavigationSection[] = useMemo(
+  const { canAccessTab } = useAllowedTabs();
+
+  const allSections: NavigationSection[] = useMemo(
     () => [
       { id: 'approved-requests', label: 'Solicitações Aprovadas', icon: ClipboardList },
       { id: 'quotations', label: 'Cotações', icon: FileText },
@@ -20,15 +30,35 @@ export function BuyerDashboard() {
     []
   );
 
-  const { activeSection } = useDashboardNav(
+  const navigationSections = useMemo(
+    () => allSections.filter((s) => {
+      const tabId = SECTION_TAB_MAP[s.id];
+      return !tabId || canAccessTab(tabId);
+    }),
+    [allSections, canAccessTab]
+  );
+
+  const { activeSection, setActiveSection } = useDashboardNav(
     navigationSections,
     'Painel do Comprador',
     'Gestão de Compras',
     'approved-requests'
   );
 
+  const [createQuotationSolicitacaoId, setCreateQuotationSolicitacaoId] = useState<string | undefined>();
+  const handleNavigateToCreateQuotation = useCallback((solicitacaoId?: string) => {
+    setCreateQuotationSolicitacaoId(solicitacaoId);
+    setActiveSection('quotations');
+  }, [setActiveSection]);
+
   switch (activeSection) {
-    case 'quotations': return <QuotationManagementPanel />;
+    case 'quotations':
+      return (
+        <QuotationsView
+          initialCreateSolicitacaoId={createQuotationSolicitacaoId}
+          onViewReset={() => setCreateQuotationSolicitacaoId(undefined)}
+        />
+      );
     case 'orders': return <BuyerPurchaseOrdersPanel />;
     case 'suppliers': return <SupplierManagementPanel />;
     case 'approved-requests':
@@ -52,7 +82,7 @@ export function BuyerDashboard() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="solicitacoes" className="mt-4">
-            <ApprovedPurchaseRequestsPanel />
+            <ApprovedPurchaseRequestsPanel onNavigateToCreateQuotation={handleNavigateToCreateQuotation} />
           </TabsContent>
           <TabsContent value="historico" className="mt-4">
             <UnitMovementsHistory />

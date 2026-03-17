@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { usePurchases } from '@/contexts/PurchaseContext';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
+import { useAllowedTabs } from '@/hooks/useAllowedTabs';
 import {
   FileText,
   Landmark,
@@ -79,16 +80,28 @@ export function FinancialDashboard() {
     isLoadingPurchases,
   } = usePurchases();
 
-  const navigationSections: NavigationSection[] = useMemo(
-    () => [
+  const { canAccessTab } = useAllowedTabs();
+
+  const navigationSections: NavigationSection[] = useMemo(() => {
+    const TAB_MAP: Record<string, string> = {
+      'overview': 'financeiro.visao',
+      'contracts': 'financeiro.contratos',
+      'cost-centers': 'financeiro.centros_custo',
+      'alerts': 'financeiro.alertas',
+      'reports': 'financeiro.relatorios',
+    };
+    const all: NavigationSection[] = [
       { id: 'overview', label: 'Visão Executiva', icon: BarChart3 },
       { id: 'contracts', label: 'Gestão de Contratos', icon: FileText },
       { id: 'cost-centers', label: 'Centros de Custo', icon: Landmark },
       { id: 'alerts', label: 'Alertas', icon: Bell },
       { id: 'reports', label: 'Relatórios', icon: Download },
-    ],
-    []
-  );
+    ];
+    return all.filter((s) => {
+      const tabId = TAB_MAP[s.id];
+      return !tabId || canAccessTab(tabId);
+    });
+  }, [canAccessTab]);
 
   const { activeSection } = useDashboardNav(
     navigationSections,

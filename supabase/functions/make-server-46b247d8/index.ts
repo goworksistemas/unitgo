@@ -1109,9 +1109,19 @@ app.post("/make-server-46b247d8/users", async (c) => {
 app.put("/make-server-46b247d8/users/:id", async (c) => {
   try {
     const id = c.req.param("id");
-    const { name, email, role, primaryUnitId, additionalUnitIds, warehouseType, adminType, jobTitle, password, dailyCode, dailyCodeGeneratedAt } = await c.req.json();
+    const body = await c.req.json();
+    const name = body.name;
+    const email = body.email;
+    const role = body.role;
+    const primaryUnitId = body.primary_unit_id ?? body.primaryUnitId;
+    const additionalUnitIds = body.additional_unit_ids ?? body.additionalUnitIds;
+    const warehouseType = body.warehouse_type ?? body.warehouseType;
+    const adminType = body.admin_type ?? body.adminType;
+    const jobTitle = body.job_title ?? body.jobTitle;
+    const password = body.password;
+    const dailyCode = body.daily_code ?? body.dailyCode;
+    const dailyCodeGeneratedAt = body.daily_code_generated_at ?? body.dailyCodeGeneratedAt;
 
-    // Prepare updates for public.users table
     const dbUpdates: any = {};
     if (name !== undefined) dbUpdates.name = name;
     if (email !== undefined) dbUpdates.email = email;
@@ -1123,20 +1133,26 @@ app.put("/make-server-46b247d8/users/:id", async (c) => {
     if (jobTitle !== undefined) dbUpdates.job_title = jobTitle;
     if (dailyCode !== undefined) dbUpdates.daily_code = dailyCode;
     if (dailyCodeGeneratedAt !== undefined) dbUpdates.daily_code_generated_at = dailyCodeGeneratedAt;
-    
-    // Update public.users table
+
+    if (Object.keys(dbUpdates).length === 0) {
+      return c.json({ error: "Nenhum campo para atualizar" }, 400);
+    }
+
     const { data: userData, error: dbError } = await supabase
       .from('users')
       .update(dbUpdates)
       .eq('id', id)
       .select()
-      .single();
-    
+      .maybeSingle();
+
     if (dbError) {
       console.error("Error updating user in database:", dbError);
       return c.json({ error: dbError.message }, 500);
     }
-    
+    if (!userData) {
+      return c.json({ error: "Usuário não encontrado" }, 404);
+    }
+
     // Update auth.users metadata and password
     const authUpdates: any = {
       user_metadata: {
@@ -2591,17 +2607,26 @@ app.get("/make-server-46b247d8/delivery-confirmations", async (c) => {
 
     if (error) throw error;
 
-    // Convert dates and parse JSON fields
-    const confirmations = data.map(conf => ({
-      ...conf,
-      batchId: conf.batch_id,
-      furnitureRequestId: conf.furniture_request_id,
-      confirmedByUserId: conf.confirmed_by_user_id,
-      receivedByUserId: conf.received_by_user_id,
-      photoUrl: conf.photo_url,
-      timestamp: new Date(conf.timestamp),
-      location: conf.location ? JSON.parse(conf.location) : undefined,
-    }));
+    const confirmations = (data || []).map(conf => {
+      let location = undefined;
+      if (conf.location) {
+        try {
+          location = typeof conf.location === 'string' ? JSON.parse(conf.location) : conf.location;
+        } catch {
+          location = undefined;
+        }
+      }
+      return {
+        ...conf,
+        batchId: conf.batch_id,
+        furnitureRequestId: conf.furniture_request_id,
+        confirmedByUserId: conf.confirmed_by_user_id,
+        receivedByUserId: conf.received_by_user_id,
+        photoUrl: conf.photo_url,
+        timestamp: new Date(conf.timestamp),
+        location,
+      };
+    });
 
     return c.json(confirmations);
   } catch (error) {
@@ -3223,6 +3248,186 @@ app.put("/make-server-46b247d8/purchase-orders/:id", async (c) => {
   } catch (error) {
     console.error("Error updating purchase order:", error);
     return c.json({ error: "Failed to update purchase order" }, 500);
+  }
+});
+
+// --- Grupos de acesso por aba (global) ---
+app.get("/make-server-46b247d8/access-groups", async (c) => {
+  try {
+    const { data: groups, error } = await supabase
+      .from('access_groups')
+      .select('*, access_group_tabs(tab_id), access_group_members(user_id, created_at)')
+      .order('nome');
+    if (error) throw error;
+    const userIds = new Set<string>();
+    (groups || []).forEach((g: any) => (g.access_group_members || []).forEach((m: any) => userIds.add(m.user_id)));
+    let usersMap: Record<string, string> = {};
+    if (userIds.size > 0) {
+      const { data: usersData } = await supabase.from('users').select('id, name').in('id', Array.from(userIds));
+      (usersData || []).forEach((u: any) => { usersMap[u.id] = u.name; });
+    }
+    const result = (groups || []).map((g: any) => ({
+      id: g.id,
+      codigo: g.codigo,
+      nome: g.nome,
+      descricao: g.descricao,
+      tabs: (g.access_group_tabs || []).map((t: any) => t.tab_id),
+      members: (g.access_group_members || []).map((m: any) => ({
+        userId: m.user_id,
+        userName: usersMap[m.user_id] || '—',
+        createdAt: m.created_at,
+      })),
+      createdAt: g.created_at,
+    }));
+    return c.json(result);
+  } catch (error) {
+    console.error("Error fetching access groups:", error);
+    return c.json({ error: "Failed to fetch groups" }, 500);
+  }
+});
+
+app.post("/make-server-46b247d8/access-groups", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { codigo, nome, descricao, tabs } = body;
+    if (!codigo || !nome) return c.json({ error: "codigo e nome obrigatórios" }, 400);
+    const { data: group, error } = await supabase.from('access_groups').insert({ codigo, nome, descricao }).select().single();
+    if (error) return c.json({ error: error.message }, 400);
+    if (tabs?.length) {
+      const rows = tabs.map((t: string) => ({ group_id: group.id, tab_id: t }));
+      await supabase.from('access_group_tabs').insert(rows);
+    }
+    return c.json({ id: group.id, codigo, nome, descricao, tabs: tabs || [], members: [] }, 201);
+  } catch {
+    return c.json({ error: "Erro ao criar grupo" }, 500);
+  }
+});
+
+app.put("/make-server-46b247d8/access-groups/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const body = await c.req.json();
+    const { nome, descricao, tabs } = body;
+    const updates: any = {};
+    if (nome !== undefined) updates.nome = nome;
+    if (descricao !== undefined) updates.descricao = descricao;
+    if (Object.keys(updates).length > 0) {
+      const { error } = await supabase.from('access_groups').update(updates).eq('id', id);
+      if (error) return c.json({ error: error.message }, 400);
+    }
+    if (tabs !== undefined) {
+      await supabase.from('access_group_tabs').delete().eq('group_id', id);
+      if (tabs.length > 0) {
+        const rows = tabs.map((t: string) => ({ group_id: id, tab_id: t }));
+        await supabase.from('access_group_tabs').insert(rows);
+      }
+    }
+    return c.json({ success: true });
+  } catch {
+    return c.json({ error: "Erro ao atualizar grupo" }, 500);
+  }
+});
+
+app.delete("/make-server-46b247d8/access-groups/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const { error } = await supabase.from('access_groups').delete().eq('id', id);
+    if (error) return c.json({ error: error.message }, 400);
+    return c.json({ success: true });
+  } catch {
+    return c.json({ error: "Erro ao excluir grupo" }, 500);
+  }
+});
+
+app.post("/make-server-46b247d8/access-groups/:id/members", async (c) => {
+  try {
+    const groupId = c.req.param("id");
+    const body = await c.req.json();
+    const userId = body.user_id ?? body.userId;
+    if (!userId) return c.json({ error: "userId obrigatório" }, 400);
+    const { data, error } = await supabase.from('access_group_members').insert({ group_id: groupId, user_id: userId }).select().single();
+    if (error) return c.json({ error: error.message }, 400);
+    return c.json(data, 201);
+  } catch {
+    return c.json({ error: "Erro ao adicionar membro" }, 500);
+  }
+});
+
+app.delete("/make-server-46b247d8/access-groups/:groupId/members/:userId", async (c) => {
+  try {
+    const groupId = c.req.param("groupId");
+    const userId = c.req.param("userId");
+    const { error } = await supabase.from('access_group_members').delete().eq('group_id', groupId).eq('user_id', userId);
+    if (error) return c.json({ error: error.message }, 400);
+    return c.json({ success: true });
+  } catch {
+    return c.json({ error: "Erro ao remover membro" }, 500);
+  }
+});
+
+app.get("/make-server-46b247d8/user-access/:userId", async (c) => {
+  try {
+    const userId = c.req.param("userId");
+    const membersRes = await supabase.from('access_group_members').select('group_id').eq('user_id', userId);
+    const groupIds = (membersRes.data || []).map((m: any) => m.group_id);
+    let extraTabs: string[] = [];
+    const extraRes = await supabase.from('user_extra_tabs').select('tab_id').eq('user_id', userId);
+    if (!extraRes.error) extraTabs = (extraRes.data || []).map((r: any) => r.tab_id);
+    return c.json({ groupIds, extraTabs });
+  } catch {
+    return c.json({ groupIds: [], extraTabs: [] });
+  }
+});
+
+app.put("/make-server-46b247d8/user-access/:userId", async (c) => {
+  try {
+    const userId = c.req.param("userId");
+    const body = await c.req.json();
+    const groupIds = Array.isArray(body.groupIds) ? body.groupIds : [];
+    const extraTabs = Array.isArray(body.extraTabs) ? body.extraTabs : [];
+
+    const { error: delErr } = await supabase.from('access_group_members').delete().eq('user_id', userId);
+    if (delErr) return c.json({ error: delErr.message }, 400);
+
+    if (groupIds.length > 0) {
+      const rows = groupIds.map((gid: string) => ({ group_id: gid, user_id: userId }));
+      const { error: insErr } = await supabase.from('access_group_members').insert(rows);
+      if (insErr) return c.json({ error: insErr.message }, 400);
+    }
+
+    const { error: delExtraErr } = await supabase.from('user_extra_tabs').delete().eq('user_id', userId);
+    if (delExtraErr) return c.json({ error: delExtraErr.message }, 400);
+    if (extraTabs.length > 0) {
+      const rows = extraTabs.map((tid: string) => ({ user_id: userId, tab_id: tid }));
+      const { error: insExtraErr } = await supabase.from('user_extra_tabs').insert(rows);
+      if (insExtraErr) return c.json({ error: insExtraErr.message }, 400);
+    }
+
+    return c.json({ success: true });
+  } catch (e) {
+    console.error("user-access PUT error:", e);
+    return c.json({ error: "Erro ao atualizar acesso" }, 500);
+  }
+});
+
+app.get("/make-server-46b247d8/user-allowed-tabs/:userId", async (c) => {
+  try {
+    const userId = c.req.param("userId");
+    const membersRes = await supabase.from('access_group_members').select('group_id').eq('user_id', userId);
+    const groupIds = (membersRes.data || []).map((m: any) => m.group_id);
+    let extraTabs: string[] = [];
+    const extraRes = await supabase.from('user_extra_tabs').select('tab_id').eq('user_id', userId);
+    if (!extraRes.error) extraTabs = (extraRes.data || []).map((r: any) => r.tab_id);
+
+    let tabs: string[] = [...extraTabs];
+    if (groupIds.length > 0) {
+      const { data: tabRows } = await supabase.from('access_group_tabs').select('tab_id').in('group_id', groupIds);
+      const groupTabs = (tabRows || []).map((t: any) => t.tab_id);
+      tabs = [...new Set([...tabs, ...groupTabs])];
+    }
+    return c.json({ allowedTabs: tabs });
+  } catch {
+    return c.json({ allowedTabs: [] });
   }
 });
 

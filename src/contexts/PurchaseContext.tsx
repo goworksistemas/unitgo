@@ -3,8 +3,11 @@
  * Gerencia estado e operações de purchase requests, suppliers, quotations, etc.
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { api } from '../utils/api';
+import { supabase } from '../utils/supabase/client';
+import { useApp } from './AppContext';
+import { useAllowedTabs } from '../hooks/useAllowedTabs';
 import { toast } from 'sonner';
 import type {
   PurchaseRequest,
@@ -16,12 +19,14 @@ import type {
   Contract,
   Currency,
   Quotation,
+  QuotationStatus,
   PurchaseOrder,
   Receiving,
 } from '../types/purchases';
 
 interface PurchaseContextType {
   purchaseRequests: PurchaseRequest[];
+  semAtribuicao: number;
   suppliers: Supplier[];
   supplierCategories: SupplierCategory[];
   costCenters: CostCenter[];
@@ -32,6 +37,7 @@ interface PurchaseContextType {
   receivings: Receiving[];
   isLoadingPurchases: boolean;
   refreshPurchases: () => Promise<void>;
+  atribuirComprador: (requestId: string) => Promise<void>;
   createPurchaseRequest: (data: Omit<PurchaseRequest, 'id' | 'createdAt' | 'updatedAt'>) => Promise<PurchaseRequest | null>;
   approvePurchaseRequestManager: (id: string, approverId: string, approverName: string) => Promise<void>;
   rejectPurchaseRequestManager: (id: string, approverId: string, approverName: string, justificativa: string) => Promise<void>;
@@ -42,13 +48,22 @@ interface PurchaseContextType {
   createCostCenter: (data: Omit<CostCenter, 'id'>) => Promise<CostCenter | null>;
   createContract: (data: Omit<Contract, 'id' | 'valorConsumido' | 'saldo' | 'createdAt' | 'updatedAt'>) => Promise<Contract | null>;
   createQuotation: (data: Omit<Quotation, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Quotation | null>;
+  updateQuotation: (id: string, updates: Partial<Quotation>) => Promise<void>;
+  updateQuotationStatus: (id: string, status: Quotation['status'], extra?: Partial<Quotation>) => Promise<void>;
   createPurchaseOrder: (data: Omit<PurchaseOrder, 'id' | 'createdAt' | 'updatedAt'>) => Promise<PurchaseOrder | null>;
   createReceiving: (data: Omit<Receiving, 'id' | 'createdAt'>) => Promise<Receiving | null>;
+  approveOrder: (orderId: string, approverId: string, approverName: string) => Promise<void>;
+  rejectOrder: (orderId: string, approverId: string, approverName: string, observacao: string) => Promise<void>;
+  resendOrderForApproval: (orderId: string, compradorId: string) => Promise<void>;
+  allowedPurchaseTabs: string[];
+  canAccessTab: (tabId: string) => boolean;
+  pendentesAprovacao: number;
 }
 
 const PurchaseContext = createContext<PurchaseContextType | undefined>(undefined);
 
 export function PurchaseProvider({ children }: { children: ReactNode }) {
+  const { currentUser } = useApp();
   const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [supplierCategories, setSupplierCategories] = useState<SupplierCategory[]>([]);
@@ -99,7 +114,12 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
       setContracts(cont as Contract[]);
       setCurrencies(defaultCurrencies);
       setQuotations(quot as Quotation[]);
-      setPurchaseOrders(po as PurchaseOrder[]);
+      setPurchaseOrders(
+        (po as Record<string, unknown>[]).map((o) => ({
+          ...o,
+          approvals: (o.purchaseOrderApprovals ?? o.approvals ?? []) as PurchaseOrder['approvals'],
+        })) as PurchaseOrder[]
+      );
       setReceivings(rec as Receiving[]);
     } catch {
       setPurchaseRequests([]);
@@ -121,6 +141,75 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
   }, [loadPurchases]);
 
   const refreshPurchases = useCallback(() => loadPurchases(), [loadPurchases]);
+
+  const approvedForQueue = useMemo(
+    () =>
+      purchaseRequests.filter(
+        (r) =>
+          r.status === 'in_quotation' ||
+          r.status === 'quotation_completed' ||
+          r.status === 'in_purchase'
+      ),
+    [purchaseRequests]
+  );
+
+  const semAtribuicao = useMemo(
+    () => approvedForQueue.filter((r) => !r.compradorId).length,
+    [approvedForQueue]
+  );
+
+  const atribuirComprador = useCallback(
+    async (requestId: string) => {
+      if (!currentUser?.id) {
+        toast.error('Usuário não identificado');
+        return;
+      }
+      try {
+        await api.purchaseRequests.update(requestId, {
+          compradorId: currentUser.id,
+          atribuidoEm: new Date().toISOString(),
+        });
+        setPurchaseRequests((prev) =>
+          prev.map((r) =>
+            r.id === requestId
+              ? {
+                  ...r,
+                  compradorId: currentUser.id,
+                  atribuidoEm: new Date().toISOString(),
+                }
+              : r
+          )
+        );
+        await refreshPurchases();
+        toast.success('Solicitação atribuída a você');
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : (e as { details?: { error?: string } })?.details?.error ?? 'Erro ao atribuir solicitação';
+        toast.error(msg);
+        throw e;
+      }
+    },
+    [currentUser?.id, refreshPurchases]
+  );
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('fila-compras')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'purchase_requests',
+        },
+        () => {
+          refreshPurchases();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refreshPurchases]);
 
   const createPurchaseRequest = useCallback(
     async (data: Omit<PurchaseRequest, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -358,6 +447,30 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const updateQuotation = useCallback(async (id: string, updates: Partial<Quotation>) => {
+    try {
+      const updated = await api.quotations.update(id, updates);
+      setQuotations((prev) => prev.map((q) => (q.id === id ? (updated as Quotation) : q)));
+      toast.success('Cotação atualizada');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao atualizar cotação');
+    }
+  }, []);
+
+  const updateQuotationStatus = useCallback(
+    async (id: string, status: QuotationStatus, extra?: Partial<Quotation>) => {
+      const updates: Partial<Quotation> = { status, ...extra };
+      if (status === 'sent') {
+        updates.linkPreenchimento = extra?.linkPreenchimento ?? crypto.randomUUID();
+        updates.enviadoEm = new Date();
+      } else if (status === 'responded') {
+        updates.respondidoEm = new Date();
+      }
+      await updateQuotation(id, updates);
+    },
+    [updateQuotation]
+  );
+
   const createPurchaseOrder = useCallback(async (data: Omit<PurchaseOrder, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const created = await api.purchaseOrders.create(data);
@@ -382,8 +495,68 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const approveOrder = useCallback(async (orderId: string, approverId: string, approverName: string) => {
+    await api.purchaseOrders.approve(orderId, { approverId, approverName });
+    setPurchaseOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? { ...o, statusAprovacao: 'aprovado' as const }
+          : o
+      )
+    );
+  }, []);
+
+  const rejectOrder = useCallback(
+    async (orderId: string, approverId: string, approverName: string, observacao: string) => {
+      await api.purchaseOrders.reject(orderId, { approverId, approverName, observacao });
+      setPurchaseOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? { ...o, statusAprovacao: 'reprovado' as const }
+            : o
+        )
+      );
+    },
+    []
+  );
+
+  const resendOrderForApproval = useCallback(async (orderId: string, compradorId: string) => {
+    await api.purchaseOrders.resendForApproval(orderId, { compradorId });
+    setPurchaseOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? { ...o, statusAprovacao: 'em_revisao' as const, versao: (o.versao ?? 1) + 1 }
+          : o
+      )
+    );
+  }, []);
+
+  const { canAccessTab: globalCanAccessTab } = useAllowedTabs();
+
+  const COMPRAS_TABS = ['solicitacoes', 'cotacoes', 'pedidos', 'aprovacoes', 'fornecedores'];
+
+  const allowedPurchaseTabs = useMemo<string[]>(() => {
+    return COMPRAS_TABS.filter((t) => globalCanAccessTab(`compras.${t}`));
+  }, [globalCanAccessTab]);
+
+  const canAccessTab = useCallback(
+    (tabId: string) => globalCanAccessTab(`compras.${tabId}`),
+    [globalCanAccessTab]
+  );
+
+  const pendentesAprovacao = useMemo(() => {
+    if (!currentUser?.id || !canAccessTab('aprovacoes')) return 0;
+    return purchaseOrders.filter(
+      (o) =>
+        (o.statusAprovacao === 'pendente' || o.statusAprovacao === undefined) &&
+        o.aprovadorNecessarioId === currentUser.id
+    ).length;
+  }, [purchaseOrders, currentUser?.id, canAccessTab]);
+
   const value: PurchaseContextType = {
     purchaseRequests,
+    semAtribuicao,
+    atribuirComprador,
     suppliers,
     supplierCategories,
     costCenters,
@@ -404,8 +577,16 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
     createCostCenter,
     createContract,
     createQuotation,
+    updateQuotation,
+    updateQuotationStatus,
     createPurchaseOrder,
     createReceiving,
+    approveOrder,
+    rejectOrder,
+    resendOrderForApproval,
+    allowedPurchaseTabs,
+    canAccessTab,
+    pendentesAprovacao,
   };
 
   return <PurchaseContext.Provider value={value}>{children}</PurchaseContext.Provider>;

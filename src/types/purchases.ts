@@ -111,6 +111,8 @@ export interface PurchaseRequest {
   status: PurchaseRequestStatus;
   itens: PurchaseRequestItem[];
   aprovacoes: PurchaseApproval[];
+  compradorId?: string;
+  atribuidoEm?: string; // ISO date
   createdAt: Date;
   updatedAt: Date;
 }
@@ -125,7 +127,8 @@ export interface QuotationItem {
   quantidade: number;
   unidadeMedida: string;
   precoUnitario?: number;
-  valorTotal?: number;
+  totalItem?: number; // precoUnitario * quantidade
+  valorTotal?: number; // alias para totalItem (retrocompatibilidade)
   observacoes?: string;
 }
 
@@ -137,10 +140,18 @@ export interface Quotation {
   formaPagamento?: string;
   condicoesPagamento?: string;
   prazoEntrega?: number;
+  dataPrevisaoEntrega?: string; // ISO date
+  frete?: number;
+  desconto?: number; // percentual
+  ipi?: number; // percentual
+  icms?: number; // percentual
+  pisCofins?: number; // percentual
   observacoes?: string;
   status: QuotationStatus;
   itens: QuotationItem[];
   linkPreenchimento?: string;
+  anexos?: string[]; // URLs Supabase Storage
+  totalGeral?: number; // calculado
   enviadoEm?: Date;
   respondidoEm?: Date;
   createdAt: Date;
@@ -162,6 +173,20 @@ export interface InvoiceInfo {
   chaveAcesso?: string;
 }
 
+export type StatusAprovacao = 'pendente' | 'aprovado' | 'reprovado' | 'em_revisao';
+export type AcaoAprovacao = 'pendente' | 'aprovado' | 'reprovado' | 'reenviado';
+
+export interface PurchaseOrderApproval {
+  id: string;
+  pedidoId: string;
+  aprovadorId?: string;
+  acao: AcaoAprovacao;
+  observacao?: string;
+  valorReferencia?: number;
+  versao: number;
+  createdAt: string;
+}
+
 export interface PurchaseOrder {
   id: string;
   cotacaoId: string;
@@ -170,6 +195,11 @@ export interface PurchaseOrder {
   status: PurchaseOrderStatus;
   notasFiscais: InvoiceInfo[];
   observacoes?: string;
+  statusAprovacao?: StatusAprovacao;
+  versao?: number;
+  aprovadorNecessarioId?: string;
+  compradorId?: string;
+  approvals?: PurchaseOrderApproval[];
   createdAt: Date;
   updatedAt: Date;
 }

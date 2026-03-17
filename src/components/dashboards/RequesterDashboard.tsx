@@ -15,22 +15,38 @@ import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
 import { toast } from 'sonner';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
+import { useAllowedTabs } from '@/hooks/useAllowedTabs';
+
+const SECTION_TAB_MAP: Record<string, string> = {
+  'stock': 'solicitante.estoque',
+  'requests': 'solicitante.minhas',
+  'deliveries': 'solicitante.recebimentos',
+  'new-purchase': 'solicitante.nova',
+  'my-purchases': 'solicitante.minhas',
+};
 
 export function RequesterDashboard() {
   const { currentUser, items, requests, addRequest, getItemById, units, deliveryBatches, getStockForItem, unitStocks, getWarehouseUnitId } = useApp();
+  const { canAccessTab } = useAllowedTabs();
   const [isNewRequestOpen, setIsNewRequestOpen] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [scannedBatchId, setScannedBatchId] = useState<string | null>(null);
 
-  const navigationSections: NavigationSection[] = useMemo(() => [
-    { id: 'stock', label: 'Estoque Disponível', icon: Package },
-    { id: 'requests', label: 'Meus Pedidos', icon: History },
-    { id: 'deliveries', label: 'Recebimentos', icon: CheckCircle2 },
-    { id: 'purchases', label: 'Compras', icon: ShoppingCart, items: [
-      { id: 'new-purchase', label: 'Nova Solicitação', icon: ShoppingCart },
-      { id: 'my-purchases', label: 'Minhas Solicitações', icon: FileText },
-    ]},
-  ], []);
+  const navigationSections: NavigationSection[] = useMemo(() => {
+    const all: NavigationSection[] = [
+      { id: 'stock', label: 'Estoque Disponível', icon: Package },
+      { id: 'requests', label: 'Meus Pedidos', icon: History },
+      { id: 'deliveries', label: 'Recebimentos', icon: CheckCircle2 },
+      { id: 'purchases', label: 'Compras', icon: ShoppingCart, items: [
+        { id: 'new-purchase', label: 'Nova Solicitação', icon: ShoppingCart },
+        { id: 'my-purchases', label: 'Minhas Solicitações', icon: FileText },
+      ]},
+    ];
+    return all.filter((s) => {
+      const tabId = SECTION_TAB_MAP[s.id];
+      return !tabId || canAccessTab(tabId);
+    });
+  }, [canAccessTab]);
 
   const { activeSection, activeItem } = useDashboardNav(navigationSections, 'Minhas Solicitações', 'Solicite materiais do almoxarifado central', 'stock');
 

@@ -129,22 +129,38 @@ export interface Loan {
   quantity?: number;
 }
 
+export interface AccessGroupMember {
+  userId: string;
+  userName?: string;
+  createdAt?: string;
+}
+
+export interface AccessGroup {
+  id: string;
+  codigo: string;
+  nome: string;
+  descricao?: string;
+  tabs: string[];
+  members: AccessGroupMember[];
+  createdAt?: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
-  primaryUnitId?: string; // Opcional para designers e solicitantes volantes
+  primaryUnitId?: string;
   additionalUnitIds?: string[];
-  warehouseType?: 'storage' | 'delivery'; // Para diferenciar almoxarifado direto de motorista
-  jobTitle?: string; // Cargo do usuário (ex: Community Leader, Assistente, etc)
-  adminType?: 'units' | 'warehouse'; // Para diferenciar tipo de admin
-  dailyCode?: string; // Código único diário para confirmações
-  dailyCodeGeneratedAt?: Date; // Timestamp da geração do código
-  requirePasswordChange?: boolean; // Usuário deve alterar senha no próximo login
-  firstLogin?: boolean; // Indica se é o primeiro acesso do usuário
-  resetToken?: string; // Token de recuperação de senha (6 dígitos)
-  resetTokenExpiry?: string; // Data de expiração do token de recuperação
+  warehouseType?: 'storage' | 'delivery';
+  jobTitle?: string;
+  adminType?: 'units' | 'warehouse';
+  dailyCode?: string;
+  dailyCodeGeneratedAt?: Date;
+  requirePasswordChange?: boolean;
+  firstLogin?: boolean;
+  resetToken?: string;
+  resetTokenExpiry?: string;
 }
 
 export interface Request {

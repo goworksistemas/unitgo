@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { PurchaseProvider } from './contexts/PurchaseContext';
+import { AllowedTabsProvider } from './contexts/AllowedTabsProvider';
 import { LoginPage } from './components/auth/LoginPage';
 import { ResetPasswordPage } from './components/auth/ResetPasswordPage';
 import { AppLayout } from './components/layout/AppLayout';
@@ -149,11 +150,13 @@ function AppContent() {
 
   return (
     <div className="min-h-screen overflow-x-hidden">
-      <PurchaseProvider>
-        <AppLayout>
-          {renderDashboard()}
-        </AppLayout>
-      </PurchaseProvider>
+      <AllowedTabsProvider>
+        <PurchaseProvider>
+          <AppLayout>
+            {renderDashboard()}
+          </AppLayout>
+        </PurchaseProvider>
+      </AllowedTabsProvider>
       <Toaster />
     </div>
   );

@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useRef } from 'react';
-import { Users, Building2, Package, List, TestTube2, Eye, LayoutDashboard, Settings2, ShoppingCart, ClipboardList, FileText, Landmark, Truck, BarChart3 } from 'lucide-react';
+import { Users, Building2, Package, List, TestTube2, Eye, LayoutDashboard, Settings2, ShoppingCart, ClipboardList, FileText, Landmark, Truck, BarChart3, Shield } from 'lucide-react';
 import { ProductsListPanel } from '../panels/ProductsListPanel';
 import { TestFlowPanel } from '../panels/TestFlowPanel';
 import { AdminResetPasswordDialog } from '../auth/AdminResetPasswordDialog';
@@ -23,11 +23,12 @@ import { PurchaseRequestApprovalPanel } from '../purchases/admin/PurchaseRequest
 import { ManagerPurchaseRequestsPanel } from '../purchases/manager/ManagerPurchaseRequestsPanel';
 import { ManagerApprovalHistoryPanel } from '../purchases/manager/ManagerApprovalHistoryPanel';
 import { ApprovedPurchaseRequestsPanel } from '../purchases/buyer/ApprovedPurchaseRequestsPanel';
-import { QuotationManagementPanel } from '../purchases/buyer/QuotationManagementPanel';
+import { QuotationsView } from '../purchases/buyer/QuotationsView';
 import { BuyerPurchaseOrdersPanel } from '../purchases/buyer/BuyerPurchaseOrdersPanel';
 import { CreatePurchaseRequestPanel } from '../purchases/requester/CreatePurchaseRequestPanel';
 import { MyPurchaseRequestsPanel } from '../purchases/requester/MyPurchaseRequestsPanel';
 import { ViewModePopup } from '../shared/ViewModePopup';
+import { AccessGroupsPanel } from '../developer/AccessGroupsPanel';
 
 const roleLabels: Record<string, string> = {
   controller: 'Controlador',
@@ -54,6 +55,7 @@ export function DeveloperDashboard() {
         { id: 'units', label: 'Unidades', icon: Building2 },
         { id: 'items', label: 'Criar Produto', icon: Package },
         { id: 'products-list', label: 'Ver Produtos', icon: List },
+        { id: 'access-groups', label: 'Grupos de Acesso', icon: Shield },
         { id: 'test-flow', label: 'Testar Fluxo', icon: TestTube2 },
       ],
     },
@@ -171,6 +173,9 @@ export function DeveloperDashboard() {
             <ProductsListPanel />
           </div>
         )}
+        {adminSection === 'access-groups' && (
+          <AccessGroupsPanel />
+        )}
         {adminSection === 'test-flow' && (
           <div className="space-y-4">
             <TestFlowPanel />
@@ -190,7 +195,7 @@ export function DeveloperDashboard() {
         case 'manager-requests': return <ManagerPurchaseRequestsPanel />;
         case 'approval-history': return <ManagerApprovalHistoryPanel />;
         case 'approved-requests': return <ApprovedPurchaseRequestsPanel />;
-        case 'quotations': return <QuotationManagementPanel />;
+        case 'quotations': return <QuotationsView />;
         case 'orders': return <BuyerPurchaseOrdersPanel />;
         case 'new-purchase': return <CreatePurchaseRequestPanel />;
         case 'my-purchases': return <MyPurchaseRequestsPanel />;
@@ -228,6 +233,7 @@ function DeveloperDialogs({ state }: { state: ReturnType<typeof useDeveloperStat
         setUserForm={state.setUserForm}
         units={state.units}
         handleUpdateUser={state.handleUpdateUser}
+        selectedUser={state.selectedUser}
       />
       <EditItemDialog
         isEditItemDialogOpen={state.isEditItemDialogOpen}

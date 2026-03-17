@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import { projectId, publicAnonKey, functionSlug } from '@/utils/supabase/info';
+import { api } from '@/utils/api';
 import type { User, UserRole } from '@/types';
 import type { UserFormState } from './types';
 
@@ -15,6 +16,8 @@ const INITIAL_USER_FORM: UserFormState = {
   warehouseType: undefined,
   adminType: undefined,
   jobTitle: '',
+  groupIds: [],
+  extraTabs: [],
 };
 
 export function useUserHandlers() {
@@ -131,6 +134,10 @@ export function useUserHandlers() {
         warehouseType: userForm.role === 'warehouse' ? userForm.warehouseType : undefined,
         adminType: userForm.role === 'admin' ? userForm.adminType : undefined,
         jobTitle: userForm.jobTitle,
+      });
+      await api.accessGroups.updateUserAccess(selectedUser.id, {
+        groupIds: userForm.groupIds,
+        extraTabs: userForm.extraTabs,
       });
       toast.success('Usuário atualizado com sucesso');
       setIsEditUserDialogOpen(false);

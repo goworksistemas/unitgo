@@ -10,6 +10,8 @@ export interface UserFormState {
   warehouseType: 'storage' | 'delivery' | undefined;
   adminType: 'units' | 'warehouse' | undefined;
   jobTitle: string;
+  groupIds: string[];
+  extraTabs: string[];
 }
 
 export interface ItemFormState {

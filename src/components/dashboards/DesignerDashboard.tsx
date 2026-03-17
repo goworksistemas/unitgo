@@ -6,6 +6,7 @@ import { FurnitureRequestsPanel } from '../panels/FurnitureRequestsPanel';
 import { FurnitureRemovalDialog } from '../dialogs/FurnitureRemovalDialog';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
+import { useAllowedTabs } from '@/hooks/useAllowedTabs';
 import { useDesignerState } from '../designer/useDesignerState';
 import { OverviewPanel } from '../designer/OverviewPanel';
 import { InventoryPanel } from '../designer/InventoryPanel';
@@ -18,10 +19,21 @@ import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
 export function DesignerDashboard() {
   const ds = useDesignerState();
 
-  const navigationSections: NavigationSection[] = useMemo(() => [
-    { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
-    { id: 'requests', label: 'Projetos', icon: Palette },
-  ], []);
+  const { canAccessTab } = useAllowedTabs();
+  const navigationSections: NavigationSection[] = useMemo(() => {
+    const TAB_MAP: Record<string, string> = {
+      'overview': 'designer.visao',
+      'requests': 'designer.projetos',
+    };
+    const all: NavigationSection[] = [
+      { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
+      { id: 'requests', label: 'Projetos', icon: Palette },
+    ];
+    return all.filter((s) => {
+      const tabId = TAB_MAP[s.id];
+      return !tabId || canAccessTab(tabId);
+    });
+  }, [canAccessTab]);
 
   const { activeSection } = useDashboardNav(
     navigationSections,
