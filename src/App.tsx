@@ -121,13 +121,17 @@ function AppContent() {
   }
 
   const renderDashboard = () => {
-    // Motoristas têm interface simplificada
-    if (currentUser.role === 'warehouse' && currentUser.warehouseType === 'delivery') {
+    // Motorista: perfil dedicado (driver) ou almox com tipo entrega (legado)
+    const isDriverExperience =
+      currentUser.role === 'driver' ||
+      (currentUser.role === 'warehouse' && currentUser.warehouseType === 'delivery');
+    if (isDriverExperience) {
       return <DriverDashboard />;
     }
 
     switch (currentUser.role) {
       case 'controller':
+      case 'executor':
         return <ControllerDashboard />;
       case 'admin':
         return <AdminDashboard />;

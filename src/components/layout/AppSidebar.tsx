@@ -44,6 +44,8 @@ const ROLE_LABELS: Record<string, string> = {
   requester: 'Solicitante',
   buyer: 'Comprador',
   financial: 'Financeiro',
+  driver: 'Motorista',
+  executor: 'Executor',
 };
 
 function getInitials(name: string): string {
