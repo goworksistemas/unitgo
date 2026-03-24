@@ -1,9 +1,16 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Unit, Item, UnitStock, FurnitureRemovalRequest, FurnitureRequestToDesigner } from '@/types';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Card, CardContent } from '../ui/card';
+import { Input } from '../ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import {
@@ -13,7 +20,18 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Separator } from '../ui/separator';
-import { Armchair, Plus, Trash2, MoreHorizontal, Clock, History, Palette, ScrollText, Calendar, MapPin } from 'lucide-react';
+import {
+  Armchair,
+  Plus,
+  Trash2,
+  MoreHorizontal,
+  Palette,
+  ScrollText,
+  Calendar,
+  MapPin,
+  Maximize2,
+  Search,
+} from 'lucide-react';
 import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
 
 type RemovalRequestWithOrigin = FurnitureRemovalRequest & { originUnitId?: string };
@@ -69,8 +87,22 @@ export function FurniturePanel({
   const [furnitureTab, setFurnitureTab] = useState<'moveis' | 'designer' | 'historico'>(() =>
     pendingToDesigner.length > 0 ? 'designer' : 'moveis',
   );
+  const [search, setSearch] = useState('');
+  const [imagePreview, setImagePreview] = useState<{ src: string; title: string } | null>(null);
+
+  const filteredFurnitureStock = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return furnitureStock;
+    return furnitureStock.filter((stock) => {
+      const item = getItemById(stock.itemId);
+      if (!item) return false;
+      const hay = `${item.name} ${item.description ?? ''} ${item.brand ?? ''} ${item.model ?? ''} ${stock.location ?? ''}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [furnitureStock, search, getItemById]);
 
   return (
+    <>
     <div className="space-y-4">
       <Tabs
         value={furnitureTab}
@@ -109,53 +141,72 @@ export function FurniturePanel({
         <TabsContent value="moveis" className="mt-4 space-y-4" forceMount={false}>
           {furnitureTab === 'moveis' ? (
             <>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5">
-          <Armchair className="h-3.5 w-3.5 text-muted-foreground" />
-          <h3 className="text-xs font-medium text-foreground">Móveis da Unidade</h3>
-          <span className="text-xs text-muted-foreground">{furnitureStock.length} itens</span>
-          {pendingRemovals.length > 0 && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
-              {pendingRemovals.length} retirada(s) pendente(s)
+      <div className="flex flex-col gap-2 mb-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Armchair className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <h3 className="text-xs font-medium text-foreground">Móveis da Unidade</h3>
+            <span className="text-xs text-muted-foreground">
+              {filteredFurnitureStock.length === furnitureStock.length
+                ? `${furnitureStock.length} item(ns)`
+                : `${filteredFurnitureStock.length} de ${furnitureStock.length}`}
             </span>
-          )}
+            {pendingRemovals.length > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
+                {pendingRemovals.length} retirada(s) pendente(s)
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Select value={selectedFloor} onValueChange={onFloorChange}>
+              <SelectTrigger className="h-7 text-xs w-[140px]">
+                <SelectValue placeholder="Filtrar por andar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os andares</SelectItem>
+                {currentUnit?.floors && Array.isArray(currentUnit.floors) && currentUnit.floors.length > 0 ? (
+                  currentUnit.floors.map((floor) => (
+                    <SelectItem key={floor} value={floor}>{floor}</SelectItem>
+                  ))
+                ) : null}
+              </SelectContent>
+            </Select>
+            <Button type="button" onClick={onAddFurniture} size="sm">
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              Cadastrar
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" size="sm" variant="outline">
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onRequestFurniture}>
+                  <Plus className="h-3.5 w-3.5 mr-2" />
+                  Solicitar ao Designer
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onRemoval}>
+                  <Trash2 className="h-3.5 w-3.5 mr-2" />
+                  Solicitar Retirada
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <Select value={selectedFloor} onValueChange={onFloorChange}>
-            <SelectTrigger className="h-7 text-xs w-[140px]">
-              <SelectValue placeholder="Filtrar por andar" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os andares</SelectItem>
-              {currentUnit?.floors && Array.isArray(currentUnit.floors) && currentUnit.floors.length > 0 ? (
-                currentUnit.floors.map((floor) => (
-                  <SelectItem key={floor} value={floor}>{floor}</SelectItem>
-                ))
-              ) : null}
-            </SelectContent>
-          </Select>
-          <Button onClick={onAddFurniture} size="sm">
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            Cadastrar
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline">
-                <MoreHorizontal className="h-3.5 w-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onRequestFurniture}>
-                <Plus className="h-3.5 w-3.5 mr-2" />
-                Solicitar ao Designer
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onRemoval}>
-                <Trash2 className="h-3.5 w-3.5 mr-2" />
-                Solicitar Retirada
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        {furnitureStock.length > 0 ? (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" aria-hidden />
+            <Input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por móvel, marca ou local…"
+              className="pl-9 h-9 text-sm"
+              aria-label="Buscar móveis nesta unidade"
+            />
+          </div>
+        ) : null}
       </div>
 
       {furnitureStock.length === 0 ? (
@@ -163,38 +214,76 @@ export function FurniturePanel({
           <Armchair className="h-6 w-6 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">Nenhum móvel cadastrado nesta unidade</p>
         </div>
+      ) : filteredFurnitureStock.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border py-10 text-center text-muted-foreground text-sm">
+          Nenhum resultado para &quot;{search.trim()}&quot;. Ajuste o termo de busca ou o filtro de andar.
+        </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-          {furnitureStock.map(stock => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+          {filteredFurnitureStock.map((stock) => {
             const item = getItemById(stock.itemId);
             if (!item) return null;
-            const locationPart = stock.location?.split(' - ')[0] || '';
-            const roomPart = stock.location?.includes(' - ') ? stock.location.split(' - ')[1] : stock.location || '';
+
             return (
-              <div
-                key={stock.id}
-                className="rounded-md border border-border overflow-hidden bg-background"
-              >
+              <Card key={stock.id} className="overflow-hidden border-border/80 shadow-none">
                 {item.imageUrl ? (
-                  <div className="aspect-video w-full overflow-hidden bg-muted">
-                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                  <div className="flex flex-col gap-0">
+                    <div className="relative h-14 sm:h-16 w-full overflow-hidden bg-muted">
+                      <img
+                        src={item.imageUrl}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="flex border-b border-border/50 bg-muted/30">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-full shrink-0 rounded-none text-muted-foreground hover:text-foreground"
+                        onClick={() => setImagePreview({ src: item.imageUrl!, title: item.name })}
+                        aria-label={`Ver imagem completa: ${item.name}`}
+                        title="Ver imagem completa"
+                      >
+                        <Maximize2 className="h-3 w-3" aria-hidden />
+                      </Button>
+                    </div>
                   </div>
-                ) : (
-                  <div className="aspect-video bg-muted flex flex-col items-center justify-center gap-1">
-                    <Armchair className="h-5 w-5 text-muted-foreground/30" />
-                    <span className="text-[10px] text-muted-foreground/50">sem imagem</span>
+                ) : null}
+                <CardContent className="p-1.5 sm:p-2">
+                  <div className="space-y-1">
+                    <h4
+                      className="text-[11px] sm:text-xs font-medium leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[2.25rem]"
+                      title={item.name}
+                    >
+                      {item.name}
+                    </h4>
+                    {item.description ? (
+                      <p
+                        className="text-[10px] text-muted-foreground line-clamp-1 leading-tight"
+                        title={item.description}
+                      >
+                        {item.description}
+                      </p>
+                    ) : null}
+
+                    <div className="flex items-start gap-0.5 text-[10px] text-muted-foreground leading-tight">
+                      <MapPin className="h-3 w-3 shrink-0 mt-px" aria-hidden />
+                      <span className="line-clamp-1" title={stock.location || undefined}>
+                        {stock.location || '—'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-end border-t border-border/80 pt-1">
+                      <span className="text-xs font-semibold tabular-nums" title="Quantidade">
+                        ×{stock.quantity}
+                      </span>
+                    </div>
                   </div>
-                )}
-                <div className="p-2.5">
-                  <p className="text-xs font-medium text-foreground truncate">{item.name}</p>
-                  <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-[11px] text-muted-foreground truncate max-w-[60%]">
-                      {roomPart || locationPart || '—'}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">×{stock.quantity}</span>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
@@ -341,5 +430,23 @@ export function FurniturePanel({
         </TabsContent>
       </Tabs>
     </div>
+
+    <Dialog open={!!imagePreview} onOpenChange={(open) => !open && setImagePreview(null)}>
+      <DialogContent className="max-w-[min(100vw-1.5rem,56rem)] gap-3 p-3 sm:p-4">
+        <DialogHeader className="pr-8 text-left">
+          <DialogTitle className="text-base leading-snug">{imagePreview?.title}</DialogTitle>
+        </DialogHeader>
+        {imagePreview ? (
+          <div className="flex max-h-[min(85vh,calc(100dvh-8rem))] justify-center overflow-auto rounded-md border border-border bg-muted/30 p-2">
+            <img
+              src={imagePreview.src}
+              alt={imagePreview.title}
+              className="h-auto max-h-[min(80vh,calc(100dvh-10rem))] w-auto max-w-full object-contain"
+            />
+          </div>
+        ) : null}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
