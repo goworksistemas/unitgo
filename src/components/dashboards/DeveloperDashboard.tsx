@@ -132,6 +132,7 @@ export function DeveloperDashboard() {
             setIsAddUserDialogOpen={state.setIsAddUserDialogOpen}
             userForm={state.userForm}
             setUserForm={state.setUserForm}
+            resetUserForm={state.resetUserForm}
             handleAddUser={state.handleAddUser}
             handleEditUser={state.handleEditUser}
             handleDeleteUser={state.handleDeleteUser}

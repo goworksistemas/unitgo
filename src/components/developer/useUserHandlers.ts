@@ -10,7 +10,7 @@ const INITIAL_USER_FORM: UserFormState = {
   name: '',
   email: '',
   password: '',
-  role: 'controller',
+  role: 'requester',
   primaryUnitId: '',
   additionalUnitIds: [],
   warehouseType: undefined,
@@ -169,6 +169,7 @@ export function useUserHandlers() {
 
   return {
     users, units, currentUser,
+    resetUserForm,
     isAddUserDialogOpen, setIsAddUserDialogOpen,
     isEditUserDialogOpen, setIsEditUserDialogOpen,
     isResetPasswordDialogOpen, setIsResetPasswordDialogOpen,

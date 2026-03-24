@@ -4,4 +4,4 @@ node_modules
 .env.*.local
 
 # Pasta temporária com SQLs de migração
-pag-temp/
+temp/

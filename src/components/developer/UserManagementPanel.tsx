@@ -2,13 +2,13 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { PlusCircle } from 'lucide-react';
 import type { DeveloperState } from './types';
-import { UserFormFields } from './UserFormFields';
+import { CreateUserWizard } from './CreateUserWizard';
 import { UserTable } from './UserTable';
 
 type Props = Pick<DeveloperState,
   | 'users' | 'units'
   | 'isAddUserDialogOpen' | 'setIsAddUserDialogOpen'
-  | 'userForm' | 'setUserForm'
+  | 'userForm' | 'setUserForm' | 'resetUserForm'
   | 'handleAddUser' | 'handleEditUser' | 'handleDeleteUser'
   | 'handleRequestPasswordChange'
   | 'setSelectedUser' | 'setIsResetPasswordDialogOpen'
@@ -17,7 +17,7 @@ type Props = Pick<DeveloperState,
 export function UserManagementPanel({
   users, units,
   isAddUserDialogOpen, setIsAddUserDialogOpen,
-  userForm, setUserForm,
+  userForm, setUserForm, resetUserForm,
   handleAddUser, handleEditUser, handleDeleteUser,
   handleRequestPasswordChange,
   setSelectedUser, setIsResetPasswordDialogOpen,
@@ -29,23 +29,35 @@ export function UserManagementPanel({
           <h2 className="text-lg font-semibold text-foreground">Gestão de Usuários</h2>
           <p className="text-sm text-muted-foreground">Crie, edite ou remova usuários do sistema</p>
         </div>
-        <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
+        <Dialog
+          open={isAddUserDialogOpen}
+          onOpenChange={(open) => {
+            setIsAddUserDialogOpen(open);
+            if (open) resetUserForm();
+          }}
+        >
           <DialogTrigger asChild>
             <Button className="gap-2 w-full sm:w-auto bg-primary hover:bg-primary/90">
               <PlusCircle className="w-4 h-4" />
               Novo Usuário
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-lg sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Criar Novo Usuário</DialogTitle>
-              <DialogDescription>Preencha os dados do novo usuário. A senha será enviada por email.</DialogDescription>
+              <DialogTitle>Criar novo usuário</DialogTitle>
+              <DialogDescription>
+                Em duas etapas: identificação e depois perfil com acesso às unidades.
+              </DialogDescription>
             </DialogHeader>
-            <UserFormFields userForm={userForm} setUserForm={setUserForm} units={units} showPassword idPrefix="add-" />
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAddUserDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleAddUser} className="bg-primary hover:bg-primary/90">Criar Usuário</Button>
-            </div>
+            <CreateUserWizard
+              dialogOpen={isAddUserDialogOpen}
+              userForm={userForm}
+              setUserForm={setUserForm}
+              units={units}
+              onCancel={() => setIsAddUserDialogOpen(false)}
+              onSubmit={handleAddUser}
+              idPrefix="add-"
+            />
           </DialogContent>
         </Dialog>
       </div>

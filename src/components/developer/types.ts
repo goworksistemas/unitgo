@@ -69,6 +69,7 @@ export interface DeveloperState {
 
   userForm: UserFormState;
   setUserForm: (f: UserFormState) => void;
+  resetUserForm: () => void;
   itemForm: ItemFormState;
   setItemForm: (f: ItemFormState) => void;
   unitForm: UnitFormState;

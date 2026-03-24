@@ -111,7 +111,7 @@ export function RoleSpecificFields({ userForm, setUserForm, units, idPrefix = ''
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            💡 Admin Controlador pode visualizar como Controlador. Admin Designer pode visualizar como Designer.
+            Admin Controlador enxerga o fluxo como Controlador; Admin Designer, como Designer.
           </p>
         </div>
       )}
