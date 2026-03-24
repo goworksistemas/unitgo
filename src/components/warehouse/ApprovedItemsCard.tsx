@@ -24,21 +24,21 @@ export function ApprovedItemsCard({
   }, {} as Record<string, Request[]>);
 
   return (
-    <Card className="border-2 border-primary bg-primary/5">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
-              Itens Aprovados - Criar Lote
+    <Card className="border border-primary/40 bg-primary/5 shadow-sm">
+      <CardHeader className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-1">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Package className="h-5 w-5 shrink-0 text-primary" />
+              Prontos para montar lote
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm">
-              {approvedOnly.length} item(ns) aprovado(s) prontos para criar lote
+              {approvedOnly.length} pedido(s) aprovado(s). Agrupe por destino em um único lote para o motorista.
             </CardDescription>
           </div>
-          <Button onClick={onCreateBatch} className="bg-primary hover:bg-primary/90" size="lg">
-            <Truck className="h-5 w-5 mr-2" />
-            Criar Lote
+          <Button onClick={onCreateBatch} className="w-full shrink-0 bg-primary hover:bg-primary/90 sm:w-auto" size="lg">
+            <Truck className="h-5 w-5 sm:mr-2" />
+            Criar lote
           </Button>
         </div>
       </CardHeader>
@@ -47,7 +47,7 @@ export function ApprovedItemsCard({
           {Object.entries(itemsByUnit).map(([unitId, unitRequests]) => {
             const unit = getUnitById(unitId);
             return (
-              <div key={unitId} className="bg-card rounded-lg p-4 border-2 border-primary/30">
+              <div key={unitId} className="rounded-lg border border-primary/25 bg-card p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <h4 className="font-semibold text-sm">{unit?.name}</h4>

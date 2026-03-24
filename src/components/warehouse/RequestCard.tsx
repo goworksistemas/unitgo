@@ -44,17 +44,17 @@ export function RequestCard({
   const urgencyCfg = URGENCY_CONFIG[request.urgency] || URGENCY_CONFIG.medium;
 
   return (
-    <div className={`border rounded-lg p-3 sm:p-4 space-y-3 ${
-      !hasStock && request.status === 'pending' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-card'
+    <div className={`space-y-3 rounded-lg border p-3 sm:p-4 ${
+      !hasStock && request.status === 'pending' ? 'border-red-200 bg-red-50/80 dark:border-red-900 dark:bg-red-950/25' : 'border-border bg-card'
     }`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <h4 className="font-semibold truncate">{item?.name || 'Item não encontrado'}</h4>
           <p className="text-sm text-muted-foreground truncate">{unit?.name}</p>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
-          <Badge className={urgencyCfg.className}>{urgencyCfg.label}</Badge>
+        <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-1">
+          <Badge variant={statusCfg.variant} className="text-[10px] sm:text-xs">{statusCfg.label}</Badge>
+          <Badge className={`text-[10px] sm:text-xs ${urgencyCfg.className}`}>{urgencyCfg.label}</Badge>
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 import type { Request, Item, Unit, User, UnitStock } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Truck } from 'lucide-react';
+import { Package, Route, ListChecks } from 'lucide-react';
 import { RequestCard } from './RequestCard';
 import { FurnitureWarehousePanel } from '../panels/FurnitureWarehousePanel';
 
@@ -9,8 +9,10 @@ interface RequestsPanelProps {
   isDeveloperMode?: boolean;
   isDeliveryDriver: boolean;
   isStorageWorker: boolean;
-  activeRequests: Request[];
-  outForDeliveryRequests: Request[];
+  /** Pedidos que precisam de ação no almox (aprovar, processar) */
+  actionRequests: Request[];
+  /** Aguardando retirada ou em rota de entrega */
+  routeRequests: Request[];
   completedRequests: Request[];
   pendingRequests: Request[];
   getItemById: (id: string) => Item | undefined;
@@ -24,74 +26,108 @@ interface RequestsPanelProps {
 }
 
 export function RequestsPanel({
-  isDeveloperMode, isDeliveryDriver, isStorageWorker,
-  activeRequests, outForDeliveryRequests, completedRequests, pendingRequests,
-  getItemById, getUnitById, getUserById, getStockForItem, warehouseUnitId,
-  onApprove, onReject, onDelivered,
+  isDeveloperMode,
+  isDeliveryDriver,
+  isStorageWorker,
+  actionRequests,
+  routeRequests,
+  completedRequests,
+  pendingRequests,
+  getItemById,
+  getUnitById,
+  getUserById,
+  getStockForItem,
+  warehouseUnitId,
+  onApprove,
+  onReject,
+  onDelivered,
 }: RequestsPanelProps) {
   const cardProps = {
-    getItemById, getUnitById, getUserById, getStockForItem,
-    warehouseUnitId, isStorageWorker, isDeliveryDriver,
-    onApprove, onReject, onDelivered,
+    getItemById,
+    getUnitById,
+    getUserById,
+    getStockForItem,
+    warehouseUnitId,
+    isStorageWorker,
+    isDeliveryDriver,
+    onApprove,
+    onReject,
+    onDelivered,
   };
+
+  const defaultTab = isDeliveryDriver && routeRequests.length > 0 && actionRequests.length === 0
+    ? 'route'
+    : 'action';
 
   const renderList = (items: Request[], emptyMsg: string) =>
     items.length === 0 ? (
-      <div className="text-center py-8 text-muted-foreground">{emptyMsg}</div>
+      <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+        {emptyMsg}
+      </div>
     ) : (
       <div className="space-y-3">
-        {items.map(r => <RequestCard key={r.id} request={r} {...cardProps} />)}
+        {items.map((r) => (
+          <RequestCard key={r.id} request={r} {...cardProps} />
+        ))}
       </div>
     );
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base sm:text-lg">Solicitações de Materiais</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
-            {isDeliveryDriver ? 'Pedidos para retirada e entrega' : 'Aprovar e separar pedidos das unidades'}
+      <Card className="border-border shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold tracking-tight">Pedidos de materiais</CardTitle>
+          <CardDescription>
+            {isDeliveryDriver
+              ? 'Use a aba «Na rota» para marcar entregas. Aprovações e lotes ficam em outras áreas do sistema.'
+              : 'Comece em «À fazer» (aprovar). Depois use «Na rota» para retirada e entrega. Lotes de carga ficam em Lotes.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue={isDeliveryDriver ? 'delivery' : 'active'} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3">
-              <TabsTrigger value="active" className="relative">
-                <span className="hidden sm:inline">Ativas</span>
-                <span className="sm:hidden">Ativas</span>
-                <span className="ml-1">({activeRequests.length})</span>
-                {pendingRequests.length > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+          <Tabs defaultValue={defaultTab} className="w-full">
+            <TabsList className="grid h-auto w-full grid-cols-3 gap-1 p-1 sm:max-w-xl">
+              <TabsTrigger value="action" className="gap-1.5 px-2 py-2 text-xs sm:text-sm">
+                <ListChecks className="hidden h-3.5 w-3.5 sm:inline" />
+                <span>À fazer</span>
+                {pendingRequests.length > 0 ? (
+                  <span className="ml-0.5 rounded-full bg-destructive/15 px-1.5 text-[10px] font-semibold text-destructive tabular-nums">
+                    {pendingRequests.length}
                   </span>
+                ) : (
+                  <span className="ml-0.5 text-muted-foreground tabular-nums">({actionRequests.length})</span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="delivery" className="sm:hidden relative">
-                <Truck className="h-4 w-4 mr-1" />
-                ({outForDeliveryRequests.length})
-                {outForDeliveryRequests.length > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500" />
-                  </span>
-                )}
+              <TabsTrigger value="route" className="gap-1.5 px-2 py-2 text-xs sm:text-sm">
+                <Route className="hidden h-3.5 w-3.5 sm:inline" />
+                <span className="truncate">Na rota</span>
+                <span className="ml-0.5 text-muted-foreground tabular-nums">({routeRequests.length})</span>
               </TabsTrigger>
-              <TabsTrigger value="completed" className="relative">
-                <span className="hidden sm:inline">Concluídas</span>
-                <span className="sm:hidden">OK</span>
-                <span className="ml-1">({completedRequests.length})</span>
+              <TabsTrigger value="completed" className="gap-1.5 px-2 py-2 text-xs sm:text-sm">
+                <Package className="hidden h-3.5 w-3.5 sm:inline" />
+                <span className="truncate">Feitos</span>
+                <span className="ml-0.5 text-muted-foreground tabular-nums">({completedRequests.length})</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="active" className="space-y-3 mt-4">
-              {renderList(activeRequests, 'Nenhuma solicitação ativa')}
+            <TabsContent value="action" className="mt-4">
+              {renderList(
+                actionRequests,
+                isStorageWorker
+                  ? 'Nada pendente de aprovação ou separação neste momento.'
+                  : 'Sem pedidos aguardando ação do almox.',
+              )}
             </TabsContent>
-            <TabsContent value="delivery" className="space-y-3 mt-4 sm:hidden">
-              {renderList(outForDeliveryRequests, 'Nenhuma entrega em rota')}
+            <TabsContent value="route" className="mt-4">
+              {renderList(
+                routeRequests,
+                'Nenhum item aguardando retirada ou em entrega.',
+              )}
             </TabsContent>
-            <TabsContent value="completed" className="space-y-3 mt-4">
-              {renderList(completedRequests.slice(0, 10), 'Nenhuma solicitação concluída')}
+            <TabsContent value="completed" className="mt-4">
+              <p className="mb-3 text-xs text-muted-foreground">
+                Mostrando os 15 últimos concluídos.
+              </p>
+              {renderList(completedRequests.slice(0, 15), 'Nenhum pedido concluído ainda.')}
             </TabsContent>
           </Tabs>
         </CardContent>

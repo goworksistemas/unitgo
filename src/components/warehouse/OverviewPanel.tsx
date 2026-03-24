@@ -15,73 +15,86 @@ export function OverviewPanel({
   pendingCount, approvedCount, awaitingPickupCount,
   outForDeliveryCount, lowStockItems, getItemById,
 }: OverviewPanelProps) {
+  const kpi = (
+    <>
+      <Card className="min-w-[132px] shrink-0 snap-start border-border shadow-sm md:min-w-0">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
+          <CardTitle className="text-xs font-medium text-muted-foreground">Aprovar</CardTitle>
+          <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        </CardHeader>
+        <CardContent className="pb-3 pt-0">
+          <div className="text-2xl font-semibold tabular-nums">{pendingCount}</div>
+          <p className="text-[11px] text-muted-foreground">aguardando você</p>
+        </CardContent>
+      </Card>
+
+      <Card className="min-w-[132px] shrink-0 snap-start border-border shadow-sm md:min-w-0">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
+          <CardTitle className="text-xs font-medium text-muted-foreground">Separar</CardTitle>
+          <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        </CardHeader>
+        <CardContent className="pb-3 pt-0">
+          <div className="text-2xl font-semibold tabular-nums">{approvedCount}</div>
+          <p className="text-[11px] text-muted-foreground">aprovados / processo</p>
+        </CardContent>
+      </Card>
+
+      <Card className="min-w-[132px] shrink-0 snap-start border-border shadow-sm md:min-w-0">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
+          <CardTitle className="text-xs font-medium text-muted-foreground">Retirada</CardTitle>
+          <PackageCheck className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+        </CardHeader>
+        <CardContent className="pb-3 pt-0">
+          <div className="text-2xl font-semibold tabular-nums">{awaitingPickupCount}</div>
+          <p className="text-[11px] text-muted-foreground">prontos p/ motorista</p>
+        </CardContent>
+      </Card>
+
+      <Card className="min-w-[132px] shrink-0 snap-start border-border shadow-sm md:min-w-0">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
+          <CardTitle className="text-xs font-medium text-muted-foreground">Em rota</CardTitle>
+          <Truck className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+        </CardHeader>
+        <CardContent className="pb-3 pt-0">
+          <div className="text-2xl font-semibold tabular-nums">{outForDeliveryCount}</div>
+          <p className="text-[11px] text-muted-foreground">entrega em andamento</p>
+        </CardContent>
+      </Card>
+
+      <Card className="min-w-[132px] shrink-0 snap-start border-border shadow-sm md:min-w-0">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
+          <CardTitle className="text-xs font-medium text-muted-foreground">Estoque baixo</CardTitle>
+          <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+        </CardHeader>
+        <CardContent className="pb-3 pt-0">
+          <div className="text-2xl font-semibold tabular-nums">{lowStockItems.length}</div>
+          <p className="text-[11px] text-muted-foreground">materiais</p>
+        </CardContent>
+      </Card>
+    </>
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm">Pendentes</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl sm:text-2xl">{pendingCount}</div>
-            <p className="text-xs text-muted-foreground">Aprovação</p>
-          </CardContent>
-        </Card>
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-sm font-medium text-foreground">Resumo rápido</h2>
+        <p className="text-xs text-muted-foreground">Números do fluxo de materiais (não inclui móveis)</p>
+      </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm">Para Separar</CardTitle>
-            <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl sm:text-2xl">{approvedCount}</div>
-            <p className="text-xs text-muted-foreground">Aprovados</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm">Aguardando</CardTitle>
-            <PackageCheck className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl sm:text-2xl">{awaitingPickupCount}</div>
-            <p className="text-xs text-muted-foreground">Retirada</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm">Em Rota</CardTitle>
-            <Truck className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl sm:text-2xl">{outForDeliveryCount}</div>
-            <p className="text-xs text-muted-foreground">Entrega</p>
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-2 sm:col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm">Estoque Baixo</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl sm:text-2xl">{lowStockItems.length}</div>
-            <p className="text-xs text-muted-foreground">Materiais</p>
-          </CardContent>
-        </Card>
+      <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 md:mx-0 md:grid md:grid-cols-5 md:gap-3 md:overflow-visible md:snap-none">
+        {kpi}
       </div>
 
       {lowStockItems.length > 0 && (
-        <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
-          <CardHeader>
-            <CardTitle className="text-red-900 dark:text-red-400 flex items-center gap-2 text-base sm:text-lg">
-              <AlertCircle className="h-5 w-5" />
-              Alertas de Estoque Baixo - Materiais
+        <Card className="border-red-200/80 bg-red-50/80 dark:border-red-900 dark:bg-red-950/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold text-red-900 dark:text-red-300">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              Materiais abaixo do mínimo
             </CardTitle>
-            <CardDescription>Materiais que precisam de reposição urgente (móveis em painel separado)</CardDescription>
+            <CardDescription className="text-xs">
+              Priorize reposição. Móveis têm painel próprio em Pedidos.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">

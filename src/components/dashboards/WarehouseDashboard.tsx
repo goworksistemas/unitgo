@@ -3,6 +3,7 @@ import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
 import { LayoutDashboard, ClipboardList, Truck, Scan, ScrollText } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { toast } from 'sonner';
 import { AddFurnitureDialog } from '../dialogs/AddFurnitureDialog';
 import { SelectItemForStockDialog } from '../dialogs/SelectItemForStockDialog';
@@ -47,9 +48,9 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
       'logistics': 'almox.logistica',
     };
     const all: NavigationSection[] = [
-      { id: 'overview', label: 'Visão Geral e Estoque', icon: LayoutDashboard },
-      { id: 'requests', label: 'Solicitações', icon: ClipboardList },
-      { id: 'logistics', label: 'Logística', icon: Truck },
+      { id: 'overview', label: 'Início', icon: LayoutDashboard },
+      { id: 'requests', label: 'Pedidos', icon: ClipboardList },
+      { id: 'logistics', label: 'Lotes', icon: Truck },
     ];
     return all.filter((s) => {
       const tabId = TAB_MAP[s.id];
@@ -58,37 +59,72 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
   }, [canAccessTab]);
 
   const { activeSection } = useDashboardNav(
-    navigationSections, 'Almoxarifado Central',
-    isDeliveryDriver ? 'Entregas e coletas de materiais' : 'Gestão de solicitações e distribuição de materiais',
+    navigationSections,
+    'Almoxarifado',
+    isDeliveryDriver ? 'Materiais: retirada e entrega' : 'Materiais: pedidos, lotes e estoque',
     'overview',
   );
 
-  console.log('🔍 DEBUG WarehouseDashboard:', { total: requests.length, requests: requests.map(r => ({ id: r.id, itemId: r.itemId, status: r.status, requestingUnitId: r.requestingUnitId, quantity: r.quantity })) });
+  const warehouseMetrics = useMemo(() => {
+    const warehouseRequests = requests.filter(r => r.status !== 'cancelled');
+    const pendingRequests = warehouseRequests.filter(r => r.status === 'pending');
+    const approvedRequests = warehouseRequests.filter(r => r.status === 'approved' || r.status === 'processing');
+    const awaitingPickupRequests = warehouseRequests.filter(r => r.status === 'awaiting_pickup');
+    const outForDeliveryRequests = warehouseRequests.filter(r => r.status === 'out_for_delivery');
+    const completedRequests = warehouseRequests.filter(r => r.status === 'completed');
+    const actionRequests = warehouseRequests.filter(r =>
+      ['pending', 'approved', 'processing'].includes(r.status),
+    );
+    const routeRequests = warehouseRequests.filter(r =>
+      ['awaiting_pickup', 'out_for_delivery'].includes(r.status),
+    );
+    const pendingBatches = deliveryBatches.filter(b => b.status === 'pending');
+    const deliveryConfirmedBatches = deliveryBatches.filter(b => b.status === 'delivery_confirmed');
+    const validPendingBatches = pendingBatches.filter(batch => {
+      const batchReqs = requests.filter(r => batch.requestIds.includes(r.id));
+      return !batchReqs.every(r => r.status === 'awaiting_pickup');
+    });
+    const furniturePickups = furnitureRemovalRequests.filter(
+      r => r.status === 'approved_storage' || r.status === 'approved_disposal',
+    );
+    const furnitureInTransit = furnitureRemovalRequests.filter(r => r.status === 'in_transit');
+    const warehouseStock = unitStocks.filter(s => s.unitId === actions.warehouseUnitId);
+    const lowStockItems = warehouseStock.filter(s => {
+      const item = items.find(i => i.id === s.itemId);
+      return s.quantity < s.minimumQuantity && !item?.isFurniture;
+    });
+    return {
+      warehouseRequests,
+      pendingRequests,
+      approvedRequests,
+      awaitingPickupRequests,
+      outForDeliveryRequests,
+      completedRequests,
+      actionRequests,
+      routeRequests,
+      pendingBatches,
+      deliveryConfirmedBatches,
+      validPendingBatches,
+      furniturePickups,
+      furnitureInTransit,
+      lowStockItems,
+    };
+  }, [requests, deliveryBatches, furnitureRemovalRequests, unitStocks, items, actions.warehouseUnitId]);
 
-  const warehouseRequests = requests.filter(r => r.status !== 'cancelled');
-  const pendingRequests = warehouseRequests.filter(r => r.status === 'pending');
-  console.log('  ✅ Pending:', { count: pendingRequests.length, details: pendingRequests.map(r => ({ id: r.id, itemId: r.itemId, quantity: r.quantity, status: r.status })) });
-
-  const approvedRequests = warehouseRequests.filter(r => r.status === 'approved' || r.status === 'processing');
-  const awaitingPickupRequests = warehouseRequests.filter(r => r.status === 'awaiting_pickup');
-  const outForDeliveryRequests = warehouseRequests.filter(r => r.status === 'out_for_delivery');
-  const completedRequests = warehouseRequests.filter(r => r.status === 'completed');
-  const activeRequests = [...pendingRequests, ...approvedRequests, ...outForDeliveryRequests];
-
-  const pendingBatches = deliveryBatches.filter(b => b.status === 'pending');
-  const deliveryConfirmedBatches = deliveryBatches.filter(b => b.status === 'delivery_confirmed');
-  const validPendingBatches = pendingBatches.filter(batch => {
-    const batchReqs = requests.filter(r => batch.requestIds.includes(r.id));
-    return !batchReqs.every(r => r.status === 'awaiting_pickup');
-  });
-
-  const furniturePickups = furnitureRemovalRequests.filter(r => r.status === 'approved_storage' || r.status === 'approved_disposal');
-  const furnitureInTransit = furnitureRemovalRequests.filter(r => r.status === 'in_transit');
-  const warehouseStock = unitStocks.filter(s => s.unitId === actions.warehouseUnitId);
-  const lowStockItems = warehouseStock.filter(s => {
-    const item = items.find(i => i.id === s.itemId);
-    return s.quantity < s.minimumQuantity && !item?.isFurniture;
-  });
+  const {
+    pendingRequests,
+    approvedRequests,
+    awaitingPickupRequests,
+    outForDeliveryRequests,
+    completedRequests,
+    actionRequests,
+    routeRequests,
+    validPendingBatches,
+    deliveryConfirmedBatches,
+    furniturePickups,
+    furnitureInTransit,
+    lowStockItems,
+  } = warehouseMetrics;
 
   const lookups = { getItemById, getUnitById, getUserById };
 
@@ -96,46 +132,57 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
     switch (activeSection) {
       case 'overview':
         return (
-          <Tabs defaultValue="resumo" className="w-full">
-            <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0 w-full justify-start">
-              <TabsTrigger
-                value="resumo"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
-              >
-                <LayoutDashboard className="h-4 w-4 shrink-0" />
-                Resumo e Estoque
-              </TabsTrigger>
-              <TabsTrigger
-                value="historico"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
-              >
-                <ScrollText className="h-4 w-4 shrink-0" />
-                Histórico
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="resumo" className="mt-4">
-              <div className="space-y-6">
-                <OverviewPanel pendingCount={pendingRequests.length} approvedCount={approvedRequests.length}
-                  awaitingPickupCount={awaitingPickupRequests.length} outForDeliveryCount={outForDeliveryRequests.length}
-                  lowStockItems={lowStockItems} getItemById={getItemById} />
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground max-w-2xl">
+              {isStorageWorker
+                ? 'Resumo dos pedidos de material e estoque do almoxarifado. Use Pedidos para aprovar e Lotes para montar entregas.'
+                : 'Acompanhe retiradas e entregas. Pedidos mostra o que está em rota.'}
+            </p>
+            <Tabs defaultValue="resumo" className="w-full">
+              <TabsList className="h-auto rounded-lg bg-muted/50 p-1 mb-4 w-full max-w-md justify-start gap-1">
+                <TabsTrigger value="resumo" className="gap-2 data-[state=active]:shadow-sm">
+                  <LayoutDashboard className="h-4 w-4 shrink-0" />
+                  Painel
+                </TabsTrigger>
+                <TabsTrigger value="historico" className="gap-2 data-[state=active]:shadow-sm">
+                  <ScrollText className="h-4 w-4 shrink-0" />
+                  Movimentações
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="resumo" className="mt-0 space-y-6">
+                <OverviewPanel
+                  pendingCount={pendingRequests.length}
+                  approvedCount={approvedRequests.length}
+                  awaitingPickupCount={awaitingPickupRequests.length}
+                  outForDeliveryCount={outForDeliveryRequests.length}
+                  lowStockItems={lowStockItems}
+                  getItemById={getItemById}
+                />
                 <StockPanel onAddFurniture={() => setShowAddFurniture(true)} onAddStock={() => setShowAddStock(true)} />
-              </div>
-            </TabsContent>
-            <TabsContent value="historico" className="mt-4">
-              <UnitMovementsHistory unitId={actions.warehouseUnitId} />
-            </TabsContent>
-          </Tabs>
+              </TabsContent>
+              <TabsContent value="historico" className="mt-0">
+                <UnitMovementsHistory unitId={actions.warehouseUnitId} />
+              </TabsContent>
+            </Tabs>
+          </div>
         );
       case 'requests':
         return (
-          <RequestsPanel {...lookups} getStockForItem={getStockForItem}
-            isDeveloperMode={isDeveloperMode} isDeliveryDriver={isDeliveryDriver} isStorageWorker={isStorageWorker}
-            activeRequests={activeRequests} outForDeliveryRequests={outForDeliveryRequests}
-            completedRequests={completedRequests} pendingRequests={pendingRequests}
+          <RequestsPanel
+            {...lookups}
+            getStockForItem={getStockForItem}
+            isDeveloperMode={isDeveloperMode}
+            isDeliveryDriver={isDeliveryDriver}
+            isStorageWorker={isStorageWorker}
+            actionRequests={actionRequests}
+            routeRequests={routeRequests}
+            completedRequests={completedRequests}
+            pendingRequests={pendingRequests}
             warehouseUnitId={actions.warehouseUnitId}
             onApprove={(id) => actions.handleRequestAction(id, 'approve')}
             onReject={(id) => actions.handleRequestAction(id, 'reject')}
-            onDelivered={(id) => actions.handleRequestAction(id, 'delivered')} />
+            onDelivered={(id) => actions.handleRequestAction(id, 'delivered')}
+          />
         );
       case 'logistics':
         return (
@@ -170,15 +217,33 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
       {showQRScanner && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowQRScanner(false)}>
           <div onClick={(e) => e.stopPropagation()}>
-            <QRCodeScanner onScanSuccess={(code) => { toast.success(`QR Code escaneado: ${code}`); setShowQRScanner(false); }}
-              onClose={() => setShowQRScanner(false)} />
+            <QRCodeScanner
+              onScanSuccess={(code) => {
+                toast.success(`QR Code escaneado: ${code}`);
+                setShowQRScanner(false);
+              }}
+              onClose={() => setShowQRScanner(false)}
+            />
           </div>
         </div>
       )}
-      <Button onClick={() => setShowQRScanner(true)}
-        className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-xl bg-primary hover:bg-primary/90 z-40 flex items-center justify-center p-0">
-        <Scan className="h-6 w-6 text-white" />
-      </Button>
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              onClick={() => setShowQRScanner(true)}
+              aria-label="Ler QR Code de lote ou etiqueta"
+              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 z-40 p-0"
+            >
+              <Scan className="h-6 w-6 text-primary-foreground" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="max-w-[200px]">
+            Ler QR Code (lote ou etiqueta)
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </>
   );
 }

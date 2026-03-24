@@ -1,8 +1,11 @@
 import type { Request, DeliveryBatch, FurnitureRemovalRequest, Item, Unit, User } from '@/types';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 import { ApprovedItemsCard } from './ApprovedItemsCard';
 import { PendingSeparationCard } from './PendingSeparationCard';
 import { DeliveryConfirmedCard } from './DeliveryConfirmedCard';
 import { FurniturePickupsCard } from './FurniturePickupsCard';
+import { ListOrdered } from 'lucide-react';
 
 interface LogisticsPanelProps {
   isStorageWorker: boolean;
@@ -32,6 +35,22 @@ export function LogisticsPanel({
 }: LogisticsPanelProps) {
   return (
     <div className="space-y-6">
+      {isStorageWorker && (
+        <Alert className="border-primary/30 bg-primary/5">
+          <ListOrdered className="h-4 w-4" />
+          <AlertTitle className="text-sm font-semibold">Fluxo de lotes (materiais)</AlertTitle>
+          <AlertDescription className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
+            <span className="block mt-1">
+              <strong className="text-foreground">1.</strong> Monte o lote com pedidos aprovados →{' '}
+              <strong className="text-foreground">2.</strong> Separe cada item no almox →{' '}
+              <strong className="text-foreground">3.</strong> Quando o destino confirmar, finalize o lote aqui embaixo.
+            </span>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isStorageWorker && <Separator className="opacity-50" />}
+
       {isStorageWorker && (
         <ApprovedItemsCard
           approvedRequests={approvedRequests}

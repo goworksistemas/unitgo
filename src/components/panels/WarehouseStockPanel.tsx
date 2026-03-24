@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -22,23 +22,19 @@ interface WarehouseStockPanelProps {
 export function WarehouseStockPanel({ onAddFurniture, onAddStock }: WarehouseStockPanelProps) {
   const { items, categories, getItemById, unitStocks, units } = useApp();
 
-  // SEMPRE buscar o ID do Almoxarifado Central (unidade fixa de distribuição)
-  const centralWarehouse = units.find(u => u.name === 'Almoxarifado Central');
-  const warehouseUnitId = centralWarehouse?.id;
-
-  // Filtrar APENAS stocks do Almoxarifado Central
-  const warehouseStock = warehouseUnitId 
-    ? unitStocks.filter(s => s.unitId === warehouseUnitId)
-    : [];
-
-  // Filtrar APENAS materiais regulares (SEM móveis)
-  const regularStock = warehouseStock.filter(s => {
-    const item = items.find(i => i.id === s.itemId);
-    return !item?.isFurniture;
-  });
-
-  // Itens regulares com estoque baixo
-  const regularLowStockItems = regularStock.filter(s => s.quantity < s.minimumQuantity);
+  const { regularStock, regularLowStockItems } = useMemo(() => {
+    const centralWarehouse = units.find((u) => u.name === 'Almoxarifado Central');
+    const warehouseUnitId = centralWarehouse?.id;
+    const warehouseStock = warehouseUnitId
+      ? unitStocks.filter((s) => s.unitId === warehouseUnitId)
+      : [];
+    const regular = warehouseStock.filter((s) => {
+      const item = items.find((i) => i.id === s.itemId);
+      return !item?.isFurniture;
+    });
+    const low = regular.filter((s) => s.quantity < s.minimumQuantity);
+    return { regularStock: regular, regularLowStockItems: low };
+  }, [unitStocks, units, items]);
 
   const renderStockTable = (stockList: typeof regularStock) => {
     if (stockList.length === 0) {
@@ -170,7 +166,7 @@ export function WarehouseStockPanel({ onAddFurniture, onAddStock }: WarehouseSto
               Estoque de Materiais
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm">
-              Materiais consumíveis e equipamentos (móveis em painel separado)
+              Somente materiais do almox central. Móveis: painel em Pedidos.
             </CardDescription>
           </div>
           <Button onClick={onAddStock} size="sm" variant="outline" className="w-full sm:w-auto">
@@ -197,36 +193,6 @@ export function WarehouseStockPanel({ onAddFurniture, onAddStock }: WarehouseSto
           </TabsList>
 
           <TabsContent value="materials" className="space-y-3 sm:space-y-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-4">
-              <Card>
-                <CardContent className="pt-4 sm:pt-6 pb-3 sm:pb-6">
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-semibold text-primary">{regularStock.length}</div>
-                    <p className="text-xs text-muted-foreground mt-1">Total de Itens</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-4 sm:pt-6 pb-3 sm:pb-6">
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-semibold text-green-600">
-                      {regularStock.filter(s => s.quantity >= s.minimumQuantity).length}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">Estoque OK</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-4 sm:pt-6 pb-3 sm:pb-6">
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-semibold text-red-600">
-                      {regularLowStockItems.length}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">Baixo Estoque</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
             {renderStockTable(regularStock)}
           </TabsContent>
 

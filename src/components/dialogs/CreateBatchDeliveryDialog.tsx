@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -9,6 +9,7 @@ import { Package, Armchair, Truck, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApp } from '../../contexts/AppContext';
 import type { Request, FurnitureRequestToDesigner } from '../../types';
+import { isDriverUser } from '@/lib/userProfile';
 
 interface CreateBatchDeliveryDialogProps {
   open: boolean;
@@ -25,20 +26,21 @@ export function CreateBatchDeliveryDialog({
   furnitureRequests,
   targetUnitId 
 }: CreateBatchDeliveryDialogProps) {
-  const { 
-    currentUser, 
+  const {
     users,
-    getItemById, 
+    getItemById,
     getUnitById,
-    createDeliveryBatch
+    createDeliveryBatch,
   } = useApp();
 
   const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([]);
   const [selectedFurnitureIds, setSelectedFurnitureIds] = useState<string[]>([]);
   const [selectedDriverId, setSelectedDriverId] = useState<string>('');
 
-  // Filtrar apenas motoristas
-  const drivers = users.filter(u => u.warehouseType === 'delivery');
+  const drivers = useMemo(
+    () => [...users].filter(isDriverUser).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
+    [users],
+  );
 
   // Filtrar apenas itens aprovados (que ainda não fazem parte de lote)
   const filteredRequests = targetUnitId 

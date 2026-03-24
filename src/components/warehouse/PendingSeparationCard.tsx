@@ -20,14 +20,14 @@ export function PendingSeparationCard({
   if (batches.length === 0) return null;
 
   return (
-    <Card className="border-2 border-orange-400 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/10">
-      <CardHeader>
-        <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-          <PackageCheck className="h-5 w-5 text-orange-600" />
-          Lotes Aguardando Separação ({batches.length})
+    <Card className="border border-orange-300/80 bg-orange-50/60 dark:border-orange-800 dark:bg-orange-950/20">
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <PackageCheck className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+          Separar lote ({batches.length})
         </CardTitle>
         <CardDescription className="text-xs sm:text-sm">
-          Separe cada item do lote. Quando todos separados, vai automaticamente para o motorista
+          Toque em «Separar» em cada linha. Quando todos estiverem separados, o lote segue para o motorista.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -37,7 +37,7 @@ export function PendingSeparationCard({
           const batchRequests = requests.filter(r => batch.requestIds.includes(r.id));
 
           return (
-            <div key={batch.id} className="bg-card rounded-lg p-4 border-2 border-orange-300 dark:border-orange-700">
+            <div key={batch.id} className="rounded-lg border border-orange-200/90 bg-card p-4 dark:border-orange-900">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <h4 className="font-semibold">Lote #{batch.qrCode}</h4>

@@ -19,19 +19,17 @@ export function DeliveryConfirmedCard({
   if (batches.length === 0) return null;
 
   return (
-    <Card className="border-2 border-green-500 dark:border-green-600 bg-green-50 dark:bg-green-900/10">
-      <CardHeader>
-        <div className="flex items-center justify-between">
+    <Card className="border border-green-300/80 bg-green-50/50 dark:border-green-900 dark:bg-green-950/20">
+      <CardHeader className="pb-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <CardTitle className="text-base sm:text-lg">
-              Entregas Confirmadas pelo Controlador
-            </CardTitle>
+            <CheckCircle className="h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
+            <CardTitle className="text-base sm:text-lg">Finalizar após confirmação no destino</CardTitle>
           </div>
-          <Badge className="bg-green-600 text-white">{batches.length}</Badge>
+          <Badge className="w-fit bg-green-600 text-white">{batches.length} lote(s)</Badge>
         </div>
         <CardDescription className="text-xs sm:text-sm">
-          Controlador confirmou recebimento - registre para finalizar
+          O controlador já confirmou no destino. Finalize aqui para concluir o fluxo do lote.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -42,7 +40,7 @@ export function DeliveryConfirmedCard({
           const totalItems = batchRequests.length + (batch.furnitureRequestIds?.length || 0);
 
           return (
-            <div key={batch.id} className="bg-card rounded-lg p-4 border-2 border-green-200 dark:border-green-700">
+            <div key={batch.id} className="rounded-lg border border-green-200/90 bg-card p-4 dark:border-green-900">
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <p className="font-semibold">Lote {batch.qrCode}</p>

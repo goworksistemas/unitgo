@@ -29,6 +29,7 @@ import {
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { isDriverUser } from '@/lib/userProfile';
 
 interface FurnitureWarehousePanelProps {
   isDeveloperMode?: boolean;
@@ -64,7 +65,10 @@ export function FurnitureWarehousePanel({ isDeveloperMode = false }: FurnitureWa
   const isDeliveryDriver = isDeveloperMode || currentUser?.warehouseType === 'delivery';
 
   // Motoristas disponíveis
-  const drivers = users.filter(u => u.role === 'warehouse' && u.warehouseType === 'delivery');
+  const drivers = useMemo(
+    () => [...users].filter(isDriverUser).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
+    [users],
+  );
 
   const { 
     pendingStorageApproval, 
@@ -414,21 +418,21 @@ export function FurnitureWarehousePanel({ isDeveloperMode = false }: FurnitureWa
             Solicitações de Móveis
           </CardTitle>
           <CardDescription className="text-xs md:text-sm">
-            Gestão de entregas de móveis aprovados pelo designer
+            Fluxo: aprovar no almox → separar e escolher motorista → entrega. Use as abas da esquerda para a direita.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="pending" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="pending" className="relative text-xs md:text-sm">
-                Aprovação
+            <TabsList className="grid h-auto w-full grid-cols-3 gap-0.5 p-1">
+              <TabsTrigger value="pending" className="relative px-2 py-2.5 text-xs md:text-sm">
+                Aprovar
                 {pendingStorageApproval.length > 0 && (
                   <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-[10px]">
                     {pendingStorageApproval.length}
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="approved" className="text-xs md:text-sm">
+              <TabsTrigger value="approved" className="px-2 py-2.5 text-xs md:text-sm">
                 Separar
                 {approvedStorage.length > 0 && (
                   <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
@@ -436,8 +440,8 @@ export function FurnitureWarehousePanel({ isDeveloperMode = false }: FurnitureWa
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="transit" className="text-xs md:text-sm">
-                Entrega
+              <TabsTrigger value="transit" className="px-2 py-2.5 text-xs md:text-sm">
+                Rota
                 {inTransit.length > 0 && (
                   <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
                     {inTransit.length}
