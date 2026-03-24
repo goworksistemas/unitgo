@@ -1013,7 +1013,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     driverUserId: string
   ): string => {
     const qrCode = `DEL-${Date.now().toString().slice(-6)}`;
-    
+    const furnitureOnly =
+      furnitureRequestIds.length > 0 && requestIds.length === 0;
+    const now = new Date();
+
     const newBatch: DeliveryBatch = {
       id: `batch-${Date.now()}`,
       requestIds,
@@ -1021,8 +1024,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       targetUnitId,
       driverUserId,
       qrCode,
-      status: 'pending', // Lote criado, aguardando separação dos itens
-      createdAt: new Date(),
+      status: furnitureOnly ? 'in_transit' : 'pending',
+      createdAt: now,
+      ...(furnitureOnly ? { dispatchedAt: now } : {}),
     };
 
     // Persistir no backend
@@ -1040,9 +1044,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
 
     furnitureRequestIds.forEach(reqId => {
-      updateFurnitureRequestToDesigner(reqId, { 
-        status: 'in_transit',
-        deliveredByUserId: driverUserId
+      updateFurnitureRequestToDesigner(reqId, {
+        status: furnitureOnly ? 'in_transit' : 'awaiting_delivery',
+        deliveredByUserId: driverUserId,
       });
     });
 
@@ -1329,7 +1333,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     
     // Marcar o item como separado (awaiting_pickup)
-    updateRequest(requestId, { 
+    await updateRequest(requestId, {
       status: 'awaiting_pickup',
       pickupReadyByUserId: currentUser.id,
       pickupReadyAt: new Date(),
@@ -1339,14 +1343,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const batch = appDeliveryBatches.find(b => b.id === batchId);
     if (!batch) return;
 
-    // Verificar o status de todos os requests do lote
-    const allSeparated = batch.requestIds.every(reqId => {
-      const req = appRequests.find(r => r.id === reqId);
-      return req && (req.status === 'awaiting_pickup' || reqId === requestId);
-    });
+    const materialIds = batch.requestIds ?? [];
+    const statusByRequestId = new Map(
+      appRequests.map((r) => [r.id, r.status]),
+    );
+    statusByRequestId.set(requestId, 'awaiting_pickup');
+    const allMaterialSeparated =
+      materialIds.length === 0 ||
+      materialIds.every(
+        (reqId) => statusByRequestId.get(reqId) === 'awaiting_pickup',
+      );
 
-    // Se todos os itens foram separados, liberar o lote para o motorista
-    if (allSeparated) {
+    // Se todos os materiais foram separados, liberar o lote para o motorista
+    if (allMaterialSeparated) {
       // Persistir mudança de status no backend
       api.deliveryBatches.update(batchId, {
         status: 'in_transit',
@@ -1380,7 +1389,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
           pickedUpAt: new Date()
         });
       });
-      
+
+      if (batch.furnitureRequestIds?.length) {
+        await Promise.all(
+          batch.furnitureRequestIds.map((reqId) =>
+            updateFurnitureRequestToDesigner(reqId, {
+              status: 'in_transit',
+              deliveredByUserId: batch.driverUserId,
+            }),
+          ),
+        );
+      }
+
       console.log('✅ Lote liberado para motorista:', batchId);
     }
   };

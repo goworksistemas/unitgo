@@ -32,6 +32,7 @@ export function FurnitureRequestsPanel() {
     const approved = furnitureRequestsToDesigner.filter(r => 
       r.status === 'approved_designer' || 
       r.status === 'approved_storage' ||
+      r.status === 'awaiting_delivery' ||
       r.status === 'in_transit'
     );
     const completed = furnitureRequestsToDesigner.filter(r => 
@@ -87,6 +88,8 @@ export function FurnitureRequestsPanel() {
         return <Badge variant="outline" className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700">Aprovado</Badge>;
       case 'approved_storage':
         return <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">Aguardando Entrega</Badge>;
+      case 'awaiting_delivery':
+        return <Badge variant="outline" className="bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700">No lote (almox)</Badge>;
       case 'in_transit':
         return <Badge variant="outline" className="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700">Em Trânsito</Badge>;
       case 'completed':

@@ -32,7 +32,7 @@ export function AdminWarehouseDashboard({ onSwitchToDesigner }: AdminWarehouseDa
     return {
       totalFurniture: furnitureItems.length,
       pendingDesignerRequests: furnitureRequestsToDesigner.filter(r => r.status === 'pending_designer').length,
-      approvedDesignerRequests: furnitureRequestsToDesigner.filter(r => ['approved_designer', 'approved_storage', 'in_transit'].includes(r.status)).length,
+      approvedDesignerRequests: furnitureRequestsToDesigner.filter(r => ['approved_designer', 'approved_storage', 'awaiting_delivery', 'in_transit'].includes(r.status)).length,
       pendingTransfers: furnitureTransfers.filter(t => t.status === 'pending').length,
       approvedTransfers: furnitureTransfers.filter(t => ['approved', 'in_transit'].includes(t.status)).length,
       pendingRemovalRequests: furnitureRemovalRequests.filter(r => r.status === 'pending').length,

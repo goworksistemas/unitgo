@@ -111,6 +111,24 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
     };
   }, [requests, deliveryBatches, furnitureRemovalRequests, unitStocks, items, actions.warehouseUnitId]);
 
+  const furnitureEligibleForBatch = useMemo(() => {
+    const idsInOpenBatch = new Set<string>();
+    for (const b of deliveryBatches) {
+      if (
+        ['pending', 'in_transit', 'delivery_confirmed', 'pending_confirmation'].includes(
+          b.status,
+        )
+      ) {
+        b.furnitureRequestIds?.forEach((id) => idsInOpenBatch.add(id));
+      }
+    }
+    return furnitureRequestsToDesigner.filter(
+      (r) =>
+        (r.status === 'in_transit' || r.status === 'awaiting_delivery') &&
+        !idsInOpenBatch.has(r.id),
+    );
+  }, [furnitureRequestsToDesigner, deliveryBatches]);
+
   const {
     pendingRequests,
     approvedRequests,
@@ -212,7 +230,7 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
       {showCreateBatch && (
         <CreateBatchDeliveryDialog open={showCreateBatch} onClose={() => setShowCreateBatch(false)}
           requests={approvedRequests.filter(r => r.status === 'approved')}
-          furnitureRequests={furnitureRequestsToDesigner.filter(r => r.status === 'in_transit')} />
+          furnitureRequests={furnitureEligibleForBatch} />
       )}
       {showQRScanner && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowQRScanner(false)}>

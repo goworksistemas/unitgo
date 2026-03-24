@@ -80,10 +80,13 @@ export function FurnitureWarehousePanel({ isDeveloperMode = false }: FurnitureWa
     return {
       pendingStorageApproval: furnitureRequestsToDesigner.filter(r => r.status === 'approved_designer'),
       approvedStorage: furnitureRequestsToDesigner.filter(r => r.status === 'approved_storage'),
-      inTransit: furnitureRequestsToDesigner.filter(r => r.status === 'in_transit'),
-      myDeliveries: furnitureRequestsToDesigner.filter(r => 
-        r.status === 'in_transit' && 
-        r.assignedToWarehouseUserId === currentUser?.id
+      inTransit: furnitureRequestsToDesigner.filter(
+        (r) => r.status === 'in_transit' || r.status === 'awaiting_delivery',
+      ),
+      myDeliveries: furnitureRequestsToDesigner.filter(
+        (r) =>
+          (r.status === 'in_transit' || r.status === 'awaiting_delivery') &&
+          r.assignedToWarehouseUserId === currentUser?.id,
       ),
       completed: furnitureRequestsToDesigner.filter(r => r.status === 'completed'),
     };
@@ -155,6 +158,8 @@ export function FurnitureWarehousePanel({ isDeveloperMode = false }: FurnitureWa
         return <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700">Designer Aprovou</Badge>;
       case 'approved_storage':
         return <Badge variant="outline" className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700">Storage Aprovou</Badge>;
+      case 'awaiting_delivery':
+        return <Badge variant="outline" className="bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-700">No lote — separação</Badge>;
       case 'in_transit':
         return <Badge variant="outline" className="bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700">Em Trânsito</Badge>;
       case 'completed':

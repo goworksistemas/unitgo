@@ -35,6 +35,11 @@ import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
+import type { DeliveryBatch } from '../../types';
+
+function getBatchDriverUserId(batch: DeliveryBatch): string {
+  return batch.driverUserId || batch.driverId || '';
+}
 
 interface DriverDashboardProps {
   isDeveloperMode?: boolean;
@@ -83,6 +88,28 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
   );
 
   const isDevMode = isDeveloperMode;
+
+  /** Lotes atribuídos ao motorista (inclui pending: aguardando separação no almox). */
+  const myActiveDeliveryBatches = useMemo(() => {
+    const activeStatuses: DeliveryBatch['status'][] = [
+      'pending',
+      'in_transit',
+      'delivery_confirmed',
+      'pending_confirmation',
+    ];
+    return deliveryBatches
+      .filter((b) => {
+        const mine =
+          isDevMode ||
+          (!!currentUser?.id && getBatchDriverUserId(b) === currentUser.id);
+        return mine && activeStatuses.includes(b.status);
+      })
+      .sort((a, b) => {
+        const rank = (s: DeliveryBatch['status']) =>
+          s === 'pending' ? 0 : s === 'in_transit' ? 1 : s === 'pending_confirmation' ? 2 : 3;
+        return rank(a.status) - rank(b.status);
+      });
+  }, [deliveryBatches, currentUser?.id, isDevMode]);
 
   // IDs de todos os itens que já estão em lotes
   const itemsInBatches = new Set<string>();
@@ -359,19 +386,14 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                   </div>
                 </div>
               )}
-              {deliveryBatches.filter(b => 
-                (isDevMode || b.driverUserId === currentUser?.id) && 
-                (b.status === 'in_transit' || b.status === 'delivery_confirmed')
-              ).length > 0 && (
+              {myActiveDeliveryBatches.length > 0 && (
                 <div>
                   <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
                     <Package className="h-5 w-5 text-primary" />
-                    Lotes de Entrega
+                    Meus lotes de entrega
                   </h2>
                   <div className="space-y-3">
-                    {deliveryBatches
-                      .filter(b => (isDevMode || b.driverUserId === currentUser?.id) && (b.status === 'in_transit' || b.status === 'delivery_confirmed'))
-                      .map(batch => {
+                    {myActiveDeliveryBatches.map((batch) => {
                         const unit = getUnitById(batch.targetUnitId);
                         const totalItems = batch.requestIds.length + (batch.furnitureRequestIds?.length || 0);
                         const hasDeliveryConfirmation = deliveryConfirmations.some(
@@ -394,6 +416,11 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                                     <Badge className="bg-primary text-sm md:text-base px-2 md:px-3 py-0.5 md:py-1">
                                       {totalItems} {totalItems === 1 ? 'item' : 'itens'}
                                     </Badge>
+                                    {batch.status === 'pending' && (
+                                      <Badge variant="secondary" className="text-xs md:text-sm px-2 md:px-3 py-0.5 md:py-1">
+                                        No almox — separação
+                                      </Badge>
+                                    )}
                                     {batch.status === 'delivery_confirmed' && (
                                       <Badge className="bg-green-600 text-xs md:text-sm px-2 md:px-3 py-0.5 md:py-1">
                                         ✓ Confirmada
@@ -402,6 +429,11 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                                   </div>
                                 </div>
                               </div>
+                              {batch.status === 'pending' && (
+                                <div className="text-xs md:text-sm text-center p-2 md:p-3 bg-amber-50 dark:bg-amber-950/25 rounded-lg border border-amber-200 dark:border-amber-900 text-amber-950 dark:text-amber-100">
+                                  O almoxarifado está separando os itens. Quando terminar, o lote libera o QR Code para entrega.
+                                </div>
+                              )}
                               {batch.status === 'in_transit' && !hasDeliveryConfirmation && (
                                 <div className="space-y-2">
                                   <Button 
@@ -420,7 +452,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                                   </Button>
                                 </div>
                               )}
-                              {(batch.status === 'delivery_confirmed' || hasDeliveryConfirmation) && (
+                              {(batch.status === 'delivery_confirmed' || batch.status === 'pending_confirmation' || hasDeliveryConfirmation) && (
                                 <div className="space-y-2">
                                   <div className="text-xs md:text-sm text-center p-2 md:p-3 bg-primary/10 rounded-lg border border-primary/30">
                                     ✓ Aguardando confirmação do recebedor
@@ -453,7 +485,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                   </div>
                 </div>
               )}
-              {totalToPickup === 0 && totalInTransit === 0 && (
+              {totalToPickup === 0 && totalInTransit === 0 && myActiveDeliveryBatches.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-4 opacity-30" />
                   <p>Nenhuma tarefa no momento</p>
@@ -487,7 +519,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
               Bem-vindo, Motorista!
             </h3>
             <div className="space-y-2 text-sm text-muted-foreground mb-4">
-              <p><strong className="text-foreground">Lotes de Entrega:</strong> Itens separados pelo almoxarifado</p>
+              <p><strong className="text-foreground">Lotes:</strong> Aparecem assim que o lote é criado; enquanto o almox separa, fica em «No almox». Depois você usa o QR Code.</p>
               <p><strong className="text-foreground">Mostrar QR Code:</strong> O recebedor escaneia para confirmar</p>
               <p><strong className="text-foreground">Confirmar Depois:</strong> Se o recebedor não estiver presente</p>
               <p><strong className="text-foreground">Coletas:</strong> Móveis para levar ao almoxarifado</p>
