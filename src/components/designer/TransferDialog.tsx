@@ -50,11 +50,11 @@ export function TransferDialog({
 }: TransferDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Solicitar Transferência de Móvel</DialogTitle>
+          <DialogTitle>Solicitar transferência</DialogTitle>
           <DialogDescription>
-            Selecione a unidade de destino para este item
+            A movimentação só ocorre após aprovação da administração. Escolha a unidade de destino e, se quiser, detalhe o motivo.
           </DialogDescription>
         </DialogHeader>
 

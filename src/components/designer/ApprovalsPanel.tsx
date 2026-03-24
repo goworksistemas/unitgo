@@ -42,9 +42,12 @@ export function ApprovalsPanel({
 }: ApprovalsPanelProps) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Aprovações de Retirada de Móveis</CardTitle>
-        <CardDescription>Avalie solicitações e decida entre armazenagem ou descarte</CardDescription>
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-lg">Retiradas aguardando decisão</CardTitle>
+        <CardDescription>
+          Pedidos feitos por outros perfis para retirar móvel da unidade. Em <strong className="text-foreground font-medium">Pendentes</strong>, use
+          Avaliar para escolher armazenagem ou descarte.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="pending" className="w-full">

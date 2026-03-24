@@ -71,7 +71,7 @@ export const AVAILABLE_TABS: TabCategory[] = [
     label: 'Designer',
     tabs: [
       { id: 'designer.visao', label: 'Visão Geral' },
-      { id: 'designer.projetos', label: 'Projetos' },
+      { id: 'designer.projetos', label: 'Pedidos das unidades' },
     ],
   },
   {

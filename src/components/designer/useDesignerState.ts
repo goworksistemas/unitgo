@@ -88,18 +88,12 @@ export function useDesignerState() {
     const request = furnitureRemovalRequests.find(r => r.id === selectedRemovalRequest);
     if (!request) return;
 
-    console.log('🔍 DEBUG handleApproveRemoval:');
-    console.log('  📋 Request ID:', selectedRemovalRequest);
-    console.log('  📦 Decision:', decision);
-    console.log('  📊 Request Before:', request);
-
     if (decision === 'disposal' && !disposalJustification.trim()) {
       toast.error('Justificativa é obrigatória para descarte');
       return;
     }
 
     const status = decision === 'storage' ? 'approved_storage' : 'approved_disposal';
-    console.log('  🔄 New Status:', status);
 
     updateFurnitureRemovalRequest(selectedRemovalRequest, {
       status,
@@ -117,7 +111,6 @@ export function useDesignerState() {
     setRemovalDialogOpen(false);
     setSelectedRemovalRequest(null);
     setDisposalJustification('');
-    console.log('✅ handleApproveRemoval concluído');
   };
 
   const handleRejectRemoval = (requestId: string) => {
