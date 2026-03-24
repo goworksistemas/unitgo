@@ -106,21 +106,26 @@ export function InventoryPanel({
       <CardContent>
         {viewingUnit ? (
           <>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-3">
               {filteredStock.length === furnitureStock.length
                 ? `${furnitureStock.length} item(ns) nesta unidade`
                 : `${filteredStock.length} de ${furnitureStock.length} item(ns)`}
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
               {filteredStock.map((stock) => {
                 const item = getItemById(stock.itemId);
                 if (!item) return null;
 
+                const transferTitle =
+                  availableUnitsCount === 0
+                    ? 'Não há outras unidades disponíveis para transferência'
+                    : 'Solicitar transferência';
+
                 return (
-                  <Card key={stock.id} className="overflow-hidden border-border/80 text-sm">
+                  <Card key={stock.id} className="overflow-hidden border-border/80 shadow-none">
                     {item.imageUrl ? (
-                      <>
-                        <div className="relative aspect-[4/3] max-h-24 sm:max-h-28 w-full overflow-hidden bg-muted">
+                      <div className="flex flex-col gap-0">
+                        <div className="relative h-14 sm:h-16 w-full overflow-hidden bg-muted">
                           <img
                             src={item.imageUrl}
                             alt=""
@@ -129,62 +134,62 @@ export function InventoryPanel({
                             className="h-full w-full object-cover"
                           />
                         </div>
-                        <div className="border-b border-border/60 bg-muted/40 px-1 py-0.5">
+                        <div className="flex border-b border-border/50 bg-muted/30">
                           <Button
                             type="button"
                             variant="ghost"
-                            size="sm"
-                            className="h-6 w-full gap-1 px-1.5 text-[11px] leading-tight text-muted-foreground hover:text-foreground"
+                            size="icon"
+                            className="h-6 w-full shrink-0 rounded-none text-muted-foreground hover:text-foreground"
                             onClick={() =>
                               setImagePreview({ src: item.imageUrl!, title: item.name })
                             }
+                            aria-label={`Ver imagem completa: ${item.name}`}
+                            title="Ver imagem completa"
                           >
-                            <Maximize2 className="h-3 w-3 shrink-0" aria-hidden />
-                            Ver imagem completa
+                            <Maximize2 className="h-3 w-3" aria-hidden />
                           </Button>
                         </div>
-                      </>
+                      </div>
                     ) : null}
-                    <CardContent className="p-2.5 sm:p-3">
-                      <div className="space-y-2">
-                        <div>
-                          <h3 className="text-sm font-medium leading-snug">{item.name}</h3>
-                          {item.description ? (
-                            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 leading-snug">
-                              {item.description}
-                            </p>
-                          ) : null}
+                    <CardContent className="p-1.5 sm:p-2">
+                      <div className="space-y-1">
+                        <h3
+                          className="text-[11px] sm:text-xs font-medium leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[2.25rem]"
+                          title={item.name}
+                        >
+                          {item.name}
+                        </h3>
+                        {item.description ? (
+                          <p
+                            className="text-[10px] text-muted-foreground line-clamp-1 leading-tight"
+                            title={item.description}
+                          >
+                            {item.description}
+                          </p>
+                        ) : null}
+
+                        <div className="flex items-start gap-0.5 text-[10px] text-muted-foreground leading-tight">
+                          <MapPin className="h-3 w-3 shrink-0 mt-px" aria-hidden />
+                          <span className="line-clamp-1" title={stock.location || undefined}>
+                            {stock.location || '—'}
+                          </span>
                         </div>
 
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                          <span className="truncate">{stock.location || 'Sem local definido'}</span>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-border">
-                          <div>
-                            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                              Qtd.
-                            </div>
-                            <div className="text-lg font-semibold tabular-nums leading-none mt-0.5">
-                              {stock.quantity}
-                            </div>
-                          </div>
+                        <div className="flex items-center justify-between gap-1 border-t border-border/80 pt-1">
+                          <span className="text-xs font-semibold tabular-nums shrink-0" title="Quantidade">
+                            ×{stock.quantity}
+                          </span>
                           <Button
                             type="button"
                             variant="secondary"
-                            size="sm"
-                            className="h-8 shrink-0 px-2.5 text-xs"
+                            size="icon"
+                            className="h-7 w-7 shrink-0"
                             onClick={() => onRequestTransfer(item.id, stock.unitId)}
                             disabled={stock.quantity === 0 || availableUnitsCount === 0}
-                            title={
-                              availableUnitsCount === 0
-                                ? 'Não há outras unidades disponíveis para transferência'
-                                : undefined
-                            }
+                            title={transferTitle}
+                            aria-label={`Transferir ${item.name}`}
                           >
-                            <ArrowRightLeft className="h-3.5 w-3.5 mr-1" />
-                            Transferir
+                            <ArrowRightLeft className="h-3.5 w-3.5" aria-hidden />
                           </Button>
                         </div>
                       </div>
