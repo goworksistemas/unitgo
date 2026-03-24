@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { 
@@ -19,9 +19,7 @@ import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -35,6 +33,11 @@ import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
+import {
+  buildDriverBatchLineItems,
+  DriverDeliveryBatchCard,
+  getDriverBatchPhase,
+} from '../delivery/DriverDeliveryBatchCard';
 import type { DeliveryBatch } from '../../types';
 
 function getBatchDriverUserId(batch: DeliveryBatch): string {
@@ -69,10 +72,6 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
   const [selectedFurnitureForQRScan, setSelectedFurnitureForQRScan] = useState<string | null>(null);
   const [selectedFurnitureForPending, setSelectedFurnitureForPending] = useState<string | null>(null);
   const [selectedBatchForTimeline, setSelectedBatchForTimeline] = useState<string | null>(null);
-  const [showTutorial, setShowTutorial] = useState(() => {
-    const hasSeenTutorial = localStorage.getItem('driver-tutorial-seen');
-    return !hasSeenTutorial;
-  });
 
   const warehouseUnitId = getWarehouseUnitId();
 
@@ -97,6 +96,16 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
       'delivery_confirmed',
       'pending_confirmation',
     ];
+    const hasBatchDeliveryConfirmation = (batchId: string) =>
+      deliveryConfirmations.some((c) => c.batchId === batchId && c.type === 'delivery');
+
+    const actionPriority = (b: DeliveryBatch) => {
+      const hasDel = hasBatchDeliveryConfirmation(b.id);
+      if (b.status === 'in_transit' && !hasDel) return 0;
+      if (b.status === 'pending') return 1;
+      return 2;
+    };
+
     return deliveryBatches
       .filter((b) => {
         const mine =
@@ -105,11 +114,31 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
         return mine && activeStatuses.includes(b.status);
       })
       .sort((a, b) => {
-        const rank = (s: DeliveryBatch['status']) =>
-          s === 'pending' ? 0 : s === 'in_transit' ? 1 : s === 'pending_confirmation' ? 2 : 3;
-        return rank(a.status) - rank(b.status);
+        const diff = actionPriority(a) - actionPriority(b);
+        if (diff !== 0) return diff;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
-  }, [deliveryBatches, currentUser?.id, isDevMode]);
+  }, [deliveryBatches, deliveryConfirmations, currentUser?.id, isDevMode]);
+
+  const driverBatchGroups = useMemo(() => {
+    const hasBatchDeliveryConfirmation = (batchId: string) =>
+      deliveryConfirmations.some((c) => c.batchId === batchId && c.type === 'delivery');
+    const entries = myActiveDeliveryBatches.map((batch) => ({
+      batch,
+      hasDeliveryConfirmation: hasBatchDeliveryConfirmation(batch.id),
+    }));
+    return {
+      deliverNow: entries.filter(
+        (e) => getDriverBatchPhase(e.batch, e.hasDeliveryConfirmation) === 'deliver_now',
+      ),
+      waitingWarehouse: entries.filter(
+        (e) => getDriverBatchPhase(e.batch, e.hasDeliveryConfirmation) === 'waiting_warehouse',
+      ),
+      awaitingReceiver: entries.filter(
+        (e) => getDriverBatchPhase(e.batch, e.hasDeliveryConfirmation) === 'awaiting_receiver',
+      ),
+    };
+  }, [myActiveDeliveryBatches, deliveryConfirmations]);
 
   // IDs de todos os itens que já estão em lotes
   const itemsInBatches = new Set<string>();
@@ -387,90 +416,97 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                 </div>
               )}
               {myActiveDeliveryBatches.length > 0 && (
-                <div>
-                  <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <Package className="h-5 w-5 text-primary" />
-                    Meus lotes de entrega
-                  </h2>
-                  <div className="space-y-3">
-                    {myActiveDeliveryBatches.map((batch) => {
-                        const unit = getUnitById(batch.targetUnitId);
-                        const totalItems = batch.requestIds.length + (batch.furnitureRequestIds?.length || 0);
-                        const hasDeliveryConfirmation = deliveryConfirmations.some(
-                          c => c.batchId === batch.id && c.type === 'delivery'
-                        );
-                        return (
-                          <Card key={batch.id} className="border-2 border-primary">
-                            <CardContent className="p-3 md:p-4">
-                              <div className="flex items-start gap-2 md:gap-3 mb-3 md:mb-4">
-                                <div className="p-2 md:p-3 rounded-lg bg-primary/10">
-                                  <Package className="h-6 w-6 md:h-8 md:w-8 text-primary" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h3 className="font-semibold text-base md:text-lg mb-1">Lote {batch.qrCode}</h3>
-                                  <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-2">
-                                    <Building2 className="h-3 w-3 md:h-4 md:w-4" />
-                                    <span className="truncate">{unit?.name}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <Badge className="bg-primary text-sm md:text-base px-2 md:px-3 py-0.5 md:py-1">
-                                      {totalItems} {totalItems === 1 ? 'item' : 'itens'}
-                                    </Badge>
-                                    {batch.status === 'pending' && (
-                                      <Badge variant="secondary" className="text-xs md:text-sm px-2 md:px-3 py-0.5 md:py-1">
-                                        No almox — separação
-                                      </Badge>
-                                    )}
-                                    {batch.status === 'delivery_confirmed' && (
-                                      <Badge className="bg-green-600 text-xs md:text-sm px-2 md:px-3 py-0.5 md:py-1">
-                                        ✓ Confirmada
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              {batch.status === 'pending' && (
-                                <div className="text-xs md:text-sm text-center p-2 md:p-3 bg-amber-50 dark:bg-amber-950/25 rounded-lg border border-amber-200 dark:border-amber-900 text-amber-950 dark:text-amber-100">
-                                  O almoxarifado está separando os itens. Quando terminar, o lote libera o QR Code para entrega.
-                                </div>
-                              )}
-                              {batch.status === 'in_transit' && !hasDeliveryConfirmation && (
-                                <div className="space-y-2">
-                                  <Button 
-                                    className="w-full h-12 md:h-14 text-base md:text-lg bg-primary hover:bg-primary/90"
-                                    onClick={() => setSelectedBatchForConfirmation(batch.id)}
-                                  >
-                                    <QrCode className="h-5 w-5 md:h-6 md:w-6 mr-2" />
-                                    Mostrar QR Code
-                                  </Button>
-                                  <Button 
-                                    variant="outline"
-                                    className="w-full h-10 md:h-12 text-xs md:text-sm border-2"
-                                    onClick={() => setSelectedBatchForPending(batch.id)}
-                                  >
-                                    Confirmar Depois (Recebedor Ausente)
-                                  </Button>
-                                </div>
-                              )}
-                              {(batch.status === 'delivery_confirmed' || batch.status === 'pending_confirmation' || hasDeliveryConfirmation) && (
-                                <div className="space-y-2">
-                                  <div className="text-xs md:text-sm text-center p-2 md:p-3 bg-primary/10 rounded-lg border border-primary/30">
-                                    ✓ Aguardando confirmação do recebedor
-                                  </div>
-                                  <Button 
-                                    variant="outline"
-                                    className="w-full h-10 md:h-12 text-xs md:text-sm"
-                                    onClick={() => setSelectedBatchForTimeline(batch.id)}
-                                  >
-                                    Ver Timeline
-                                  </Button>
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <h2 className="text-lg font-semibold flex items-center gap-2 text-foreground">
+                      <Package className="h-5 w-5 text-primary shrink-0" aria-hidden />
+                      Meus lotes de entrega
+                    </h2>
+                    <p className="text-sm text-muted-foreground leading-snug">
+                      O que precisa de ação agora aparece primeiro. Código do lote e destino ficam sempre visíveis.
+                    </p>
                   </div>
+
+                  {driverBatchGroups.deliverNow.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-300/90">
+                        Prioridade — entregar agora
+                      </p>
+                      <div className="space-y-3">
+                        {driverBatchGroups.deliverNow.map(({ batch, hasDeliveryConfirmation }) => (
+                          <DriverDeliveryBatchCard
+                            key={batch.id}
+                            batch={batch}
+                            lineItems={buildDriverBatchLineItems(
+                              batch,
+                              requests,
+                              furnitureRequestsToDesigner,
+                              getItemById,
+                            )}
+                            destinationLabel={getUnitById(batch.targetUnitId)?.name ?? ''}
+                            hasDeliveryConfirmation={hasDeliveryConfirmation}
+                            onShowQr={() => setSelectedBatchForConfirmation(batch.id)}
+                            onMarkPending={() => setSelectedBatchForPending(batch.id)}
+                            onShowTimeline={() => setSelectedBatchForTimeline(batch.id)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {driverBatchGroups.waitingWarehouse.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-900/90 dark:text-amber-200/90">
+                        Aguardando o almoxarifado
+                      </p>
+                      <div className="space-y-3">
+                        {driverBatchGroups.waitingWarehouse.map(({ batch, hasDeliveryConfirmation }) => (
+                          <DriverDeliveryBatchCard
+                            key={batch.id}
+                            batch={batch}
+                            lineItems={buildDriverBatchLineItems(
+                              batch,
+                              requests,
+                              furnitureRequestsToDesigner,
+                              getItemById,
+                            )}
+                            destinationLabel={getUnitById(batch.targetUnitId)?.name ?? ''}
+                            hasDeliveryConfirmation={hasDeliveryConfirmation}
+                            onShowQr={() => setSelectedBatchForConfirmation(batch.id)}
+                            onMarkPending={() => setSelectedBatchForPending(batch.id)}
+                            onShowTimeline={() => setSelectedBatchForTimeline(batch.id)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {driverBatchGroups.awaitingReceiver.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-sky-900/85 dark:text-sky-200/85">
+                        Com o recebedor / confirmação
+                      </p>
+                      <div className="space-y-3">
+                        {driverBatchGroups.awaitingReceiver.map(({ batch, hasDeliveryConfirmation }) => (
+                          <DriverDeliveryBatchCard
+                            key={batch.id}
+                            batch={batch}
+                            lineItems={buildDriverBatchLineItems(
+                              batch,
+                              requests,
+                              furnitureRequestsToDesigner,
+                              getItemById,
+                            )}
+                            destinationLabel={getUnitById(batch.targetUnitId)?.name ?? ''}
+                            hasDeliveryConfirmation={hasDeliveryConfirmation}
+                            onShowQr={() => setSelectedBatchForConfirmation(batch.id)}
+                            onMarkPending={() => setSelectedBatchForPending(batch.id)}
+                            onShowTimeline={() => setSelectedBatchForTimeline(batch.id)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               {(furnitureInTransit.length > 0 || furnitureDeliveryInTransit.length > 0) && (
@@ -512,28 +548,6 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {showTutorial && (
-        <Card className="border-2 border-primary bg-primary/5">
-          <CardContent className="p-4">
-            <h3 className="font-semibold text-lg mb-3 text-primary">
-              Bem-vindo, Motorista!
-            </h3>
-            <div className="space-y-2 text-sm text-muted-foreground mb-4">
-              <p><strong className="text-foreground">Lotes:</strong> Aparecem assim que o lote é criado; enquanto o almox separa, fica em «No almox». Depois você usa o QR Code.</p>
-              <p><strong className="text-foreground">Mostrar QR Code:</strong> O recebedor escaneia para confirmar</p>
-              <p><strong className="text-foreground">Confirmar Depois:</strong> Se o recebedor não estiver presente</p>
-              <p><strong className="text-foreground">Coletas:</strong> Móveis para levar ao almoxarifado</p>
-            </div>
-            <Button onClick={() => {
-              setShowTutorial(false);
-              localStorage.setItem('driver-tutorial-seen', 'true');
-            }} className="w-full">
-              Entendi!
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
       {renderContent()}
 
       {selectedBatchForConfirmation && (

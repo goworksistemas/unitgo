@@ -16,6 +16,22 @@ export function formatDateShort(date: Date | string): string {
   });
 }
 
+/** Texto curto para “há quanto tempo” (passado), em pt-BR. */
+export function formatRelativeTimePast(date: Date | string | undefined): string {
+  if (date === undefined || date === null) return '';
+  const t = new Date(date).getTime();
+  if (Number.isNaN(t)) return '';
+  const diffMs = Date.now() - t;
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'agora';
+  if (mins < 60) return `há ${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `há ${hours} h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `há ${days} ${days === 1 ? 'dia' : 'dias'}`;
+  return formatDateShort(date);
+}
+
 const ROLE_LABELS: Record<string, string> = {
   controller: 'Controlador',
   admin: 'Administrador',
