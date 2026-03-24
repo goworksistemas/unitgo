@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Unit, DeliveryBatch, DeliveryConfirmation, Request, FurnitureRequestToDesigner, Item, User } from '@/types';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -51,14 +52,16 @@ export function DeliveriesPanel({
     completedBatches.length === 0 &&
     completedFurniture.length === 0;
 
+  const [deliveriesTab, setDeliveriesTab] = useState<'pending' | 'completed'>('pending');
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5">
           <Package className="h-3.5 w-3.5 text-muted-foreground" />
-          <h3 className="text-xs font-medium text-foreground">Meus Recebimentos</h3>
+          <h3 className="text-xs font-medium text-foreground">Recebimentos da unidade</h3>
           <span className="text-xs text-muted-foreground">
-            {allPendingConfirmation.length + pendingFurnitureDeliveries.length + completedBatches.length + completedFurniture.length} itens
+            {allPendingConfirmation.length + pendingFurnitureDeliveries.length + completedBatches.length + completedFurniture.length} registro(s)
           </span>
         </div>
         <Button onClick={onShowQRScanner} size="sm" className="relative">
@@ -79,7 +82,7 @@ export function DeliveriesPanel({
           <p className="text-sm text-muted-foreground">Nenhum item encontrado</p>
         </div>
       ) : (
-        <Tabs defaultValue="pending" className="w-full">
+        <Tabs value={deliveriesTab} onValueChange={(v) => setDeliveriesTab(v as 'pending' | 'completed')} className="w-full">
           <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0 w-full justify-start">
             <TabsTrigger
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
@@ -96,26 +99,30 @@ export function DeliveriesPanel({
               Confirmados ({completedBatches.length + completedFurniture.length})
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="pending" className="space-y-3 mt-4">
-            <PendingDeliveriesTab
-              pendingBatches={allPendingConfirmation}
-              pendingFurnitureDeliveries={pendingFurnitureDeliveries}
-              requests={requests}
-              furnitureRequestsToDesigner={furnitureRequestsToDesigner}
-              getItemById={getItemById}
-              getUserById={getUserById}
-              onSelectBatchForReceipt={onSelectBatchForReceipt}
-            />
+          <TabsContent value="pending" className="space-y-3 mt-4" forceMount={false}>
+            {deliveriesTab === 'pending' ? (
+              <PendingDeliveriesTab
+                pendingBatches={allPendingConfirmation}
+                pendingFurnitureDeliveries={pendingFurnitureDeliveries}
+                requests={requests}
+                furnitureRequestsToDesigner={furnitureRequestsToDesigner}
+                getItemById={getItemById}
+                getUserById={getUserById}
+                onSelectBatchForReceipt={onSelectBatchForReceipt}
+              />
+            ) : null}
           </TabsContent>
-          <TabsContent value="completed" className="space-y-3 mt-4">
-            <CompletedDeliveriesTab
-              completedBatches={completedBatches}
-              completedFurniture={completedFurniture}
-              requests={requests}
-              getItemById={getItemById}
-              getUserById={getUserById}
-              getConfirmationsForBatch={getConfirmationsForBatch}
-            />
+          <TabsContent value="completed" className="space-y-3 mt-4" forceMount={false}>
+            {deliveriesTab === 'completed' ? (
+              <CompletedDeliveriesTab
+                completedBatches={completedBatches}
+                completedFurniture={completedFurniture}
+                requests={requests}
+                getItemById={getItemById}
+                getUserById={getUserById}
+                getConfirmationsForBatch={getConfirmationsForBatch}
+              />
+            ) : null}
           </TabsContent>
         </Tabs>
       )}

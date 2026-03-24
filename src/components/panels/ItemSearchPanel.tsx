@@ -24,6 +24,7 @@ export function ItemSearchPanel({ title = 'Buscar Itens', description }: ItemSea
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [mainTab, setMainTab] = useState<'estoque' | 'historico'>('estoque');
 
   const filteredItems = useMemo(() => {
     if (!currentUnit) return [];
@@ -87,7 +88,7 @@ export function ItemSearchPanel({ title = 'Buscar Itens', description }: ItemSea
           </Button>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="estoque" className="w-full">
+          <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as 'estoque' | 'historico')} className="w-full">
             <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0 w-full justify-start">
               <TabsTrigger
                 value="estoque"
@@ -105,7 +106,9 @@ export function ItemSearchPanel({ title = 'Buscar Itens', description }: ItemSea
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="estoque" className="mt-4 space-y-4">
+            <TabsContent value="estoque" className="mt-4 space-y-4" forceMount={false}>
+              {mainTab === 'estoque' ? (
+              <>
               {/* Search and Filters */}
               <div className="flex gap-3 flex-col sm:flex-row">
                 <div className="relative flex-1">
@@ -165,10 +168,12 @@ export function ItemSearchPanel({ title = 'Buscar Itens', description }: ItemSea
                   </>
                 )}
               </div>
+              </>
+              ) : null}
             </TabsContent>
 
-            <TabsContent value="historico" className="mt-4">
-              <UnitMovementsHistory filterByFurniture={false} />
+            <TabsContent value="historico" className="mt-4" forceMount={false}>
+              {mainTab === 'historico' ? <UnitMovementsHistory filterByFurniture={false} /> : null}
             </TabsContent>
           </Tabs>
         </CardContent>

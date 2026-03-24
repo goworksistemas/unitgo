@@ -2,10 +2,12 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { usePurchases } from '../../contexts/PurchaseContext';
 import { Button } from '../ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Package, Armchair, Scan, ShoppingCart, ClipboardList, History, PackageOpen, Calendar, Truck, Boxes } from 'lucide-react';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
+import { useNavigation } from '@/hooks/useNavigation';
 import type { NavigationSection } from '@/hooks/useNavigation';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { cn } from '@/lib/utils';
 import { ControllerKPIs } from '../controller/ControllerKPIs';
 import { FurniturePanel } from '../controller/FurniturePanel';
 import { LoansPanel } from '../controller/LoansPanel';
@@ -18,12 +20,68 @@ import { ControllerDialogs, type StockDialogState } from '../controller/Controll
 import { ManagerPurchaseRequestsPanel } from '../purchases/manager/ManagerPurchaseRequestsPanel';
 import { ManagerApprovalHistoryPanel } from '../purchases/manager/ManagerApprovalHistoryPanel';
 
+function getControllerPageMeta(
+  section: string,
+  item: string | undefined,
+  unitName: string | undefined,
+  roleLabel: string,
+): { title: string; subtitle?: string } {
+  const u = unitName ?? 'Unidade';
+  switch (section) {
+    case 'estoque':
+      if (item === 'materiais') {
+        return {
+          title: 'Materiais',
+          subtitle: `${u} · Buscar, consumir, registrar entrada ou emprestar`,
+        };
+      }
+      if (item === 'moveis') {
+        return {
+          title: 'Móveis',
+          subtitle: `${u} · Patrimônio, designer e retiradas`,
+        };
+      }
+      if (item === 'loans') {
+        return {
+          title: 'Empréstimos',
+          subtitle: `${u} · Itens emprestados e devoluções`,
+        };
+      }
+      return { title: 'Estoque', subtitle: u };
+    case 'almoxarifado':
+      return {
+        title: 'Solicitações ao almoxarifado',
+        subtitle: `${u} · Materiais com o estoque central`,
+      };
+    case 'deliveries':
+      return {
+        title: 'Recebimentos',
+        subtitle: `${u} · Confirme entregas com QR Code`,
+      };
+    case 'purchases':
+      if (item === 'approval-history') {
+        return {
+          title: 'Histórico de aprovações',
+          subtitle: `${u} · Suas decisões em compras`,
+        };
+      }
+      return {
+        title: 'Aprovação de compras',
+        subtitle: `${u} · Primeira análise dos pedidos da equipe`,
+      };
+    default:
+      return { title: roleLabel, subtitle: u };
+  }
+}
+
 export function ControllerDashboard() {
   const {
     currentUnit, unitStocks, loans, items, getItemById, getUserById,
     requests, furnitureRemovalRequests, furnitureRequestsToDesigner,
     deliveryBatches, getConfirmationsForBatch, currentUser,
   } = useApp();
+  const { setTitle } = useNavigation();
+  const roleLabel = currentUser?.role === 'executor' ? 'Executor' : 'Controlador';
   const { purchaseRequests } = usePurchases();
 
   const [addFurnitureDialogOpen, setAddFurnitureDialogOpen] = useState(false);
@@ -107,24 +165,25 @@ export function ControllerDashboard() {
           { id: 'loans', label: 'Empréstimos', icon: Calendar, badge: overdueLoans > 0 ? overdueLoans : undefined },
         ],
       },
-      { id: 'almoxarifado', label: 'Almoxarifado', icon: PackageOpen, badge: pendingAlmoxarifado > 0 ? pendingAlmoxarifado : undefined },
-      { id: 'deliveries', label: 'Entregas', icon: Truck, badge: pendingDeliveries > 0 ? pendingDeliveries : undefined },
+      { id: 'almoxarifado', label: 'Pedidos ao almox.', icon: PackageOpen, badge: pendingAlmoxarifado > 0 ? pendingAlmoxarifado : undefined },
+      { id: 'deliveries', label: 'Recebimentos', icon: Truck, badge: pendingDeliveries > 0 ? pendingDeliveries : undefined },
       {
         id: 'purchases',
         label: 'Compras',
         icon: ShoppingCart,
         items: [
-          { id: 'manager-requests', label: 'Solicitações da Área', icon: ClipboardList, badge: pendingManagerApprovals > 0 ? pendingManagerApprovals : undefined },
-          { id: 'approval-history', label: 'Histórico Aprovações', icon: History },
+          { id: 'manager-requests', label: 'Aprovar pedidos', icon: ClipboardList, badge: pendingManagerApprovals > 0 ? pendingManagerApprovals : undefined },
+          { id: 'approval-history', label: 'Histórico', icon: History },
         ],
       },
     ];
   }, [currentUnit, deliveryBatches, requests, furnitureRemovalRequests, loans, purchaseRequests, currentUser, unitStocks, getItemById]);
 
   const { activeSection, activeItem, setActiveSection } = useDashboardNav(
-    navigationSections, 'Painel do Controlador',
-    currentUnit ? `Gestão de ${currentUnit.name}` : 'Selecione uma unidade no sidebar',
-    'estoque'
+    navigationSections,
+    undefined,
+    undefined,
+    'estoque',
   );
 
   useEffect(() => {
@@ -133,10 +192,27 @@ export function ControllerDashboard() {
     }
   }, [activeSection, activeItem, setActiveSection]);
 
+  useEffect(() => {
+    if (!currentUnit) return;
+    const { title, subtitle } = getControllerPageMeta(
+      activeSection,
+      activeItem,
+      currentUnit.name,
+      roleLabel,
+    );
+    setTitle(title, subtitle);
+  }, [activeSection, activeItem, currentUnit, setTitle, roleLabel]);
+
+  const showEstoqueOverviewBand = activeSection === 'estoque';
+
   if (!currentUnit) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <p className="text-sm">Selecione uma unidade para visualizar</p>
+      <div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center max-w-md mx-auto">
+        <Package className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" aria-hidden />
+        <p className="text-sm font-medium text-foreground">Escolha uma unidade</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Use o seletor <span className="font-medium text-foreground/80">Unidade</span> na barra lateral para carregar estoque, pedidos e recebimentos.
+        </p>
       </div>
     );
   }
@@ -165,8 +241,8 @@ export function ControllerDashboard() {
         switch (activeItem) {
           case 'materiais': return (
             <ItemSearchPanel
-              title="Estoque de Materiais"
-              description="Gerencie o estoque da unidade — consumir, adicionar ao estoque ou emprestar itens"
+              title="Materiais em estoque"
+              description="Itens desta unidade: abra um material para consumir, emprestar ou ver histórico."
             />
           );
           case 'loans': return <LoansPanel />;
@@ -200,58 +276,75 @@ export function ControllerDashboard() {
   };
 
   const isPurchasesWithSubTabs = activeSection === 'purchases';
-  const isAlmoxarifado = activeSection === 'almoxarifado';
+  const purchasesSubTab = activeItem === 'approval-history' ? 'approval-history' : 'manager-requests';
 
   return (
     <>
-      <div className="space-y-0">
-        {/* Top band - oculto no Almoxarifado para evitar dois dashboards; Materiais usa KPIs simplificados */}
-        {!isAlmoxarifado && (
-        <div className="bg-background border-b border-border -mx-4 -mt-4 md:-mx-6 md:-mt-6 mb-0">
-          <ControllerKPIs
-            totalMaterials={unitKPIs.totalItems}
-            totalFurniture={unitKPIs.totalFurniture}
-            activeLoans={unitKPIs.activeLoans}
-            overdueLoans={unitKPIs.overdueLoans}
-            belowMinimum={unitKPIs.belowMinimum}
-          />
-          <PendingDeliveriesAlert
-            currentUnit={currentUnit} deliveryBatches={deliveryBatches}
-            onConfirmReceipt={setScannedBatchId} onViewDetails={setSelectedBatchForTimeline}
-          />
-          <LoanAlerts
-            overdueLoans={unitKPIs.overdueLoans} soonLoans={unitKPIs.soonLoans}
-            overdueLoansData={unitKPIs.overdueLoansData} getItemById={getItemById}
-          />
-        </div>
+      <div className="space-y-4">
+        {showEstoqueOverviewBand && (
+          <div className="rounded-xl border border-border/80 bg-card overflow-hidden shadow-sm">
+            <p className="px-4 pt-3 pb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Resumo do estoque da unidade
+            </p>
+            <ControllerKPIs
+              totalMaterials={unitKPIs.totalItems}
+              totalFurniture={unitKPIs.totalFurniture}
+              activeLoans={unitKPIs.activeLoans}
+              overdueLoans={unitKPIs.overdueLoans}
+              belowMinimum={unitKPIs.belowMinimum}
+            />
+            <PendingDeliveriesAlert
+              currentUnit={currentUnit} deliveryBatches={deliveryBatches}
+              onConfirmReceipt={setScannedBatchId} onViewDetails={setSelectedBatchForTimeline}
+            />
+            <LoanAlerts
+              overdueLoans={unitKPIs.overdueLoans} soonLoans={unitKPIs.soonLoans}
+              overdueLoansData={unitKPIs.overdueLoansData} getItemById={getItemById}
+            />
+          </div>
         )}
 
-        <div className="bg-muted/30 p-4 md:p-5 -mx-4 -mb-4 md:-mx-6 md:-mb-6 mt-0">
+        <div className="rounded-xl border border-border/80 bg-card/90 p-4 md:p-5 shadow-sm">
           {isPurchasesWithSubTabs ? (
-            <Tabs value={activeItem || 'manager-requests'} onValueChange={(v) => setActiveSection('purchases', v as 'manager-requests' | 'approval-history')}>
-              <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0 w-full justify-start">
-                <TabsTrigger
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
-                  value="manager-requests"
+            <>
+              <div className="flex flex-wrap gap-0 border-b border-border mb-4" role="tablist" aria-label="Compras">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={purchasesSubTab === 'manager-requests'}
+                  className={cn(
+                    'inline-flex items-center gap-2 px-4 py-2.5 text-sm transition-colors border-b-2 -mb-px rounded-none',
+                    purchasesSubTab === 'manager-requests'
+                      ? 'border-primary text-foreground font-medium'
+                      : 'border-transparent text-muted-foreground hover:text-foreground',
+                  )}
+                  onClick={() => setActiveSection('purchases', 'manager-requests')}
                 >
                   <ClipboardList className="h-4 w-4 shrink-0" />
-                  Solicitações da Área
-                </TabsTrigger>
-                <TabsTrigger
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground px-4 py-2.5 text-sm data-[state=active]:font-medium flex items-center gap-2 transition-colors"
-                  value="approval-history"
+                  Solicitações da equipe
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={purchasesSubTab === 'approval-history'}
+                  className={cn(
+                    'inline-flex items-center gap-2 px-4 py-2.5 text-sm transition-colors border-b-2 -mb-px rounded-none',
+                    purchasesSubTab === 'approval-history'
+                      ? 'border-primary text-foreground font-medium'
+                      : 'border-transparent text-muted-foreground hover:text-foreground',
+                  )}
+                  onClick={() => setActiveSection('purchases', 'approval-history')}
                 >
                   <History className="h-4 w-4 shrink-0" />
-                  Histórico Aprovações
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="manager-requests" className="mt-0">
-                <ManagerPurchaseRequestsPanel />
-              </TabsContent>
-              <TabsContent value="approval-history" className="mt-0">
+                  Histórico de aprovações
+                </button>
+              </div>
+              {purchasesSubTab === 'approval-history' ? (
                 <ManagerApprovalHistoryPanel />
-              </TabsContent>
-            </Tabs>
+              ) : (
+                <ManagerPurchaseRequestsPanel />
+              )}
+            </>
           ) : (
             renderContent()
           )}
@@ -272,12 +365,23 @@ export function ControllerDashboard() {
         deliveryBatches={deliveryBatches} getConfirmationsForBatch={getConfirmationsForBatch}
       />
 
-      <Button
-        onClick={() => setShowQRScanner(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full border border-border bg-primary hover:bg-primary/90 z-40 flex items-center justify-center p-0"
-      >
-        <Scan className="h-6 w-6 text-white" />
-      </Button>
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              onClick={() => setShowQRScanner(true)}
+              className="fixed bottom-6 right-6 h-14 w-14 rounded-full border border-border bg-primary hover:bg-primary/90 z-40 flex items-center justify-center p-0 shadow-lg"
+              aria-label="Escanear QR Code de entrega"
+            >
+              <Scan className="h-6 w-6 text-primary-foreground" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="max-w-[220px]">
+            Escanear QR de lote — confirme recebimentos mais rápido
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </>
   );
 }

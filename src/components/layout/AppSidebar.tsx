@@ -72,6 +72,11 @@ export function AppSidebar() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!activeSection) return;
+    setExpandedSections((prev) => new Set(prev).add(activeSection));
+  }, [activeSection]);
+
   const availableUnits = getAvailableUnits();
 
   const shouldShowUnitSelector =

@@ -34,8 +34,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '../ui/popover';
-import { Check, ChevronsUpDown } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Check, ChevronsUpDown, Calendar } from 'lucide-react';
+import { Card, CardContent } from '../ui/card';
 import { Package, Plus, Clock, CheckCircle, XCircle, Loader } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -154,91 +154,151 @@ export function RequestItemsPanel() {
   const approvedCount = unitRequests.filter(r => r.status === 'approved' || r.status === 'processing').length;
   const completedCount = unitRequests.filter(r => r.status === 'completed').length;
 
-  const getStatusBorder = (status: string) => {
-    if (status === 'rejected' || status === 'overdue') return 'border-red-500';
-    if (status === 'pending') return 'border-yellow-400';
-    return 'border-emerald-500';
+  const requestCardAccent = (status: string) => {
+    if (status === 'rejected' || status === 'overdue') {
+      return 'border-l-4 border-l-red-500 bg-red-500/[0.03] dark:bg-red-950/20';
+    }
+    if (status === 'pending') {
+      return 'border-l-4 border-l-amber-500 bg-amber-500/[0.04] dark:bg-amber-950/15';
+    }
+    if (status === 'approved' || status === 'processing') {
+      return 'border-l-4 border-l-sky-500 bg-sky-500/[0.04] dark:bg-sky-950/20';
+    }
+    return 'border-l-4 border-l-emerald-500 bg-emerald-500/[0.04] dark:bg-emerald-950/15';
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5">
-          <Package className="h-3.5 w-3.5 text-muted-foreground" />
-          <h3 className="text-xs font-medium text-foreground">Almoxarifado</h3>
-          <span className="text-xs text-muted-foreground">{unitRequests.length} solicitações</span>
+    <div className="space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Package className="h-4 w-4" aria-hidden />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground tracking-tight">Pedidos ao almoxarifado</h3>
+              <p className="text-xs text-muted-foreground">
+                {unitRequests.length === 0
+                  ? 'Nenhuma solicitação nesta unidade'
+                  : `${unitRequests.length} solicitação${unitRequests.length === 1 ? '' : 'ões'} registrada${unitRequests.length === 1 ? '' : 's'}`}
+              </p>
+            </div>
+          </div>
         </div>
-        <Button onClick={handleNewRequest} size="sm">
+        <Button onClick={handleNewRequest} size="sm" className="shrink-0 w-full sm:w-auto">
           <Plus className="h-3.5 w-3.5 mr-1.5" />
-          Nova Solicitação
+          Nova solicitação
         </Button>
       </div>
 
-      {/* Cards de dashboard */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium">Pendentes</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-semibold">{pendingCount}</div>
-            <p className="text-xs text-muted-foreground">Aguardando aprovação</p>
+        <Card className="border-border/80 shadow-sm overflow-hidden">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
+              <Clock className="h-5 w-5 text-amber-700 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-semibold tabular-nums leading-none">{pendingCount}</p>
+              <p className="text-xs font-medium text-foreground mt-1">Pendentes</p>
+              <p className="text-[11px] text-muted-foreground">Aguardando o almoxarifado</p>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium">Em andamento</CardTitle>
-            <Loader className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-semibold">{approvedCount}</div>
-            <p className="text-xs text-muted-foreground">Aprovados / processando</p>
+        <Card className="border-border/80 shadow-sm overflow-hidden">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 dark:bg-sky-900/30">
+              <Loader className="h-5 w-5 text-sky-700 dark:text-sky-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-semibold tabular-nums leading-none">{approvedCount}</p>
+              <p className="text-xs font-medium text-foreground mt-1">Em andamento</p>
+              <p className="text-[11px] text-muted-foreground">Aprovado ou separando</p>
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium">Concluídas</CardTitle>
-            <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-semibold">{completedCount}</div>
-            <p className="text-xs text-muted-foreground">Entregues</p>
+        <Card className="border-border/80 shadow-sm overflow-hidden">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+              <CheckCircle className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-semibold tabular-nums leading-none">{completedCount}</p>
+              <p className="text-xs font-medium text-foreground mt-1">Concluídas</p>
+              <p className="text-[11px] text-muted-foreground">Já entregues à unidade</p>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {unitRequests.length > 0 ? (
-        <div className="rounded-md border border-border overflow-hidden divide-y divide-border bg-background">
-          {unitRequests.map(request => {
+        <div className="space-y-3">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Lista de solicitações</p>
+          {unitRequests.map((request) => {
             const item = getItemById(request.itemId);
-            const detail = `${new Date(request.createdAt).toLocaleDateString('pt-BR')} ${new Date(request.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • ${request.status === 'rejected' && request.rejectedReason ? request.rejectedReason : (request.observations || 'Sem observações')}`;
+            const created = new Date(request.createdAt);
+            const dateStr = `${created.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })} · ${created.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+            const hasObs = Boolean(request.observations?.trim());
+            const rejected = request.status === 'rejected' && request.rejectedReason;
+
             return (
-              <div
+              <Card
                 key={request.id}
                 className={cn(
-                  "flex items-center gap-2.5 px-3 py-2 hover:bg-muted/50 transition-colors",
-                  `border-l-[3px] ${getStatusBorder(request.status)}`
+                  'border border-border/80 shadow-sm transition-shadow hover:shadow-md',
+                  requestCardAccent(request.status),
                 )}
               >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{item?.name}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{detail}</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs text-muted-foreground">{request.quantity}</span>
-                  {getUrgencyBadge(request.urgency)}
-                  {getStatusBadge(request.status)}
-                </div>
-              </div>
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <p className="text-base font-semibold text-foreground leading-snug">
+                        {item?.name ?? 'Item removido do catálogo'}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Calendar className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
+                          {dateStr}
+                        </span>
+                      </div>
+                      {rejected ? (
+                        <p className="text-sm text-destructive/90 bg-destructive/5 dark:bg-destructive/10 rounded-md px-3 py-2 border border-destructive/15">
+                          <span className="font-medium text-destructive">Motivo da rejeição: </span>
+                          {request.rejectedReason}
+                        </p>
+                      ) : hasObs ? (
+                        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">{request.observations}</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground/80 italic">Sem observações na solicitação</p>
+                      )}
+                    </div>
+                    <div className="flex flex-row flex-wrap items-stretch gap-3 lg:flex-col lg:items-end shrink-0">
+                      <div className="rounded-lg border border-border/80 bg-muted/40 px-4 py-2.5 min-w-[7rem]">
+                        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Quantidade</p>
+                        <p className="text-lg font-semibold tabular-nums text-foreground">{request.quantity}</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                        {getUrgencyBadge(request.urgency)}
+                        {getStatusBadge(request.status)}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-10 gap-2 text-center">
-          <Package className="h-6 w-6 text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground">Nenhum item encontrado</p>
-        </div>
+        <Card className="border-dashed border-border/80 bg-muted/20">
+          <CardContent className="flex flex-col items-center justify-center py-14 px-6 text-center">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <Package className="h-6 w-6 text-muted-foreground/50" aria-hidden />
+            </div>
+            <p className="text-sm font-medium text-foreground">Nenhum pedido ainda</p>
+            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+              Quando precisar de materiais do almoxarifado central, use <span className="font-medium text-foreground/90">Nova solicitação</span>.
+            </p>
+          </CardContent>
+        </Card>
       )}
 
       {/* Dialog de Nova Solicitação */}

@@ -23,8 +23,8 @@ export function ManagerApprovalHistoryPanel() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Histórico de Aprovações</CardTitle>
-        <CardDescription>Decisões tomadas por você em solicitações de compra</CardDescription>
+        <CardTitle className="text-base">Decisões já registradas</CardTitle>
+        <CardDescription>Solicitações em que você já aprovou ou rejeitou</CardDescription>
       </CardHeader>
       <CardContent>
         {history.length === 0 ? (

@@ -7,7 +7,7 @@ import { useNavigation, type NavigationSection } from './useNavigation';
  */
 export function useDashboardNav(
   sections: NavigationSection[],
-  title: string,
+  title: string | undefined,
   subtitle?: string,
   defaultSection?: string
 ) {
@@ -18,6 +18,7 @@ export function useDashboardNav(
   }, [sections, setSections]);
 
   useEffect(() => {
+    if (title === undefined) return;
     setTitle(title, subtitle);
   }, [title, subtitle, setTitle]);
 

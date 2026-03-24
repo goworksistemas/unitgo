@@ -72,9 +72,9 @@ export function ManagerPurchaseRequestsPanel() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Solicitações da Minha Área</CardTitle>
+        <CardTitle className="text-base">Fila para sua análise</CardTitle>
         <CardDescription>
-          Aprove ou rejeite solicitações de compra da sua unidade (1ª camada)
+          Pedidos da equipe da unidade aguardando sua decisão antes do comprador
         </CardDescription>
       </CardHeader>
       <CardContent>
