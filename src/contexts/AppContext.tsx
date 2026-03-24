@@ -98,37 +98,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [appDeliveryBatches, setAppDeliveryBatches] = useState<DeliveryBatch[]>([]);
   const [appDeliveryConfirmations, setAppDeliveryConfirmations] = useState<DeliveryConfirmation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const sessionValidated = useRef(false);
+  const initGenerationRef = useRef(0);
 
   // Fluxo unificado: validar sessão -> carregar dados -> restaurar usuário
   useEffect(() => {
-    if (sessionValidated.current) return;
-    sessionValidated.current = true;
+    const generation = ++initGenerationRef.current;
 
     const initApp = async () => {
       let validatedUserId: string | null = null;
 
-      // 1. Se há sessão salva, valida com o backend antes de restaurar
+      // 1. Se há sessão salva, valida com o backend (rede/5xx não deslogam)
       if (authService.hasStoredSession()) {
         const storedUserId = authService.getStoredUserId();
         console.log('🔄 Sessão encontrada no localStorage, validando...');
 
-        try {
-          const sessionData = await authService.getSession();
-
-          if (sessionData) {
-            console.log('✅ Sessão válida no backend');
-            validatedUserId = storedUserId;
-          } else {
-            console.log('⚠️ Sessão inválida, limpando dados locais');
-            authService.clearStorage();
-          }
-        } catch {
-          // Erro de rede: mantém a sessão local (pode ser offline temporário)
-          console.log('⚠️ Erro de rede ao validar sessão, mantendo sessão local');
+        const authState = await authService.validateAuthState();
+        if (authState === 'logged_out') {
+          console.log('⚠️ Sessão inválida ou expirada');
+          validatedUserId = null;
+        } else {
           validatedUserId = storedUserId;
+          if (authState === 'offline') {
+            console.log('⚠️ Validação adiada (rede/servidor); usando sessão local');
+          } else {
+            console.log('✅ Sessão válida no backend');
+          }
         }
       }
+
+      if (generation !== initGenerationRef.current) return;
 
       // 2. Carregar dados do backend
       try {
@@ -202,44 +200,72 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setAppDeliveryBatches(deliveryBatchesData || []);
         setAppDeliveryConfirmations(deliveryConfirmationsData || []);
 
-        // 3. Restaurar usuário somente se a sessão foi validada
-        if (validatedUserId && usersData) {
-          const userToRestore = usersData.find((u: User) => u.id === validatedUserId);
-          if (userToRestore) {
-            console.log('✅ Sessão restaurada:', userToRestore.name);
-            setCurrentUser(userToRestore);
+        if (generation !== initGenerationRef.current) return;
 
-            if (!['admin', 'driver'].includes(userToRestore.role)) {
-              if (!userToRestore.dailyCode || isDailyCodeExpired(userToRestore.dailyCodeGeneratedAt)) {
-                const newCode = generateRandomDailyCode();
-                const now = new Date();
-                userToRestore.dailyCode = newCode;
-                userToRestore.dailyCodeGeneratedAt = now;
-                setAppUsers(prev => prev.map(u =>
-                  u.id === userToRestore.id ? { ...u, dailyCode: newCode, dailyCodeGeneratedAt: now } : u
-                ));
-                api.users.update(userToRestore.id, {
-                  dailyCode: newCode,
-                  dailyCodeGeneratedAt: now.toISOString(),
-                }).catch(err => console.error('Erro ao salvar código diário:', err));
-              }
-            }
+        const usersResult = results[0];
 
-            if (userToRestore.role !== 'designer' && userToRestore.primaryUnitId && unitsData) {
-              const primaryUnit = unitsData.find((u: Unit) => u.id === userToRestore.primaryUnitId);
-              if (primaryUnit) {
-                setCurrentUnitState(primaryUnit);
-              }
+        const applyRestoredUser = (userToRestore: User) => {
+          console.log('✅ Sessão restaurada:', userToRestore.name);
+          setCurrentUser(userToRestore);
+
+          if (!['admin', 'driver'].includes(userToRestore.role)) {
+            if (!userToRestore.dailyCode || isDailyCodeExpired(userToRestore.dailyCodeGeneratedAt)) {
+              const newCode = generateRandomDailyCode();
+              const now = new Date();
+              userToRestore.dailyCode = newCode;
+              userToRestore.dailyCodeGeneratedAt = now;
+              setAppUsers(prev => prev.map(u =>
+                u.id === userToRestore.id ? { ...u, dailyCode: newCode, dailyCodeGeneratedAt: now } : u
+              ));
+              api.users.update(userToRestore.id, {
+                dailyCode: newCode,
+                dailyCodeGeneratedAt: now.toISOString(),
+              }).catch(err => console.error('Erro ao salvar código diário:', err));
             }
+          }
+
+          if (userToRestore.role !== 'designer' && userToRestore.role !== 'developer' && userToRestore.primaryUnitId && unitsData?.length) {
+            const primaryUnit = unitsData.find((u: Unit) => u.id === userToRestore.primaryUnitId);
+            if (primaryUnit) {
+              setCurrentUnitState(primaryUnit);
+            }
+          }
+        };
+
+        // 3. Restaurar usuário: prioriza lista da API; se falhou ou veio vazia, usa cache do localStorage
+        if (validatedUserId) {
+          const userFromApi =
+            usersResult.status === 'fulfilled' && Array.isArray(usersData)
+              ? usersData.find((u: User) => u.id === validatedUserId)
+              : undefined;
+
+          if (userFromApi) {
+            applyRestoredUser(userFromApi);
           } else {
-            console.log('⚠️ Usuário não encontrado no banco, limpando sessão');
-            authService.clearStorage();
+            const cached = authService.getCurrentUserNormalized();
+            const cacheOk = cached?.id === validatedUserId;
+            const usersFailed = usersResult.status === 'rejected';
+            const listEmpty = usersResult.status === 'fulfilled' && Array.isArray(usersData) && usersData.length === 0;
+
+            if (cacheOk && (usersFailed || listEmpty)) {
+              console.warn('⚠️ Usando perfil em cache (API de usuários indisponível ou lista vazia)');
+              applyRestoredUser(cached);
+            } else if (usersResult.status === 'fulfilled' && usersData.length > 0) {
+              console.log('⚠️ Usuário não encontrado no cadastro, limpando sessão');
+              authService.clearStorage();
+            } else if (cacheOk) {
+              applyRestoredUser(cached);
+            } else {
+              authService.clearStorage();
+            }
           }
         }
       } catch (error) {
         console.error('❌ Erro ao carregar dados:', error);
       } finally {
-        setIsLoading(false);
+        if (generation === initGenerationRef.current) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -1282,6 +1308,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       
       try {
+        const destinoNome =
+          appUnits.find((u) => u.id === request.requestingUnitId)?.name ?? request.requestingUnitId;
         console.log('📤 Criando movimentação de SAÍDA...');
         await addMovement({
           type: 'consumption',
@@ -1289,7 +1317,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           unitId: warehouseId, // Almoxarifado Central (ID dinâmico)
           userId: currentUser.id,
           quantity: request.quantity,
-          notes: `Separação do lote para entrega - Destino: ${request.requestingUnitId}`,
+          notes: `Separação do lote para entrega - Destino: ${destinoNome}`,
         });
         console.log('✅ Movimentação de saída criada:', request.itemId, request.quantity, 'do almoxarifado', warehouseId);
       } catch (error) {
@@ -1537,13 +1565,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 // Se não existe, criar a movimentação de saída
                 if (!existingOutMovement) {
                   try {
+                    const destinoNome =
+                      appUnits.find((u) => u.id === request.requestingUnitId)?.name ??
+                      request.requestingUnitId;
                     await addMovement({
                       type: 'out',
                       itemId: request.itemId,
                       unitId: warehouseId,
                       userId: confirmationData.userId,
                       quantity: request.quantity,
-                      notes: `Baixa do lote ${batch.qrCode} - Entrega confirmada para ${request.requestingUnitId}`,
+                      notes: `Baixa do lote ${batch.qrCode} - Entrega confirmada para ${destinoNome}`,
                     });
                     console.log('✅ Movimentação de SAÍDA criada do almoxarifado');
                   } catch (error) {

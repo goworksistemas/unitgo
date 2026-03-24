@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useApp } from '../../contexts/AppContext';
+import { replaceUnitIdsWithNames } from '@/lib/format';
 import { Badge } from '../ui/badge';
 import { 
   ArrowDown, 
@@ -17,7 +18,7 @@ interface StockMovementsTimelineProps {
 }
 
 export function StockMovementsTimeline({ unitId }: StockMovementsTimelineProps) {
-  const { movements, getItemById, getUnitById, getUserById } = useApp();
+  const { movements, units, getItemById, getUnitById, getUserById } = useApp();
 
   const recentMovements = useMemo(() => {
     // Get movements for this unit, sorted by most recent
@@ -176,7 +177,7 @@ export function StockMovementsTimeline({ unitId }: StockMovementsTimelineProps) 
                 {/* Notes */}
                 {movement.notes && (
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                    {movement.notes}
+                    {replaceUnitIdsWithNames(movement.notes, units)}
                   </p>
                 )}
               </div>

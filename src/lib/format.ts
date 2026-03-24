@@ -82,3 +82,17 @@ const STATUS_MAP: Record<string, StatusConfig> = {
 export function getStatusConfig(status: string): StatusConfig {
   return STATUS_MAP[status] || { label: status, variant: 'outline' as const };
 }
+
+/** Substitui UUIDs de unidades no texto pelos nomes (ex.: notas de movimentação com destino). */
+export function replaceUnitIdsWithNames(
+  text: string,
+  units: readonly { id: string; name: string }[]
+): string {
+  let result = text;
+  for (const u of units) {
+    if (u.id && result.includes(u.id)) {
+      result = result.split(u.id).join(u.name);
+    }
+  }
+  return result;
+}

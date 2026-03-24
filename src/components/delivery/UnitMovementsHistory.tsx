@@ -19,6 +19,7 @@ import {
   Building2
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { replaceUnitIdsWithNames } from '@/lib/format';
 
 interface UnitMovementsHistoryProps {
   /** Se true, filtra apenas móveis. Se false, filtra apenas materiais (não móveis). Se undefined, mostra todos. */
@@ -384,7 +385,9 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
                         {/* Notes */}
                         {movement.notes && (
                           <div className="mt-2 p-2 bg-muted/50 rounded border border-border">
-                            <p className="text-xs text-foreground">{movement.notes}</p>
+                            <p className="text-xs text-foreground">
+                              {replaceUnitIdsWithNames(movement.notes, units)}
+                            </p>
                           </div>
                         )}
                       </div>
