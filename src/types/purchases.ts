@@ -81,6 +81,8 @@ export type PurchaseRequestStatus =
   | 'in_purchase'
   | 'completed';
 
+export type PurchaseRequestItemPrioridade = 'normal' | 'emergencial';
+
 export interface PurchaseRequestItem {
   id: string;
   solicitacaoId: string;
@@ -88,6 +90,15 @@ export interface PurchaseRequestItem {
   quantidade: number;
   unidadeMedida: string;
   observacao?: string;
+  /** ID do item de estoque (catálogo Gowork), quando vinculado */
+  productId?: string;
+  /** Código comercial / interno para exibição */
+  codigo?: string;
+  /** Plano de contas (ex.: X.XX.XX) */
+  contaContabil?: string;
+  /** Data de necessidade (ISO yyyy-mm-dd) */
+  dataNecessidade?: string;
+  prioridade?: PurchaseRequestItemPrioridade;
 }
 
 export interface PurchaseApproval {
@@ -199,6 +210,10 @@ export interface PurchaseOrder {
   versao?: number;
   aprovadorNecessarioId?: string;
   compradorId?: string;
+  solicitanteId?: string;
+  /** Contato / e-mail no cabeçalho do pedido (quando persistidos no backend) */
+  contatoFornecedor?: string;
+  emailFornecedor?: string;
   approvals?: PurchaseOrderApproval[];
   createdAt: Date;
   updatedAt: Date;

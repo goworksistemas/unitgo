@@ -47,6 +47,7 @@ interface PurchaseContextType {
   updateQuotation: (id: string, updates: Partial<Quotation>) => Promise<void>;
   updateQuotationStatus: (id: string, status: Quotation['status'], extra?: Partial<Quotation>) => Promise<void>;
   createPurchaseOrder: (data: Omit<PurchaseOrder, 'id' | 'createdAt' | 'updatedAt'>) => Promise<PurchaseOrder | null>;
+  updatePurchaseOrder: (id: string, updates: Partial<PurchaseOrder>) => Promise<PurchaseOrder | null>;
   createReceiving: (data: Omit<Receiving, 'id' | 'createdAt'>) => Promise<Receiving | null>;
   approveOrder: (orderId: string, approverId: string, approverName: string) => Promise<void>;
   rejectOrder: (orderId: string, approverId: string, approverName: string, observacao: string) => Promise<void>;
@@ -426,6 +427,20 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const updatePurchaseOrder = useCallback(async (id: string, updates: Partial<PurchaseOrder>) => {
+    try {
+      const updated = await api.purchaseOrders.update(id, updates);
+      setPurchaseOrders((prev) =>
+        prev.map((o) => (o.id === id ? { ...o, ...(updated as PurchaseOrder) } : o))
+      );
+      toast.success('Pedido atualizado');
+      return updated as PurchaseOrder;
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao atualizar pedido');
+      return null;
+    }
+  }, []);
+
   const createReceiving = useCallback(async (data: Omit<Receiving, 'id' | 'createdAt'>) => {
     try {
       const created = await api.receivings.create({ ...data, createdAt: new Date() });
@@ -499,6 +514,7 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
     updateQuotation,
     updateQuotationStatus,
     createPurchaseOrder,
+    updatePurchaseOrder,
     createReceiving,
     approveOrder,
     rejectOrder,

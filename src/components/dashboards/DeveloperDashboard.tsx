@@ -31,6 +31,9 @@ const roleLabels: Record<string, string> = {
   driver: 'Motorista',
   designer: 'Designer',
   requester: 'Solicitante',
+  buyer: 'Comprador',
+  financial: 'Financeiro',
+  purchases_admin: 'Admin Compras',
 };
 
 export function DeveloperDashboard() {

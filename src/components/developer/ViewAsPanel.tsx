@@ -38,7 +38,7 @@ function RoleDashboard({ role }: { role: string }) {
     case 'requester':
       return <RequesterDashboard />;
     case 'buyer':
-      return <BuyerDashboard />;
+      return <BuyerDashboard viewAsBuyerMode />;
     case 'financial':
       return <FinancialDashboard />;
     case 'purchases_admin':
