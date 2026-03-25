@@ -5,6 +5,7 @@ import { useApp } from '@/contexts/AppContext';
 import { usePurchases } from '@/contexts/PurchaseContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -81,6 +82,7 @@ export default function BuyerQuotationsPanel({ relaxedBuyerScope }: BuyerQuotati
   const [fornecedorId, setFornecedorId] = useState('');
   const [moedaId, setMoedaId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [listQuery, setListQuery] = useState('');
 
   const assignableRequests = useMemo(() => {
     if (!currentUser) return [];
@@ -102,6 +104,23 @@ export default function BuyerQuotationsPanel({ relaxedBuyerScope }: BuyerQuotati
           new Date(a.updatedAt as unknown as string).getTime()
       );
   }, [quotations, assignableIds]);
+
+  const filteredQuotations = useMemo(() => {
+    const q = listQuery.trim().toLowerCase();
+    if (!q) return myQuotations;
+    return myQuotations.filter((cot) => {
+      const sup = suppliers.find((s) => s.id === cot.fornecedorId);
+      const hay = [
+        cot.id,
+        cot.solicitacaoId,
+        sup?.razaoSocial ?? '',
+        statusLabel(cot.status),
+      ]
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [myQuotations, listQuery, suppliers]);
 
   const scOptionsForCreate = useMemo(
     () => assignableRequests.filter((r) => r.status === 'in_quotation' || r.status === 'quotation_completed'),
@@ -158,15 +177,16 @@ export default function BuyerQuotationsPanel({ relaxedBuyerScope }: BuyerQuotati
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">Cotação</h2>
-          <p className="text-sm text-muted-foreground">
-            Cotações vinculadas às solicitações atribuídas a você.
+    <div className="space-y-6">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold tracking-tight">Cotações</h1>
+          <p className="text-sm text-muted-foreground max-w-xl">
+            Propostas ligadas às suas solicitações. Crie rascunhos a partir de SCs em cotação e acompanhe envio e
+            resposta dos fornecedores.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 shrink-0">
           <Button type="button" variant="outline" size="sm" onClick={() => refreshPurchases()}>
             Atualizar
           </Button>
@@ -181,21 +201,37 @@ export default function BuyerQuotationsPanel({ relaxedBuyerScope }: BuyerQuotati
             Nova cotação
           </Button>
         </div>
-      </div>
+      </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Lista de cotações</CardTitle>
-          <CardDescription>
-            {myQuotations.length} cotação(ões) no escopo
-            {scOptionsForCreate.length === 0 && ' — nenhuma SC em cotação para criar nova.'}
-          </CardDescription>
+      <Card className="border-border/60 shadow-sm">
+        <CardHeader className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <CardTitle className="text-base">Suas cotações</CardTitle>
+              <CardDescription>
+                {filteredQuotations.length} de {myQuotations.length} no escopo
+                {listQuery.trim() ? ' (filtro ativo)' : ''}
+                {scOptionsForCreate.length === 0 && myQuotations.length > 0 && (
+                  <span className="block sm:inline">
+                    <span className="hidden sm:inline"> · </span>
+                    Nenhuma SC em cotação para abrir nova proposta agora.
+                  </span>
+                )}
+              </CardDescription>
+            </div>
+            <Input
+              className="sm:max-w-xs"
+              placeholder="Filtrar por fornecedor, SC ou status…"
+              value={listQuery}
+              onChange={(e) => setListQuery(e.target.value)}
+            />
+          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
+                <TableHead className="hidden lg:table-cell">Ref.</TableHead>
                 <TableHead>SC</TableHead>
                 <TableHead>Fornecedor</TableHead>
                 <TableHead>Status</TableHead>
@@ -208,11 +244,17 @@ export default function BuyerQuotationsPanel({ relaxedBuyerScope }: BuyerQuotati
               {myQuotations.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
-                    Nenhuma cotação encontrada.
+                    Nenhuma cotação no seu escopo ainda.
+                  </TableCell>
+                </TableRow>
+              ) : filteredQuotations.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                    Nenhum resultado para “{listQuery.trim()}”. Ajuste o filtro.
                   </TableCell>
                 </TableRow>
               ) : (
-                myQuotations.map((q) => {
+                filteredQuotations.map((q) => {
                   const sup = suppliers.find((s) => s.id === q.fornecedorId);
                   const updated =
                     q.updatedAt instanceof Date
@@ -220,7 +262,9 @@ export default function BuyerQuotationsPanel({ relaxedBuyerScope }: BuyerQuotati
                       : new Date(q.updatedAt as unknown as string);
                   return (
                     <TableRow key={q.id}>
-                      <TableCell className="font-mono text-xs">{q.id.slice(0, 8)}…</TableCell>
+                      <TableCell className="hidden lg:table-cell font-mono text-xs text-muted-foreground">
+                        {q.id.slice(0, 8)}…
+                      </TableCell>
                       <TableCell className="font-mono text-xs">{q.solicitacaoId.slice(0, 8)}…</TableCell>
                       <TableCell className="max-w-[200px] truncate">{sup?.razaoSocial ?? '—'}</TableCell>
                       <TableCell>

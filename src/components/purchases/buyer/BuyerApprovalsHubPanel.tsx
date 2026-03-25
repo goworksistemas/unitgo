@@ -6,6 +6,7 @@ import { usePurchases } from '@/contexts/PurchaseContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -68,28 +69,34 @@ export default function BuyerApprovalsHubPanel({
     );
   }
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">Central de Aprovações</h2>
-        <p className="text-sm text-muted-foreground">
-          O que está aguardando aprovação de gestão/diretoria (SCs) ou alçada de pedido (PC).
-        </p>
-      </div>
+  const defaultTab =
+    scAguardandoGestao.length > pedidosAguardandoAlcada.length ? 'sc' : 'pedidos';
 
-      <Tabs defaultValue="pedidos" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="pedidos">
+  return (
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">Fila de aprovações</h1>
+        <p className="text-sm text-muted-foreground max-w-2xl">
+          Duas filas distintas: pedidos de compra (PC) aguardando alçada e solicitações (SC) aguardando gestão ou
+          diretoria antes de seguir no fluxo.
+        </p>
+      </header>
+
+      <Tabs defaultValue={defaultTab} className="space-y-4">
+        <TabsList className="h-auto w-full flex-wrap justify-start gap-1 bg-muted/40 p-1">
+          <TabsTrigger value="pedidos" className="flex-1 min-w-[140px] sm:flex-none">
             Pedidos ({pedidosAguardandoAlcada.length})
           </TabsTrigger>
-          <TabsTrigger value="sc">Solicitações ({scAguardandoGestao.length})</TabsTrigger>
+          <TabsTrigger value="sc" className="flex-1 min-w-[140px] sm:flex-none">
+            Solicitações ({scAguardandoGestao.length})
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pedidos">
-          <Card>
+        <TabsContent value="pedidos" className="focus-visible:outline-none">
+          <Card className="border-border/60 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-base">Pedidos aguardando aprovação</CardTitle>
-              <CardDescription>Status aprovação: pendente ou em revisão</CardDescription>
+              <CardTitle className="text-base">Pedidos aguardando liberação</CardTitle>
+              <CardDescription>Status de aprovação: pendente ou em revisão.</CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto">
               <Table>
@@ -106,8 +113,8 @@ export default function BuyerApprovalsHubPanel({
                 <TableBody>
                   {pedidosAguardandoAlcada.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                        Nenhum pedido nesta fila.
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
+                        Nenhum pedido aguardando alçada no seu escopo.
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -137,13 +144,14 @@ export default function BuyerApprovalsHubPanel({
                           <TableCell>{format(created, 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
                           <TableCell>
                             {onOpenOrder && (
-                              <button
+                              <Button
                                 type="button"
-                                className="text-sm text-[#3F76FF] hover:underline"
+                                variant="link"
+                                className="h-auto p-0 text-primary"
                                 onClick={() => onOpenOrder(o.id)}
                               >
-                                Abrir
-                              </button>
+                                Abrir pedido
+                              </Button>
                             )}
                           </TableCell>
                         </TableRow>
@@ -156,11 +164,11 @@ export default function BuyerApprovalsHubPanel({
           </Card>
         </TabsContent>
 
-        <TabsContent value="sc">
-          <Card>
+        <TabsContent value="sc" className="focus-visible:outline-none">
+          <Card className="border-border/60 shadow-sm">
             <CardHeader>
-              <CardTitle className="text-base">SCs aguardando aprovação</CardTitle>
-              <CardDescription>Fluxo gestor / diretoria antes de liberar cotação</CardDescription>
+              <CardTitle className="text-base">Solicitações aguardando gestão</CardTitle>
+              <CardDescription>Gestor ou diretoria ainda não liberaram a etapa seguinte.</CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto">
               <Table>
@@ -175,8 +183,8 @@ export default function BuyerApprovalsHubPanel({
                 <TableBody>
                   {scAguardandoGestao.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                        Nenhuma SC nesta fila.
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-10">
+                        Nenhuma solicitação aguardando gestão no seu escopo.
                       </TableCell>
                     </TableRow>
                   ) : (

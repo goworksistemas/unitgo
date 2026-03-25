@@ -102,12 +102,12 @@ export function SupplierManagementPanel() {
   }
 
   return (
-    <Card>
+    <Card className="border-border/60 shadow-sm">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle>Fornecedores</CardTitle>
-            <CardDescription>Cadastro de fornecedores</CardDescription>
+            <CardTitle className="text-base">Fornecedores</CardTitle>
+            <CardDescription>Cadastro usado nas cotações e pedidos</CardDescription>
           </div>
           <Button onClick={handleOpenCreate}>
             <Plus className="h-4 w-4 mr-2" /> Novo

@@ -64,54 +64,54 @@ export default function BuyerIndicatorsPanel({ relaxedBuyerScope }: BuyerIndicat
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold">Indicadores</h2>
-        <p className="text-sm text-muted-foreground">
-          Visão consolidada dos pedidos vinculados ao comprador. Tempo médio e saving dependem de
-          integração com ERP — valores exibidos são baseados nos dados do Gowork.
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">Indicadores</h1>
+        <p className="text-sm text-muted-foreground max-w-2xl">
+          Resumo dos pedidos de compra no seu escopo, por data de emissão no sistema. Métricas adicionais do ERP
+          podem ser integradas depois.
           {relaxedBuyerScope && (
-            <span className="block mt-1 text-amber-700 dark:text-amber-400">
-              Modo pré-visualização: todos os pedidos com comprador atribuído.
+            <span className="block mt-2 text-amber-700 dark:text-amber-400">
+              Pré-visualização: inclui todos os pedidos com comprador atribuído.
             </span>
           )}
         </p>
-      </div>
+      </header>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Card>
+        <Card className="border-border/60 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Pedidos gerados</CardTitle>
+            <CardTitle className="text-sm font-medium">Pedidos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold tabular-nums">{totalPedidos}</div>
-            <CardDescription className="text-xs">No escopo filtrado</CardDescription>
+            <CardDescription className="text-xs">Quantidade no período considerado</CardDescription>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-border/60 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Valor total (PC)</CardTitle>
+            <CardTitle className="text-sm font-medium">Valor total</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold tabular-nums">{fmt(valorTotal)}</div>
-            <CardDescription className="text-xs">Soma de valor_total</CardDescription>
+            <CardDescription className="text-xs">Soma dos totais dos PCs</CardDescription>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-border/60 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Ticket médio</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold tabular-nums">{fmt(ticketMedio)}</div>
-            <CardDescription className="text-xs">Valor total ÷ quantidade</CardDescription>
+            <CardDescription className="text-xs">Valor médio por pedido</CardDescription>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
+      <Card className="border-border/60 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-base">Pedidos por período</CardTitle>
-          <CardDescription>Volume e valor por mês de emissão</CardDescription>
+          <CardTitle className="text-base">Histórico mensal</CardTitle>
+          <CardDescription>Quantidade de pedidos e valor por mês de emissão</CardDescription>
         </CardHeader>
         <CardContent className="h-[320px] w-full min-w-0">
           {chartData.length === 0 ? (

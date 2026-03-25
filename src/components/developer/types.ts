@@ -1,3 +1,4 @@
+import type { Dispatch, SetStateAction } from 'react';
 import type { User, UserRole, Unit, Category, Item } from '@/types';
 
 export interface UserFormState {
@@ -70,7 +71,7 @@ export interface DeveloperState {
   isUploadingImage: boolean;
 
   userForm: UserFormState;
-  setUserForm: (f: UserFormState) => void;
+  setUserForm: Dispatch<SetStateAction<UserFormState>>;
   resetUserForm: () => void;
   itemForm: ItemFormState;
   setItemForm: (f: ItemFormState) => void;

@@ -37,6 +37,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -46,7 +51,13 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { CalendarIcon, MessageCircle, MoreVertical, X } from 'lucide-react';
+import {
+  CalendarIcon,
+  ChevronDown,
+  MessageCircle,
+  MoreVertical,
+  X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -239,6 +250,7 @@ export default function BuyerPurchaseRequestsPanel({ simulatedBuyer }: BuyerPurc
     currentUser?.role === 'developer';
 
   const isRealBuyer = currentUser?.role === 'buyer';
+  const compactFilters = isRealBuyer && !simulatedBuyer;
 
   useEffect(() => {
     if (!currentUser) return;
@@ -410,8 +422,12 @@ export default function BuyerPurchaseRequestsPanel({ simulatedBuyer }: BuyerPurc
       <CardHeader className="pb-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="text-base">Solicitações de Compra</CardTitle>
-            <CardDescription>Visão comprador — fila atribuída e filtros operacionais</CardDescription>
+            <CardTitle className="text-base">Solicitações de compra</CardTitle>
+            <CardDescription>
+              {compactFilters
+                ? 'Fila atribuída a você — refine por período, unidade e status.'
+                : 'Fila por comprador — filtros para operação e suporte.'}
+            </CardDescription>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={() => refreshPurchases()}>
             Atualizar
@@ -421,56 +437,58 @@ export default function BuyerPurchaseRequestsPanel({ simulatedBuyer }: BuyerPurc
       <CardContent className="space-y-4">
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-2 items-end">
-            <div className="space-y-1.5 min-w-[200px] flex-1">
-              <span className="text-xs text-muted-foreground">Comprador</span>
-              <div className="flex gap-1">
-                <Select
-                  value={compradorSelectValue}
-                  onValueChange={(v) => {
-                    if (v === '__me__') {
-                      setDraft((d) => ({ ...d, buyerId: currentUser?.id ?? null }));
-                    } else if (v === '__all__') {
-                      setDraft((d) => ({ ...d, buyerId: null }));
-                    } else {
-                      setDraft((d) => ({ ...d, buyerId: v }));
-                    }
-                  }}
-                  disabled={!isAdminLike || simulatedBuyer}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Comprador" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {simulatedBuyer && (
-                      <SelectItem value="__preview__">Pré-visualização (todas as filas)</SelectItem>
-                    )}
-                    {!isAdminLike && currentUser && (
-                      <SelectItem value="__me__">{getUserById(currentUser.id)?.name ?? 'Eu'}</SelectItem>
-                    )}
-                    {isAdminLike && !simulatedBuyer && <SelectItem value="__all__">Todos</SelectItem>}
-                    {buyerRoleUsers.map((u) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {isAdminLike && draft.buyerId && !simulatedBuyer && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0"
-                    onClick={() => setDraft((d) => ({ ...d, buyerId: null }))}
+            {!compactFilters && (
+              <div className="space-y-1.5 min-w-[200px] flex-1">
+                <span className="text-xs text-muted-foreground">Comprador</span>
+                <div className="flex gap-1">
+                  <Select
+                    value={compradorSelectValue}
+                    onValueChange={(v) => {
+                      if (v === '__me__') {
+                        setDraft((d) => ({ ...d, buyerId: currentUser?.id ?? null }));
+                      } else if (v === '__all__') {
+                        setDraft((d) => ({ ...d, buyerId: null }));
+                      } else {
+                        setDraft((d) => ({ ...d, buyerId: v }));
+                      }
+                    }}
+                    disabled={!isAdminLike || simulatedBuyer}
                   >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
+                    <SelectTrigger>
+                      <SelectValue placeholder="Comprador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {simulatedBuyer && (
+                        <SelectItem value="__preview__">Pré-visualização (todas as filas)</SelectItem>
+                      )}
+                      {!isAdminLike && currentUser && (
+                        <SelectItem value="__me__">{getUserById(currentUser.id)?.name ?? 'Eu'}</SelectItem>
+                      )}
+                      {isAdminLike && !simulatedBuyer && <SelectItem value="__all__">Todos</SelectItem>}
+                      {buyerRoleUsers.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {isAdminLike && draft.buyerId && !simulatedBuyer && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => setDraft((d) => ({ ...d, buyerId: null }))}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-1.5 min-w-[180px] flex-1">
-              <span className="text-xs text-muted-foreground">Local de Entrega</span>
+              <span className="text-xs text-muted-foreground">Local de entrega</span>
               <Select
                 value={draft.unitId ?? '__all__'}
                 onValueChange={(v) => setDraft((d) => ({ ...d, unitId: v === '__all__' ? null : v }))}
@@ -492,18 +510,18 @@ export default function BuyerPurchaseRequestsPanel({ simulatedBuyer }: BuyerPurc
             </div>
 
             <DatePickerField
-              label="Emissão Inicial"
+              label="Emissão — de"
               value={draft.dateFrom}
               onChange={(d) => setDraft((prev) => ({ ...prev, dateFrom: startOfDay(d) }))}
             />
             <DatePickerField
-              label="Emissão Final"
+              label="Emissão — até"
               value={draft.dateTo}
               onChange={(d) => setDraft((prev) => ({ ...prev, dateTo: startOfDay(d) }))}
             />
 
             <div className="space-y-1.5 min-w-[180px] flex-1">
-              <span className="text-xs text-muted-foreground">Status</span>
+              <span className="text-xs text-muted-foreground">Situação na fila</span>
               <Select
                 value={draft.status}
                 onValueChange={(v) => setDraft((d) => ({ ...d, status: v as BuyerScFilter }))}
@@ -512,109 +530,122 @@ export default function BuyerPurchaseRequestsPanel({ simulatedBuyer }: BuyerPurc
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="pendente_comprar">Pendente Comprar</SelectItem>
-                  <SelectItem value="em_cotacao">Em Cotação</SelectItem>
-                  <SelectItem value="pedido_gerado">Pedido Gerado</SelectItem>
-                  <SelectItem value="cancelado">Cancelado</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="pendente_comprar">Aguardando compra</SelectItem>
+                  <SelectItem value="em_cotacao">Em cotação</SelectItem>
+                  <SelectItem value="pedido_gerado">Com pedido gerado</SelectItem>
+                  <SelectItem value="cancelado">Canceladas</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-1.5 min-w-[200px] flex-1">
-              <span className="text-xs text-muted-foreground">Agrupamento Por</span>
-              <Select
-                value={draft.groupBy}
-                onValueChange={(v) => setDraft((d) => ({ ...d, groupBy: v as GroupBy }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sem agrupamento</SelectItem>
-                  <SelectItem value="unit">Por Unidade</SelectItem>
-                  <SelectItem value="priority">Por Prioridade</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2 items-end">
-            <div className="space-y-1.5 min-w-[160px] flex-1">
-              <span className="text-xs text-muted-foreground">Centro de Custo</span>
-              <Input
-                placeholder="Código ou nome"
-                value={draft.costCenterQuery}
-                onChange={(e) => setDraft((d) => ({ ...d, costCenterQuery: e.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-1.5 min-w-[200px] flex-1">
-              <span className="text-xs text-muted-foreground">Solicitante</span>
-              <Select
-                value={draft.requesterId ?? '__all__'}
-                onValueChange={(v) => setDraft((d) => ({ ...d, requesterId: v === '__all__' ? null : v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Todos</SelectItem>
-                  {users.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5 min-w-[140px] flex-1">
-              <span className="text-xs text-muted-foreground">Número SC</span>
-              <Input
-                placeholder="Buscar"
-                value={draft.scNumberQuery}
-                onChange={(e) => setDraft((d) => ({ ...d, scNumberQuery: e.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-1.5 min-w-[200px] flex-1">
-              <span className="text-xs text-muted-foreground">Grupo de Produto</span>
-              <Select
-                value={draft.categoryId ?? '__all__'}
-                onValueChange={(v) => setDraft((d) => ({ ...d, categoryId: v === '__all__' ? null : v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Todos</SelectItem>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex-1 min-w-[120px] flex justify-end items-end">
+            <div className="flex min-w-[120px] justify-end pb-0.5">
               <Button
                 type="button"
                 className="text-white hover:opacity-90"
                 style={{ backgroundColor: PRIMARY }}
                 onClick={applyBuscar}
               >
-                Buscar
+                Aplicar filtros
               </Button>
             </div>
           </div>
+
+          <Collapsible defaultOpen={!compactFilters} className="group/coll">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-1.5 px-0 h-8 text-muted-foreground hover:text-foreground">
+                <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]/coll:rotate-180" />
+                Mais filtros e agrupamento
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 pt-1">
+              <div className="flex flex-wrap gap-2 items-end rounded-lg border border-border/60 bg-muted/20 p-3">
+                <div className="space-y-1.5 min-w-[200px] flex-1">
+                  <span className="text-xs text-muted-foreground">Agrupar linhas por</span>
+                  <Select
+                    value={draft.groupBy}
+                    onValueChange={(v) => setDraft((d) => ({ ...d, groupBy: v as GroupBy }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem agrupamento</SelectItem>
+                      <SelectItem value="unit">Unidade</SelectItem>
+                      <SelectItem value="priority">Prioridade</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5 min-w-[160px] flex-1">
+                  <span className="text-xs text-muted-foreground">Centro de custo</span>
+                  <Input
+                    placeholder="Código ou nome"
+                    value={draft.costCenterQuery}
+                    onChange={(e) => setDraft((d) => ({ ...d, costCenterQuery: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-1.5 min-w-[200px] flex-1">
+                  <span className="text-xs text-muted-foreground">Solicitante</span>
+                  <Select
+                    value={draft.requesterId ?? '__all__'}
+                    onValueChange={(v) => setDraft((d) => ({ ...d, requesterId: v === '__all__' ? null : v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">Todos</SelectItem>
+                      {users.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5 min-w-[140px] flex-1">
+                  <span className="text-xs text-muted-foreground">Nº / trecho da SC</span>
+                  <Input
+                    placeholder="Buscar"
+                    value={draft.scNumberQuery}
+                    onChange={(e) => setDraft((d) => ({ ...d, scNumberQuery: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-1.5 min-w-[200px] flex-1">
+                  <span className="text-xs text-muted-foreground">Grupo de produto</span>
+                  <Select
+                    value={draft.categoryId ?? '__all__'}
+                    onValueChange={(v) => setDraft((d) => ({ ...d, categoryId: v === '__all__' ? null : v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">Todos</SelectItem>
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-t border-border/60 pt-4">
+          <p className="text-xs text-muted-foreground hidden sm:block">
+            Dica: use a busca rápida no grid atual e pressione Enter para aplicar junto com os filtros.
+          </p>
           <Input
-            className="sm:max-w-xs"
-            placeholder="Busca rápida…"
+            className="sm:max-w-sm"
+            placeholder="Busca rápida na lista (Enter para aplicar)"
             value={draft.quickSearch}
             onChange={(e) => setDraft((d) => ({ ...d, quickSearch: e.target.value }))}
             onKeyDown={(e) => {

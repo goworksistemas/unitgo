@@ -1,6 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Dispatch, SetStateAction } from 'react';
 import type { Unit, UserRole } from '@/types';
 import type { UserFormState } from './types';
 import { RoleSpecificFields } from './RoleSpecificFields';
@@ -9,7 +10,7 @@ const NO_DEPARTMENT = '__none__';
 
 interface UserFormFieldsProps {
   userForm: UserFormState;
-  setUserForm: (f: UserFormState) => void;
+  setUserForm: Dispatch<SetStateAction<UserFormState>>;
   units: Unit[];
   showPassword?: boolean;
   idPrefix?: string;
@@ -76,10 +77,10 @@ export function UserFormFields({
             <Select
               value={userForm.departmentId?.trim() ? userForm.departmentId : NO_DEPARTMENT}
               onValueChange={(value) =>
-                setUserForm({
-                  ...userForm,
+                setUserForm((prev) => ({
+                  ...prev,
                   departmentId: value === NO_DEPARTMENT ? '' : value,
-                })
+                }))
               }
             >
               <SelectTrigger id={`${idPrefix}department`} className="h-9">

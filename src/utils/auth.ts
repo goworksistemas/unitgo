@@ -19,6 +19,10 @@ export function normalizeStoredUserRow(user: Record<string, unknown> | null | un
   const additional =
     (user.additionalUnitIds as string[] | undefined) ??
     (user.additional_unit_ids as string[] | undefined);
+  const departmentId =
+    (user.departmentId as string | null | undefined) ??
+    (user.department_id as string | null | undefined);
+
   return {
     id: user.id,
     name: String(user.name ?? ''),
@@ -26,6 +30,7 @@ export function normalizeStoredUserRow(user: Record<string, unknown> | null | un
     role: user.role as User['role'],
     primaryUnitId: primary,
     additionalUnitIds: Array.isArray(additional) ? additional : undefined,
+    departmentId: departmentId === undefined ? undefined : departmentId,
     warehouseType: (user.warehouseType ?? user.warehouse_type) as User['warehouseType'],
     adminType: (user.adminType ?? user.admin_type) as User['adminType'],
     jobTitle: (user.jobTitle ?? user.job_title) as string | undefined,

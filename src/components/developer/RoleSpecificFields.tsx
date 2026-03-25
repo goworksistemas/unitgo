@@ -2,12 +2,13 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import type { Dispatch, SetStateAction } from 'react';
 import type { Unit } from '@/types';
 import type { UserFormState } from './types';
 
 interface RoleSpecificFieldsProps {
   userForm: UserFormState;
-  setUserForm: (f: UserFormState) => void;
+  setUserForm: Dispatch<SetStateAction<UserFormState>>;
   units: Unit[];
   idPrefix?: string;
 }

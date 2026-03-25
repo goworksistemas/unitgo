@@ -902,6 +902,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAppUsers(prev => prev.map(user =>
       user.id === userId ? { ...user, ...updates } : user
     ));
+    setCurrentUser(prev =>
+      prev && prev.id === userId ? { ...prev, ...updates } : prev
+    );
   };
 
   const deleteUser = (userId: string) => {

@@ -294,12 +294,15 @@ export default function BuyerPurchaseOrdersPanel({
   }
 
   return (
-    <Card>
+    <Card className="border-border/60 shadow-sm">
       <CardHeader className="pb-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <CardTitle className="text-base">Pedidos de Compra</CardTitle>
-            <CardDescription>Lista operacional do comprador</CardDescription>
+            <CardTitle className="text-base">Pedidos de compra</CardTitle>
+            <CardDescription>
+              PCs do seu escopo — use os filtros para achar por período, entrega ou aprovação. Filtros extras ficam
+              no painel recolhível.
+            </CardDescription>
           </div>
           <div className="flex flex-wrap gap-1 justify-end">
             <Button type="button" variant="outline" size="icon" onClick={() => refreshPurchases()} title="Atualizar">

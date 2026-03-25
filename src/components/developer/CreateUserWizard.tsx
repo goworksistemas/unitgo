@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,7 @@ const STEPS = [
 interface CreateUserWizardProps {
   dialogOpen: boolean;
   userForm: UserFormState;
-  setUserForm: (f: UserFormState) => void;
+  setUserForm: Dispatch<SetStateAction<UserFormState>>;
   units: Unit[];
   onCancel: () => void;
   onSubmit: () => void;

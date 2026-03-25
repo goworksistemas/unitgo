@@ -743,7 +743,7 @@ app.get("/make-server-46b247d8/auth/session", async (c) => {
       .eq('id', data.user.id)
       .single();
     
-    return c.json({ user: userData, session: { access_token: token } });
+    return c.json({ user: userDbToApi(userData), session: { access_token: token } });
   } catch (error) {
     console.error("Error getting session:", error);
     return c.json({ error: "Failed to get session" }, 500);
