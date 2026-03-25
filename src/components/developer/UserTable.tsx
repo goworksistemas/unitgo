@@ -3,11 +3,12 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Edit, Trash2, KeyRound, ShieldAlert, Truck, Package } from 'lucide-react';
 import type { User, Unit } from '@/types';
+import { getRoleName } from '@/lib/format';
 
 interface UserTableProps {
   users: User[];
   units: Unit[];
-  handleEditUser: (user: User) => void;
+  handleEditUser: (user: User) => void | Promise<void>;
   handleDeleteUser: (userId: string) => void;
   handleRequestPasswordChange: (user: User) => void;
   setSelectedUser: (u: User | null) => void;
@@ -45,7 +46,7 @@ export function UserTable({
                 <Badge variant="secondary" className="capitalize">
                   {user.role === 'warehouse'
                     ? (user.warehouseType === 'delivery' ? 'Motorista' : 'Almoxarife')
-                    : user.role}
+                    : getRoleName(user.role)}
                 </Badge>
               </TableCell>
               <TableCell>

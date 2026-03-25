@@ -56,7 +56,6 @@ import type { Contract, CostCenter } from '@/types/purchases';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
-
 const fmt = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 

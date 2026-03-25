@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
-import { Package, History, CheckCircle2, Scan, ShoppingCart, FileText, ScrollText } from 'lucide-react';
+import { Package, History, CheckCircle2, Scan, ShoppingCart, FileText, ScrollText, Landmark } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { RequesterConfirmationPanel } from '../panels/RequesterConfirmationPanel';
 import { QRCodeScanner } from '../shared/QRCodeScanner';
@@ -11,6 +11,8 @@ import { RequestsPanel } from '../requester/RequestsPanel';
 import { NewRequestDialog } from '../requester/NewRequestDialog';
 import { CreatePurchaseRequestPanel } from '../purchases/requester/CreatePurchaseRequestPanel';
 import { MyPurchaseRequestsPanel } from '../purchases/requester/MyPurchaseRequestsPanel';
+import { CostCenterManagementPanel } from '../purchases/admin/CostCenterManagementPanel';
+import { ContractManagementPanel } from '../purchases/admin/ContractManagementPanel';
 import { UnitMovementsHistory } from '../delivery/UnitMovementsHistory';
 import { toast } from 'sonner';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
@@ -23,6 +25,8 @@ const SECTION_TAB_MAP: Record<string, string> = {
   'deliveries': 'solicitante.recebimentos',
   'new-purchase': 'solicitante.nova',
   'my-purchases': 'solicitante.minhas',
+  'cost-centers': 'compras.centros_custo',
+  'contracts': 'compras.contratos',
 };
 
 export function RequesterDashboard() {
@@ -33,14 +37,23 @@ export function RequesterDashboard() {
   const [scannedBatchId, setScannedBatchId] = useState<string | null>(null);
 
   const navigationSections: NavigationSection[] = useMemo(() => {
+    const extraPurchaseItems: NavigationSection['items'] = [];
+    if (canAccessTab('compras.centros_custo'))
+      extraPurchaseItems.push({ id: 'cost-centers', label: 'Centros de Custo', icon: Landmark });
+    if (canAccessTab('compras.contratos'))
+      extraPurchaseItems.push({ id: 'contracts', label: 'Contratos', icon: FileText });
+
+    const purchaseItems: NonNullable<NavigationSection['items']> = [
+      { id: 'new-purchase', label: 'Nova Solicitação', icon: ShoppingCart },
+      { id: 'my-purchases', label: 'Minhas Solicitações', icon: FileText },
+      ...extraPurchaseItems,
+    ];
+
     const all: NavigationSection[] = [
       { id: 'stock', label: 'Estoque Disponível', icon: Package },
       { id: 'requests', label: 'Meus Pedidos', icon: History },
       { id: 'deliveries', label: 'Recebimentos', icon: CheckCircle2 },
-      { id: 'purchases', label: 'Compras', icon: ShoppingCart, items: [
-        { id: 'new-purchase', label: 'Nova Solicitação', icon: ShoppingCart },
-        { id: 'my-purchases', label: 'Minhas Solicitações', icon: FileText },
-      ]},
+      { id: 'purchases', label: 'Compras', icon: ShoppingCart, items: purchaseItems },
     ];
     return all.filter((s) => {
       const tabId = SECTION_TAB_MAP[s.id];
@@ -124,7 +137,9 @@ export function RequesterDashboard() {
       )}
       {activeSection === 'deliveries' && <RequesterConfirmationPanel />}
       {activeSection === 'purchases' && activeItem === 'my-purchases' && <MyPurchaseRequestsPanel />}
-      {activeSection === 'purchases' && activeItem !== 'my-purchases' && <CreatePurchaseRequestPanel />}
+      {activeSection === 'purchases' && activeItem === 'cost-centers' && <CostCenterManagementPanel />}
+      {activeSection === 'purchases' && activeItem === 'contracts' && <ContractManagementPanel />}
+      {activeSection === 'purchases' && (!activeItem || activeItem === 'new-purchase') && <CreatePurchaseRequestPanel />}
 
       <Button
         onClick={() => setShowQRScanner(true)}

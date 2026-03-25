@@ -54,7 +54,10 @@ export function CreateUserWizard({
   };
 
   const needsPrimaryUnit =
-    userForm.role !== 'designer' && userForm.role !== 'admin' && userForm.role !== 'developer';
+    userForm.role !== 'designer' &&
+    userForm.role !== 'admin' &&
+    userForm.role !== 'developer' &&
+    userForm.role !== 'purchases_admin';
 
   return (
     <div className="space-y-6">
@@ -172,6 +175,7 @@ export function CreateUserWizard({
                   <SelectItem value="requester">Solicitante</SelectItem>
                   <SelectItem value="buyer">Comprador</SelectItem>
                   <SelectItem value="financial">Financeiro</SelectItem>
+                  <SelectItem value="purchases_admin">Admin Compras</SelectItem>
                   <SelectItem value="executor">Executor</SelectItem>
                   <SelectItem value="driver">Motorista</SelectItem>
                 </SelectContent>

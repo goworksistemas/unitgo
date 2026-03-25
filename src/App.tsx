@@ -15,6 +15,7 @@ import { DeveloperDashboard } from './components/dashboards/DeveloperDashboard';
 import { RequesterDashboard } from './components/dashboards/RequesterDashboard';
 import { BuyerDashboard } from './components/dashboards/BuyerDashboard';
 import { FinancialDashboard } from './components/dashboards/FinancialDashboard';
+import { PurchasesAdminDashboard } from './components/dashboards/PurchasesAdminDashboard';
 import { Toaster } from './components/ui/sonner';
 import { projectId, publicAnonKey, functionSlug } from './utils/supabase/info';
 import { useInactivityLogout } from './hooks/useInactivityLogout';
@@ -147,6 +148,8 @@ function AppContent() {
         return <BuyerDashboard />;
       case 'financial':
         return <FinancialDashboard />;
+      case 'purchases_admin':
+        return <PurchasesAdminDashboard />;
       default:
         return <div>Perfil não reconhecido</div>;
     }

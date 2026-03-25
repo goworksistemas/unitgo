@@ -1,13 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
-import { usePurchases } from '../../contexts/PurchaseContext';
 import { Button } from '../ui/button';
-import { Package, Armchair, Scan, ShoppingCart, ClipboardList, History, PackageOpen, Calendar, Truck, Boxes } from 'lucide-react';
+import { Package, Armchair, Scan, PackageOpen, Calendar, Truck, Boxes } from 'lucide-react';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import { useNavigation } from '@/hooks/useNavigation';
 import type { NavigationSection } from '@/hooks/useNavigation';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { cn } from '@/lib/utils';
 import { ControllerKPIs } from '../controller/ControllerKPIs';
 import { FurniturePanel } from '../controller/FurniturePanel';
 import { LoansPanel } from '../controller/LoansPanel';
@@ -17,9 +15,6 @@ import { ItemSearchPanel } from '../panels/ItemSearchPanel';
 import { PendingDeliveriesAlert } from '../controller/PendingDeliveriesAlert';
 import { LoanAlerts } from '../controller/LoanAlerts';
 import { ControllerDialogs, type StockDialogState } from '../controller/ControllerDialogs';
-import { ManagerPurchaseRequestsPanel } from '../purchases/manager/ManagerPurchaseRequestsPanel';
-import { ManagerApprovalHistoryPanel } from '../purchases/manager/ManagerApprovalHistoryPanel';
-
 function getControllerPageMeta(
   section: string,
   item: string | undefined,
@@ -58,17 +53,6 @@ function getControllerPageMeta(
         title: 'Recebimentos',
         subtitle: `${u} · Confirme entregas com QR Code`,
       };
-    case 'purchases':
-      if (item === 'approval-history') {
-        return {
-          title: 'Histórico de aprovações',
-          subtitle: `${u} · Suas decisões em compras`,
-        };
-      }
-      return {
-        title: 'Aprovação de compras',
-        subtitle: `${u} · Primeira análise dos pedidos da equipe`,
-      };
     default:
       return { title: roleLabel, subtitle: u };
   }
@@ -82,8 +66,6 @@ export function ControllerDashboard() {
   } = useApp();
   const { setTitle } = useNavigation();
   const roleLabel = currentUser?.role === 'executor' ? 'Executor' : 'Controlador';
-  const { purchaseRequests } = usePurchases();
-
   const [addFurnitureDialogOpen, setAddFurnitureDialogOpen] = useState(false);
   const [requestFurnitureDialogOpen, setRequestFurnitureDialogOpen] = useState(false);
   const [removalDialogOpen, setRemovalDialogOpen] = useState(false);
@@ -142,12 +124,6 @@ export function ControllerDashboard() {
     const overdueLoans = loans.filter(
       l => l.unitId === currentUnit.id && (l.status === 'overdue' || (l.status === 'active' && new Date(l.expectedReturnDate) < new Date()))
     ).length;
-    const pendingManagerApprovals = purchaseRequests?.filter(
-      (r: { status: string; unidadeId?: string; solicitanteId?: string }) =>
-        r.status === 'pending_manager' &&
-        r.unidadeId === currentUnit.id &&
-        r.solicitanteId !== currentUser?.id
-    ).length ?? 0;
     const belowMinimumCount = unitStocks.filter(s => {
       const item = getItemById(s.itemId);
       return s.unitId === currentUnit.id && item && !item.isFurniture && s.quantity < s.minimumQuantity;
@@ -167,17 +143,8 @@ export function ControllerDashboard() {
       },
       { id: 'almoxarifado', label: 'Pedidos ao almox.', icon: PackageOpen, badge: pendingAlmoxarifado > 0 ? pendingAlmoxarifado : undefined },
       { id: 'deliveries', label: 'Recebimentos', icon: Truck, badge: pendingDeliveries > 0 ? pendingDeliveries : undefined },
-      {
-        id: 'purchases',
-        label: 'Compras',
-        icon: ShoppingCart,
-        items: [
-          { id: 'manager-requests', label: 'Aprovar pedidos', icon: ClipboardList, badge: pendingManagerApprovals > 0 ? pendingManagerApprovals : undefined },
-          { id: 'approval-history', label: 'Histórico', icon: History },
-        ],
-      },
     ];
-  }, [currentUnit, deliveryBatches, requests, furnitureRemovalRequests, loans, purchaseRequests, currentUser, unitStocks, getItemById]);
+  }, [currentUnit, deliveryBatches, requests, furnitureRemovalRequests, loans, unitStocks, getItemById]);
 
   const { activeSection, activeItem, setActiveSection } = useDashboardNav(
     navigationSections,
@@ -221,9 +188,6 @@ export function ControllerDashboard() {
 
   const renderContent = () => {
     switch (activeSection) {
-      case 'purchases':
-        if (activeItem === 'approval-history') return <ManagerApprovalHistoryPanel />;
-        return <ManagerPurchaseRequestsPanel />;
       case 'almoxarifado':
         return <AlmoxarifadoPanel />;
       case 'deliveries':
@@ -275,9 +239,6 @@ export function ControllerDashboard() {
     }
   };
 
-  const isPurchasesWithSubTabs = activeSection === 'purchases';
-  const purchasesSubTab = activeItem === 'approval-history' ? 'approval-history' : 'manager-requests';
-
   return (
     <>
       <div className="space-y-4">
@@ -305,49 +266,7 @@ export function ControllerDashboard() {
         )}
 
         <div className="rounded-xl border border-border/80 bg-card/90 p-4 md:p-5 shadow-sm">
-          {isPurchasesWithSubTabs ? (
-            <>
-              <div className="flex flex-wrap gap-0 border-b border-border mb-4" role="tablist" aria-label="Compras">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={purchasesSubTab === 'manager-requests'}
-                  className={cn(
-                    'inline-flex items-center gap-2 px-4 py-2.5 text-sm transition-colors border-b-2 -mb-px rounded-none',
-                    purchasesSubTab === 'manager-requests'
-                      ? 'border-primary text-foreground font-medium'
-                      : 'border-transparent text-muted-foreground hover:text-foreground',
-                  )}
-                  onClick={() => setActiveSection('purchases', 'manager-requests')}
-                >
-                  <ClipboardList className="h-4 w-4 shrink-0" />
-                  Solicitações da equipe
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={purchasesSubTab === 'approval-history'}
-                  className={cn(
-                    'inline-flex items-center gap-2 px-4 py-2.5 text-sm transition-colors border-b-2 -mb-px rounded-none',
-                    purchasesSubTab === 'approval-history'
-                      ? 'border-primary text-foreground font-medium'
-                      : 'border-transparent text-muted-foreground hover:text-foreground',
-                  )}
-                  onClick={() => setActiveSection('purchases', 'approval-history')}
-                >
-                  <History className="h-4 w-4 shrink-0" />
-                  Histórico de aprovações
-                </button>
-              </div>
-              {purchasesSubTab === 'approval-history' ? (
-                <ManagerApprovalHistoryPanel />
-              ) : (
-                <ManagerPurchaseRequestsPanel />
-              )}
-            </>
-          ) : (
-            renderContent()
-          )}
+          {renderContent()}
         </div>
       </div>
 

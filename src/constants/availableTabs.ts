@@ -14,20 +14,19 @@ export interface TabCategory {
 
 export const AVAILABLE_TABS: TabCategory[] = [
   {
-    label: 'Compras (Buyer)',
+    label: 'Admin de Compras',
     tabs: [
-      { id: 'compras.solicitacoes', label: 'Solicitações Aprovadas' },
-      { id: 'compras.cotacoes', label: 'Cotações' },
-      { id: 'compras.pedidos', label: 'Pedidos' },
-      { id: 'compras.aprovacoes', label: 'Aprovações Financeiras' },
-      { id: 'compras.fornecedores', label: 'Fornecedores' },
+      { id: 'compras_admin.visao', label: 'Dashboard de Compras' },
+      { id: 'compras_admin.requisicoes', label: 'Requisições' },
+      { id: 'compras_admin.cotacoes', label: 'Cotações' },
+      { id: 'compras_admin.aprovacoes', label: 'Aprovações' },
+      { id: 'compras_admin.pedidos', label: 'Pedidos de Compra' },
+      { id: 'compras_admin.configuracoes', label: 'Configurações' },
     ],
   },
   {
-    label: 'Compras (Admin)',
+    label: 'Compras (Cadastros auxiliares)',
     tabs: [
-      { id: 'compras.gestor', label: 'Solicitações Gestor' },
-      { id: 'compras.diretoria', label: 'Aprovações Diretoria' },
       { id: 'compras.centros_custo', label: 'Centros de Custo' },
       { id: 'compras.contratos', label: 'Contratos' },
     ],

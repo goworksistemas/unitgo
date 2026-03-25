@@ -7,6 +7,8 @@ export interface UserFormState {
   role: UserRole;
   primaryUnitId: string;
   additionalUnitIds: string[];
+  /** UUID do departamento ou string vazia = nenhum */
+  departmentId: string;
   warehouseType: 'storage' | 'delivery' | undefined;
   adminType: 'units' | 'warehouse' | undefined;
   jobTitle: string;
@@ -76,7 +78,7 @@ export interface DeveloperState {
   setUnitForm: (f: UnitFormState) => void;
 
   handleAddUser: () => Promise<void>;
-  handleEditUser: (user: User) => void;
+  handleEditUser: (user: User) => Promise<void>;
   handleUpdateUser: () => Promise<void>;
   handleDeleteUser: (userId: string) => void;
   handleRequestPasswordChange: (user: User) => void;

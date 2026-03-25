@@ -161,9 +161,9 @@ export function DriverDeliveryBatchCard({
                   lineItems.length > 6 && 'max-h-36 overflow-y-auto overscroll-contain pr-1',
                 )}
               >
-                {lineItems.map((line) => (
+                {lineItems.map((line, index) => (
                   <li
-                    key={`${line.kind}-${line.id}`}
+                    key={`${line.kind}-${line.id}-${index}`}
                     className="flex items-start gap-2 text-sm leading-snug"
                   >
                     {line.kind === 'material' ? (

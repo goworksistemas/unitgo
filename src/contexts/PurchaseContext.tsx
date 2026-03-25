@@ -6,8 +6,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { api } from '../utils/api';
 import { supabase } from '../utils/supabase/client';
-import { useApp } from './AppContext';
-import { useAllowedTabs } from '../hooks/useAllowedTabs';
 import { toast } from 'sonner';
 import type {
   PurchaseRequest,
@@ -26,7 +24,6 @@ import type {
 
 interface PurchaseContextType {
   purchaseRequests: PurchaseRequest[];
-  semAtribuicao: number;
   suppliers: Supplier[];
   supplierCategories: SupplierCategory[];
   costCenters: CostCenter[];
@@ -37,7 +34,6 @@ interface PurchaseContextType {
   receivings: Receiving[];
   isLoadingPurchases: boolean;
   refreshPurchases: () => Promise<void>;
-  atribuirComprador: (requestId: string) => Promise<void>;
   createPurchaseRequest: (data: Omit<PurchaseRequest, 'id' | 'createdAt' | 'updatedAt'>) => Promise<PurchaseRequest | null>;
   approvePurchaseRequestManager: (id: string, approverId: string, approverName: string) => Promise<void>;
   rejectPurchaseRequestManager: (id: string, approverId: string, approverName: string, justificativa: string) => Promise<void>;
@@ -55,15 +51,11 @@ interface PurchaseContextType {
   approveOrder: (orderId: string, approverId: string, approverName: string) => Promise<void>;
   rejectOrder: (orderId: string, approverId: string, approverName: string, observacao: string) => Promise<void>;
   resendOrderForApproval: (orderId: string, compradorId: string) => Promise<void>;
-  allowedPurchaseTabs: string[];
-  canAccessTab: (tabId: string) => boolean;
-  pendentesAprovacao: number;
 }
 
 const PurchaseContext = createContext<PurchaseContextType | undefined>(undefined);
 
 export function PurchaseProvider({ children }: { children: ReactNode }) {
-  const { currentUser } = useApp();
   const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [supplierCategories, setSupplierCategories] = useState<SupplierCategory[]>([]);
@@ -141,55 +133,6 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
   }, [loadPurchases]);
 
   const refreshPurchases = useCallback(() => loadPurchases(), [loadPurchases]);
-
-  const approvedForQueue = useMemo(
-    () =>
-      purchaseRequests.filter(
-        (r) =>
-          r.status === 'in_quotation' ||
-          r.status === 'quotation_completed' ||
-          r.status === 'in_purchase'
-      ),
-    [purchaseRequests]
-  );
-
-  const semAtribuicao = useMemo(
-    () => approvedForQueue.filter((r) => !r.compradorId).length,
-    [approvedForQueue]
-  );
-
-  const atribuirComprador = useCallback(
-    async (requestId: string) => {
-      if (!currentUser?.id) {
-        toast.error('Usuário não identificado');
-        return;
-      }
-      try {
-        await api.purchaseRequests.update(requestId, {
-          compradorId: currentUser.id,
-          atribuidoEm: new Date().toISOString(),
-        });
-        setPurchaseRequests((prev) =>
-          prev.map((r) =>
-            r.id === requestId
-              ? {
-                  ...r,
-                  compradorId: currentUser.id,
-                  atribuidoEm: new Date().toISOString(),
-                }
-              : r
-          )
-        );
-        await refreshPurchases();
-        toast.success('Solicitação atribuída a você');
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : (e as { details?: { error?: string } })?.details?.error ?? 'Erro ao atribuir solicitação';
-        toast.error(msg);
-        throw e;
-      }
-    },
-    [currentUser?.id, refreshPurchases]
-  );
 
   useEffect(() => {
     const channel = supabase
@@ -531,32 +474,8 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const { canAccessTab: globalCanAccessTab } = useAllowedTabs();
-
-  const COMPRAS_TABS = ['solicitacoes', 'cotacoes', 'pedidos', 'aprovacoes', 'fornecedores'];
-
-  const allowedPurchaseTabs = useMemo<string[]>(() => {
-    return COMPRAS_TABS.filter((t) => globalCanAccessTab(`compras.${t}`));
-  }, [globalCanAccessTab]);
-
-  const canAccessTab = useCallback(
-    (tabId: string) => globalCanAccessTab(`compras.${tabId}`),
-    [globalCanAccessTab]
-  );
-
-  const pendentesAprovacao = useMemo(() => {
-    if (!currentUser?.id || !canAccessTab('aprovacoes')) return 0;
-    return purchaseOrders.filter(
-      (o) =>
-        (o.statusAprovacao === 'pendente' || o.statusAprovacao === undefined) &&
-        o.aprovadorNecessarioId === currentUser.id
-    ).length;
-  }, [purchaseOrders, currentUser?.id, canAccessTab]);
-
   const value: PurchaseContextType = {
     purchaseRequests,
-    semAtribuicao,
-    atribuirComprador,
     suppliers,
     supplierCategories,
     costCenters,
@@ -584,9 +503,6 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
     approveOrder,
     rejectOrder,
     resendOrderForApproval,
-    allowedPurchaseTabs,
-    canAccessTab,
-    pendentesAprovacao,
   };
 
   return <PurchaseContext.Provider value={value}>{children}</PurchaseContext.Provider>;

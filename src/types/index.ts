@@ -14,8 +14,9 @@
  * - requester: Solicitante (faz pedidos de materiais)
  * - buyer: Comprador (cotações, pedidos, fornecedores)
  * - financial: Financeiro (contratos, centros de custo, relatórios)
+ * - purchases_admin: Administrador do módulo de compras (requisições, cotações, pedidos, aprovações e parametrização de alçadas)
  */
-export type UserRole = 'controller' | 'admin' | 'warehouse' | 'designer' | 'developer' | 'requester' | 'executor' | 'driver' | 'buyer' | 'financial';
+export type UserRole = 'controller' | 'admin' | 'warehouse' | 'designer' | 'developer' | 'requester' | 'executor' | 'driver' | 'buyer' | 'financial' | 'purchases_admin';
 
 export type MovementType = 'entrada' | 'saida' | 'emprestimo' | 'devolucao' | 'ajuste';
 
@@ -152,6 +153,8 @@ export interface User {
   role: UserRole;
   primaryUnitId?: string;
   additionalUnitIds?: string[];
+  /** Setor/departamento (FK departments) — preenchido no cadastro/edição pelo desenvolvedor */
+  departmentId?: string | null;
   warehouseType?: 'storage' | 'delivery';
   jobTitle?: string;
   adminType?: 'units' | 'warehouse';

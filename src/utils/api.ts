@@ -143,6 +143,11 @@ export const api = {
     }),
   },
 
+  // ========== DEPARTMENTS (setores — via Edge Function / service role) ==========
+  departments: {
+    getAll: () => apiRequest('/departments'),
+  },
+
   // ========== FLOORS ==========
   floors: {
     getAll: () => apiRequest('/floors'),

@@ -16,6 +16,8 @@ import type { NavigationSection } from '@/hooks/useNavigation';
 import { useAllowedTabs } from '@/hooks/useAllowedTabs';
 import { useApp } from '@/contexts/AppContext';
 import { useDesignerState } from '../designer/useDesignerState';
+import { CostCenterManagementPanel } from '../purchases/admin/CostCenterManagementPanel';
+import { ContractManagementPanel } from '../purchases/admin/ContractManagementPanel';
 import { OverviewPanel } from '../designer/OverviewPanel';
 import { InventoryPanel } from '../designer/InventoryPanel';
 import { MyRequestsPanel } from '../designer/MyRequestsPanel';
@@ -38,11 +40,17 @@ export function DesignerDashboard() {
     const TAB_MAP: Record<string, string> = {
       overview: 'designer.visao',
       requests: 'designer.projetos',
+      'cost-centers': 'compras.centros_custo',
+      contracts: 'compras.contratos',
     };
     const all: NavigationSection[] = [
       { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
       { id: 'requests', label: 'Pedidos das unidades', icon: Inbox },
     ];
+    if (canAccessTab('compras.centros_custo'))
+      all.push({ id: 'cost-centers', label: 'Centros de Custo', icon: Inbox });
+    if (canAccessTab('compras.contratos'))
+      all.push({ id: 'contracts', label: 'Contratos', icon: Inbox });
     return all.filter((s) => {
       const tabId = TAB_MAP[s.id];
       return !tabId || canAccessTab(tabId);
@@ -58,6 +66,8 @@ export function DesignerDashboard() {
 
   const renderContent = () => {
     switch (activeSection) {
+      case 'cost-centers': return <CostCenterManagementPanel />;
+      case 'contracts': return <ContractManagementPanel />;
       case 'overview':
         return (
           <Tabs defaultValue="resumo" className="w-full">

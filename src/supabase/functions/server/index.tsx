@@ -75,6 +75,16 @@ function parseFloors(floors: any): string[] {
   return [];
 }
 
+/** GET listagem compras: falha no banco → 200 + [] (não quebra o front). */
+function purchasesListResponse(c: { json: (b: unknown) => Response }, label: string, error: unknown, rows: unknown[] | null) {
+  if (error) {
+    const e = error as Record<string, unknown>;
+    console.error(`[${label}] GET list — erro (retornando []):`, e?.code, e?.message ?? JSON.stringify(error));
+    return c.json([]);
+  }
+  return c.json(rows ?? []);
+}
+
 // Convert snake_case to camelCase for user objects
 function userDbToApi(user: any) {
   if (!user) return null;
@@ -85,6 +95,7 @@ function userDbToApi(user: any) {
     role: user.role,
     primaryUnitId: user.primary_unit_id,
     additionalUnitIds: user.additional_unit_ids,
+    departmentId: user.department_id ?? null,
     warehouseType: user.warehouse_type,
     adminType: user.admin_type,
     jobTitle: user.job_title,
@@ -1126,17 +1137,31 @@ app.put("/make-server-46b247d8/users/:id", async (c) => {
     const dailyCode = body.daily_code ?? body.dailyCode;
     const dailyCodeGeneratedAt = body.daily_code_generated_at ?? body.dailyCodeGeneratedAt;
 
+    const uuidOrNull = (v: unknown) =>
+      typeof v === 'string' && v.trim() !== '' ? v.trim() : null;
+    const departmentIdInBody = 'department_id' in body || 'departmentId' in body;
+    const departmentIdRaw = body.department_id ?? body.departmentId;
+    const primaryUnitIdForDb =
+      primaryUnitId !== undefined ? uuidOrNull(primaryUnitId) : undefined;
+    const additionalUnitIdsForDb =
+      additionalUnitIds !== undefined
+        ? Array.isArray(additionalUnitIds)
+          ? additionalUnitIds.filter((id: string) => id && String(id).trim() !== '')
+          : additionalUnitIds
+        : undefined;
+
     const dbUpdates: any = {};
     if (name !== undefined) dbUpdates.name = name;
     if (email !== undefined) dbUpdates.email = email;
     if (role !== undefined) dbUpdates.role = role;
-    if (primaryUnitId !== undefined) dbUpdates.primary_unit_id = primaryUnitId;
-    if (additionalUnitIds !== undefined) dbUpdates.additional_unit_ids = additionalUnitIds;
+    if (primaryUnitIdForDb !== undefined) dbUpdates.primary_unit_id = primaryUnitIdForDb;
+    if (additionalUnitIdsForDb !== undefined) dbUpdates.additional_unit_ids = additionalUnitIdsForDb;
     if (warehouseType !== undefined) dbUpdates.warehouse_type = warehouseType;
     if (adminType !== undefined) dbUpdates.admin_type = adminType;
     if (jobTitle !== undefined) dbUpdates.job_title = jobTitle;
     if (dailyCode !== undefined) dbUpdates.daily_code = dailyCode;
     if (dailyCodeGeneratedAt !== undefined) dbUpdates.daily_code_generated_at = dailyCodeGeneratedAt;
+    if (departmentIdInBody) dbUpdates.department_id = uuidOrNull(departmentIdRaw);
 
     if (Object.keys(dbUpdates).length === 0) {
       return c.json({ error: "Nenhum campo para atualizar" }, 400);
@@ -1162,11 +1187,12 @@ app.put("/make-server-46b247d8/users/:id", async (c) => {
       user_metadata: {
         name: name || userData.name,
         role: role || userData.role,
-        primaryUnitId: primaryUnitId !== undefined ? primaryUnitId : userData.primary_unit_id,
-        additionalUnitIds: additionalUnitIds !== undefined ? additionalUnitIds : userData.additional_unit_ids,
+        primaryUnitId: primaryUnitIdForDb !== undefined ? primaryUnitIdForDb : userData.primary_unit_id,
+        additionalUnitIds: additionalUnitIdsForDb !== undefined ? additionalUnitIdsForDb : userData.additional_unit_ids,
         warehouseType: warehouseType !== undefined ? warehouseType : userData.warehouse_type,
         adminType: adminType !== undefined ? adminType : userData.admin_type,
         jobTitle: jobTitle || null,
+        departmentId: userData.department_id ?? null,
       }
     };
     
@@ -3221,15 +3247,32 @@ app.get("/make-server-46b247d8/currencies", async (c) => {
   }
 });
 
+// --- Departments (lista para UI; service role) ---
+app.get("/make-server-46b247d8/departments", async (c) => {
+  try {
+    const { data, error } = await supabase
+      .from("departments")
+      .select("id, name, is_active")
+      .order("name");
+    if (error) {
+      console.error("[departments] GET:", (error as any)?.code, (error as any)?.message);
+      return c.json([]);
+    }
+    return c.json(data || []);
+  } catch (error) {
+    console.error("Error fetching departments:", error);
+    return c.json([]);
+  }
+});
+
 // --- Purchase Requests ---
 app.get("/make-server-46b247d8/purchase-requests", async (c) => {
   try {
     const { data, error } = await supabase.from('purchase_requests').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    return c.json(data || []);
+    return purchasesListResponse(c, "purchase_requests", error, data as unknown[] | null);
   } catch (error) {
-    console.error("Error fetching purchase requests:", error);
-    return c.json({ error: "Failed to fetch purchase requests" }, 500);
+    console.error("purchase_requests GET catch:", error);
+    return c.json([]);
   }
 });
 
@@ -3316,8 +3359,12 @@ app.put("/make-server-46b247d8/purchase-requests/:id/approve-director", async (c
   try {
     const id = c.req.param("id");
     const body = await c.req.json();
-    const { data: current, error: fetchErr } = await supabase.from('purchase_requests').select('aprovacoes').eq('id', id).single();
+    const { data: current, error: fetchErr } = await supabase.from('purchase_requests').select('aprovacoes, status').eq('id', id).single();
     if (fetchErr) throw fetchErr;
+    const st = current?.status;
+    if (st !== 'pending_manager' && st !== 'pending_director') {
+      return c.json({ error: "Apenas solicitações na 2ª ou 3ª camada podem ser aprovadas aqui", status: st }, 400);
+    }
     const aprovacoes = Array.isArray(current?.aprovacoes) ? current.aprovacoes : [];
     aprovacoes.push({
       id: crypto.randomUUID(),
@@ -3342,8 +3389,12 @@ app.put("/make-server-46b247d8/purchase-requests/:id/reject-director", async (c)
   try {
     const id = c.req.param("id");
     const body = await c.req.json();
-    const { data: current, error: fetchErr } = await supabase.from('purchase_requests').select('aprovacoes').eq('id', id).single();
+    const { data: current, error: fetchErr } = await supabase.from('purchase_requests').select('aprovacoes, status').eq('id', id).single();
     if (fetchErr) throw fetchErr;
+    const st = current?.status;
+    if (st !== 'pending_manager' && st !== 'pending_director') {
+      return c.json({ error: "Apenas solicitações na 2ª ou 3ª camada podem ser rejeitadas aqui", status: st }, 400);
+    }
     const aprovacoes = Array.isArray(current?.aprovacoes) ? current.aprovacoes : [];
     aprovacoes.push({
       id: crypto.randomUUID(),
@@ -3369,11 +3420,10 @@ app.put("/make-server-46b247d8/purchase-requests/:id/reject-director", async (c)
 app.get("/make-server-46b247d8/quotations", async (c) => {
   try {
     const { data, error } = await supabase.from('quotations').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    return c.json(data || []);
+    return purchasesListResponse(c, "quotations", error, data as unknown[] | null);
   } catch (error) {
-    console.error("Error fetching quotations:", error);
-    return c.json({ error: "Failed to fetch quotations" }, 500);
+    console.error("quotations GET catch:", error);
+    return c.json([]);
   }
 });
 
@@ -3422,11 +3472,23 @@ app.get("/make-server-46b247d8/purchase-audit-logs", async (c) => {
 // --- Purchase Orders ---
 app.get("/make-server-46b247d8/purchase-orders", async (c) => {
   try {
-    const { data, error } = await supabase
-      .from('purchase_orders')
-      .select('*, purchase_order_approvals(*)')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
+    let { data, error } = await supabase
+      .from("purchase_orders")
+      .select("*, purchase_order_approvals(*)")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      const retry = await supabase
+        .from("purchase_orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (retry.error) {
+        console.error("[purchase_orders] GET retry error → []", retry.error);
+        return c.json([]);
+      }
+      data = retry.data;
+    }
+
     const orders = (data || []).map((o: any) => ({
       ...o,
       approvals: o.purchase_order_approvals || [],
@@ -3434,8 +3496,8 @@ app.get("/make-server-46b247d8/purchase-orders", async (c) => {
     }));
     return c.json(orders);
   } catch (error) {
-    console.error("Error fetching purchase orders:", error);
-    return c.json({ error: "Failed to fetch purchase orders" }, 500);
+    console.error("purchase_orders GET catch:", error);
+    return c.json([]);
   }
 });
 
@@ -3670,8 +3732,18 @@ app.put("/make-server-46b247d8/user-access/:userId", async (c) => {
   try {
     const userId = c.req.param("userId");
     const body = await c.req.json();
-    const groupIds = Array.isArray(body.groupIds) ? body.groupIds : [];
-    const extraTabs = Array.isArray(body.extraTabs) ? body.extraTabs : [];
+    const groupIdsRaw = Array.isArray(body.groupIds)
+      ? body.groupIds
+      : Array.isArray(body.group_ids)
+        ? body.group_ids
+        : [];
+    const extraTabsRaw = Array.isArray(body.extraTabs)
+      ? body.extraTabs
+      : Array.isArray(body.extra_tabs)
+        ? body.extra_tabs
+        : [];
+    const groupIds = groupIdsRaw.filter((gid: string) => gid != null && String(gid).trim() !== '');
+    const extraTabs = extraTabsRaw.filter((tid: string) => tid != null && String(tid).trim() !== '');
 
     const { error: delErr } = await supabase
       .from('access_group_members')
@@ -3728,11 +3800,10 @@ app.get("/make-server-46b247d8/user-allowed-tabs/:userId", async (c) => {
 app.get("/make-server-46b247d8/receivings", async (c) => {
   try {
     const { data, error } = await supabase.from('receivings').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    return c.json(data || []);
+    return purchasesListResponse(c, "receivings", error, data as unknown[] | null);
   } catch (error) {
-    console.error("Error fetching receivings:", error);
-    return c.json({ error: "Failed to fetch receivings" }, 500);
+    console.error("receivings GET catch:", error);
+    return c.json([]);
   }
 });
 

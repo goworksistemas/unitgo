@@ -13,6 +13,8 @@ import { useDashboardNav } from '@/hooks/useDashboardNav';
 import type { NavigationSection } from '@/hooks/useNavigation';
 import { useAllowedTabs } from '@/hooks/useAllowedTabs';
 import { useWarehouseActions } from '../warehouse/useWarehouseActions';
+import { CostCenterManagementPanel } from '../purchases/admin/CostCenterManagementPanel';
+import { ContractManagementPanel } from '../purchases/admin/ContractManagementPanel';
 import { OverviewPanel } from '../warehouse/OverviewPanel';
 import { RequestsPanel } from '../warehouse/RequestsPanel';
 import { LogisticsPanel } from '../warehouse/LogisticsPanel';
@@ -46,12 +48,18 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
       'overview': 'almox.visao',
       'requests': 'almox.solicitacoes',
       'logistics': 'almox.logistica',
+      'cost-centers': 'compras.centros_custo',
+      'contracts': 'compras.contratos',
     };
     const all: NavigationSection[] = [
       { id: 'overview', label: 'Início', icon: LayoutDashboard },
       { id: 'requests', label: 'Pedidos', icon: ClipboardList },
       { id: 'logistics', label: 'Lotes', icon: Truck },
     ];
+    if (canAccessTab('compras.centros_custo'))
+      all.push({ id: 'cost-centers', label: 'Centros de Custo', icon: ClipboardList });
+    if (canAccessTab('compras.contratos'))
+      all.push({ id: 'contracts', label: 'Contratos', icon: ClipboardList });
     return all.filter((s) => {
       const tabId = TAB_MAP[s.id];
       return !tabId || canAccessTab(tabId);
@@ -148,6 +156,8 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
 
   const renderContent = () => {
     switch (activeSection) {
+      case 'cost-centers': return <CostCenterManagementPanel />;
+      case 'contracts': return <ContractManagementPanel />;
       case 'overview':
         return (
           <div className="space-y-4">

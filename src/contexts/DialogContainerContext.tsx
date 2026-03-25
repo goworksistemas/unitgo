@@ -10,7 +10,6 @@ export function DialogContainerProvider({ children }: { children: React.ReactNod
       {children}
       <div
         ref={(el) => setContainer(el)}
-        aria-hidden
         className="fixed pointer-events-none"
         style={{
           left: 260,

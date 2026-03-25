@@ -224,7 +224,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }
           }
 
-          if (userToRestore.role !== 'designer' && userToRestore.role !== 'developer' && userToRestore.primaryUnitId && unitsData?.length) {
+          if (
+            userToRestore.role !== 'designer' &&
+            userToRestore.role !== 'developer' &&
+            userToRestore.role !== 'purchases_admin' &&
+            userToRestore.primaryUnitId &&
+            unitsData?.length
+          ) {
             const primaryUnit = unitsData.find((u: Unit) => u.id === userToRestore.primaryUnitId);
             if (primaryUnit) {
               setCurrentUnitState(primaryUnit);
@@ -293,7 +299,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      if (user.role === 'designer' || user.role === 'developer' || !user.primaryUnitId) {
+      if (
+        user.role === 'designer' ||
+        user.role === 'developer' ||
+        user.role === 'purchases_admin' ||
+        !user.primaryUnitId
+      ) {
         setCurrentUnitState(null);
       } else {
         const primaryUnit = appUnits.find(u => u.id === user.primaryUnitId);
@@ -315,6 +326,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Check if user has access to this unit
       const hasAccess = 
         currentUser.role === 'admin' ||
+        currentUser.role === 'purchases_admin' ||
         currentUser.role === 'designer' || // Designers podem acessar todas as unidades
         currentUser.role === 'developer' || // Developers podem acessar todas as unidades
         currentUser.primaryUnitId === unitId ||
@@ -667,7 +679,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const getAvailableUnits = (): Unit[] => {
     if (!currentUser) return [];
     
-    if (currentUser.role === 'admin') {
+    if (currentUser.role === 'admin' || currentUser.role === 'purchases_admin') {
       return appUnits;
     }
     

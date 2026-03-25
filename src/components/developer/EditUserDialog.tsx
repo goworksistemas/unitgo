@@ -4,6 +4,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useDialogContainer } from '@/contexts/DialogContainerContext';
 import { cn } from '@/lib/utils';
 import { api } from '@/utils/api';
+import { supabase } from '@/utils/supabase/client';
+import { toast } from 'sonner';
 import type { DeveloperState } from './types';
 import { UserFormFields } from './UserFormFields';
 import { UserAccessGroups, UserAccessExtraTabs } from './UserAccessFields';
@@ -23,6 +25,8 @@ export function EditUserDialog({
   selectedUser,
 }: Props) {
   const [groups, setGroups] = useState<AccessGroup[]>([]);
+  /** `null` = carregando; array = opções (pode ser vazio) */
+  const [departmentOptions, setDepartmentOptions] = useState<{ id: string; name: string }[] | null>(null);
   const dialogContainer = useDialogContainer();
 
   const loadGroups = useCallback(async () => {
@@ -41,16 +45,69 @@ export function EditUserDialog({
   }, [isEditUserDialogOpen, loadGroups]);
 
   useEffect(() => {
-    if (isEditUserDialogOpen && selectedUser) {
-      api.accessGroups.getUserAccess(selectedUser.id).then((res: { groupIds?: string[]; extraTabs?: string[] }) => {
-        setUserForm((prev) => ({
-          ...prev,
-          groupIds: res.groupIds ?? [],
-          extraTabs: res.extraTabs ?? [],
-        }));
-      }).catch(() => {});
+    if (!isEditUserDialogOpen) {
+      setDepartmentOptions(null);
+      return;
     }
-  }, [isEditUserDialogOpen, selectedUser?.id]);
+    let cancelled = false;
+    setDepartmentOptions(null);
+
+    type DeptRow = { id: string; name: string; isActive?: boolean; is_active?: boolean };
+
+    const rowToOption = (d: DeptRow) => {
+      const inactive = d.isActive === false || d.is_active === false;
+      return { id: d.id, name: inactive ? `${d.name} (inativo)` : d.name };
+    };
+
+    (async () => {
+      const byId = new Map<string, { id: string; name: string }>();
+
+      const merge = (rows: DeptRow[]) => {
+        for (const r of rows) {
+          if (r?.id) byId.set(r.id, rowToOption(r));
+        }
+      };
+
+      try {
+        const raw = await api.departments.getAll();
+        if (!cancelled && Array.isArray(raw) && raw.length > 0) {
+          merge(raw as DeptRow[]);
+        }
+      } catch {
+        /* tenta Supabase abaixo */
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('departments')
+          .select('id, name, is_active')
+          .order('name');
+        if (!cancelled && !error && Array.isArray(data) && data.length > 0) {
+          merge(data as DeptRow[]);
+        }
+      } catch {
+        /* ignore */
+      }
+
+      if (cancelled) return;
+
+      const sorted = Array.from(byId.values()).sort((a, b) =>
+        a.name.localeCompare(b.name, 'pt-BR')
+      );
+
+      if (sorted.length === 0) {
+        toast.error(
+          'Nenhum departamento carregado. Faça deploy da rota GET /departments na Edge Function e confira o RLS da tabela departments no Supabase.'
+        );
+      }
+
+      setDepartmentOptions(sorted);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditUserDialogOpen]);
 
   return (
     <Dialog open={isEditUserDialogOpen} onOpenChange={setIsEditUserDialogOpen}>
@@ -81,6 +138,8 @@ export function EditUserDialog({
               setUserForm={setUserForm}
               units={units}
               idPrefix="edit-"
+              departmentOptions={departmentOptions}
+              preservedDepartmentId={userForm.departmentId}
             />
           </div>
           <div>

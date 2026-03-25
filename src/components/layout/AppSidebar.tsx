@@ -44,6 +44,7 @@ const ROLE_LABELS: Record<string, string> = {
   requester: 'Solicitante',
   buyer: 'Comprador',
   financial: 'Financeiro',
+  purchases_admin: 'Admin Compras',
   driver: 'Motorista',
   executor: 'Executor',
 };
@@ -82,7 +83,8 @@ export function AppSidebar() {
   const shouldShowUnitSelector =
     availableUnits.length > 1 ||
     currentUser?.role === 'designer' ||
-    currentUser?.role === 'developer';
+    currentUser?.role === 'developer' ||
+    currentUser?.role === 'purchases_admin';
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => {
@@ -112,7 +114,9 @@ export function AppSidebar() {
             <Select value={currentUnit?.id || ''} onValueChange={setCurrentUnit}>
               <SelectTrigger className="w-full h-9 text-sm min-w-0">
                 <SelectValue placeholder={
-                  currentUser?.role === 'designer' || currentUser?.role === 'developer'
+                  currentUser?.role === 'designer' ||
+                  currentUser?.role === 'developer' ||
+                  currentUser?.role === 'purchases_admin'
                     ? 'Selecione uma unidade'
                     : 'Selecione'
                 } />

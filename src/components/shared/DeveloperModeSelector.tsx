@@ -11,7 +11,8 @@ import {
   Code, 
   User,
   ArrowLeft,
-  Eye
+  Eye,
+  ShoppingCart,
 } from 'lucide-react';
 import type { UserRole } from '../../types';
 
@@ -80,6 +81,12 @@ const roleConfig: Partial<Record<UserRole, { label: string; icon: React.ReactNod
     icon: <UserCog className="w-4 h-4" />,
     color: 'bg-emerald-600',
     description: 'Contratos, centros de custo, relatórios'
+  },
+  purchases_admin: {
+    label: 'Admin Compras',
+    icon: <ShoppingCart className="w-4 h-4" />,
+    color: 'bg-violet-600',
+    description: 'Fluxo completo de compras + parametrização de aprovadores e alçadas por valor'
   },
 };
 

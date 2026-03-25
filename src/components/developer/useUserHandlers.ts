@@ -13,6 +13,7 @@ const INITIAL_USER_FORM: UserFormState = {
   role: 'requester',
   primaryUnitId: '',
   additionalUnitIds: [],
+  departmentId: '',
   warehouseType: undefined,
   adminType: undefined,
   jobTitle: '',
@@ -36,7 +37,13 @@ export function useUserHandlers() {
       toast.error('Preencha os campos obrigatórios (nome, email, senha e perfil)');
       return;
     }
-    if (userForm.role !== 'designer' && userForm.role !== 'admin' && userForm.role !== 'developer' && !userForm.primaryUnitId) {
+    if (
+      userForm.role !== 'designer' &&
+      userForm.role !== 'admin' &&
+      userForm.role !== 'developer' &&
+      userForm.role !== 'purchases_admin' &&
+      !userForm.primaryUnitId
+    ) {
       toast.error('Selecione a unidade primária');
       return;
     }
@@ -56,7 +63,13 @@ export function useUserHandlers() {
             password: userForm.password,
             name: userForm.name,
             role: userForm.role,
-            primaryUnitId: userForm.role === 'designer' || userForm.role === 'admin' || userForm.role === 'developer' ? undefined : userForm.primaryUnitId,
+            primaryUnitId:
+              userForm.role === 'designer' ||
+              userForm.role === 'admin' ||
+              userForm.role === 'developer' ||
+              userForm.role === 'purchases_admin'
+                ? undefined
+                : userForm.primaryUnitId,
             additionalUnitIds: userForm.role === 'controller' ? userForm.additionalUnitIds : undefined,
             warehouseType: userForm.role === 'warehouse' ? userForm.warehouseType : undefined,
             adminType: userForm.role === 'admin' ? userForm.adminType : undefined,
@@ -79,14 +92,28 @@ export function useUserHandlers() {
     }
   };
 
-  const handleEditUser = (user: User) => {
+  const handleEditUser = async (user: User) => {
+    let groupIds: string[] = [];
+    let extraTabs: string[] = [];
+    try {
+      const res = await api.accessGroups.getUserAccess(user.id);
+      const r = res as { groupIds?: string[]; extraTabs?: string[] };
+      groupIds = Array.isArray(r.groupIds) ? r.groupIds : [];
+      extraTabs = Array.isArray(r.extraTabs) ? r.extraTabs : [];
+    } catch {
+      // Mantém listas vazias; usuário ainda pode editar e salvar
+    }
+
     setSelectedUser(user);
     setUserForm({
       name: user.name, email: user.email, password: '',
       role: user.role, primaryUnitId: user.primaryUnitId || '',
       additionalUnitIds: user.additionalUnitIds || [],
+      departmentId: user.departmentId ?? '',
       warehouseType: user.warehouseType, adminType: user.adminType,
       jobTitle: user.jobTitle || '',
+      groupIds,
+      extraTabs,
     });
     setIsEditUserDialogOpen(true);
   };
@@ -105,7 +132,39 @@ export function useUserHandlers() {
     const isEditingSelf = currentUser?.id === selectedUser.id;
     const roleChanged = selectedUser.role !== userForm.role;
 
+    const uuidOrNull = (v: string | undefined) =>
+      v && String(v).trim() !== '' ? String(v).trim() : null;
+    const primaryUnitId =
+      userForm.role === 'designer' ||
+      userForm.role === 'admin' ||
+      userForm.role === 'developer' ||
+      userForm.role === 'purchases_admin'
+        ? null
+        : uuidOrNull(userForm.primaryUnitId);
+    const additionalUnitIds =
+      userForm.role === 'controller'
+        ? (userForm.additionalUnitIds || []).filter((id) => id && String(id).trim() !== '')
+        : null;
+
+    const groupIdsPayload = (userForm.groupIds ?? []).filter((id) => id && String(id).trim() !== '');
+    const extraTabsPayload = (userForm.extraTabs ?? []).filter((id) => id && String(id).trim() !== '');
+
     try {
+      // Chamar fetch direto (sem apiRequest) para evitar toSnakeCase —
+      // a Edge Function deployada espera camelCase: groupIds / extraTabs
+      const accessRes = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/${functionSlug}/user-access/${selectedUser.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${publicAnonKey}` },
+          body: JSON.stringify({ groupIds: groupIdsPayload, extraTabs: extraTabsPayload }),
+        }
+      );
+      if (!accessRes.ok) {
+        const err = await accessRes.json().catch(() => ({}));
+        throw new Error(err.error || 'Erro ao salvar grupos/abas extras');
+      }
+
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/${functionSlug}/users/${selectedUser.id}`,
         {
@@ -113,11 +172,12 @@ export function useUserHandlers() {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${publicAnonKey}` },
           body: JSON.stringify({
             name: userForm.name, email: userForm.email, role: userForm.role,
-            primaryUnitId: userForm.role === 'designer' || userForm.role === 'admin' || userForm.role === 'developer' ? null : userForm.primaryUnitId,
-            additionalUnitIds: userForm.role === 'controller' ? userForm.additionalUnitIds : null,
+            primaryUnitId,
+            additionalUnitIds,
             warehouseType: userForm.role === 'warehouse' ? userForm.warehouseType : null,
             adminType: userForm.role === 'admin' ? userForm.adminType : null,
             jobTitle: userForm.jobTitle || null,
+            departmentId: uuidOrNull(userForm.departmentId),
             password: userForm.password || undefined,
           }),
         }
@@ -129,15 +189,18 @@ export function useUserHandlers() {
       await response.json();
       updateUser(selectedUser.id, {
         name: userForm.name, email: userForm.email, role: userForm.role,
-        primaryUnitId: userForm.role === 'designer' || userForm.role === 'admin' || userForm.role === 'developer' ? undefined : userForm.primaryUnitId,
-        additionalUnitIds: userForm.role === 'controller' ? userForm.additionalUnitIds : undefined,
+        primaryUnitId:
+          userForm.role === 'designer' ||
+          userForm.role === 'admin' ||
+          userForm.role === 'developer' ||
+          userForm.role === 'purchases_admin'
+            ? undefined
+            : primaryUnitId || undefined,
+        additionalUnitIds: userForm.role === 'controller' ? additionalUnitIds || undefined : undefined,
         warehouseType: userForm.role === 'warehouse' ? userForm.warehouseType : undefined,
         adminType: userForm.role === 'admin' ? userForm.adminType : undefined,
         jobTitle: userForm.jobTitle,
-      });
-      await api.accessGroups.updateUserAccess(selectedUser.id, {
-        groupIds: userForm.groupIds,
-        extraTabs: userForm.extraTabs,
+        departmentId: uuidOrNull(userForm.departmentId),
       });
       toast.success('Usuário atualizado com sucesso');
       setIsEditUserDialogOpen(false);

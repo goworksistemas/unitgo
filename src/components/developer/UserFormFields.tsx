@@ -5,15 +5,42 @@ import type { Unit, UserRole } from '@/types';
 import type { UserFormState } from './types';
 import { RoleSpecificFields } from './RoleSpecificFields';
 
+const NO_DEPARTMENT = '__none__';
+
 interface UserFormFieldsProps {
   userForm: UserFormState;
   setUserForm: (f: UserFormState) => void;
   units: Unit[];
   showPassword?: boolean;
   idPrefix?: string;
+  /** Só no fluxo de edição (dev): lista de departamentos; `null` = carregando */
+  departmentOptions?: { id: string; name: string }[] | null;
+  /** UUID já salvo no usuário mas ausente da lista (ex.: falha parcial de carga) */
+  preservedDepartmentId?: string;
 }
 
-export function UserFormFields({ userForm, setUserForm, units, showPassword = false, idPrefix = '' }: UserFormFieldsProps) {
+export function UserFormFields({
+  userForm,
+  setUserForm,
+  units,
+  showPassword = false,
+  idPrefix = '',
+  departmentOptions,
+  preservedDepartmentId,
+}: UserFormFieldsProps) {
+  const deptRows =
+    departmentOptions === null || departmentOptions === undefined
+      ? []
+      : (() => {
+          const pid = preservedDepartmentId?.trim();
+          if (pid && !departmentOptions.some((d) => d.id === pid)) {
+            return [
+              { id: pid, name: `Setor vinculado (${pid.slice(0, 8)}…)` },
+              ...departmentOptions,
+            ];
+          }
+          return departmentOptions;
+        })();
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
       <div className="space-y-1.5">
@@ -36,6 +63,40 @@ export function UserFormFields({ userForm, setUserForm, units, showPassword = fa
           className="h-9"
         />
       </div>
+      {departmentOptions !== undefined && (
+        <div className="space-y-1.5">
+          <Label htmlFor={`${idPrefix}department`} className="text-xs font-medium">
+            Departamento (setor)
+          </Label>
+          {departmentOptions === null ? (
+            <div className="h-9 flex items-center text-xs text-muted-foreground border rounded-md px-3 bg-muted/40">
+              Carregando setores…
+            </div>
+          ) : (
+            <Select
+              value={userForm.departmentId?.trim() ? userForm.departmentId : NO_DEPARTMENT}
+              onValueChange={(value) =>
+                setUserForm({
+                  ...userForm,
+                  departmentId: value === NO_DEPARTMENT ? '' : value,
+                })
+              }
+            >
+              <SelectTrigger id={`${idPrefix}department`} className="h-9">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_DEPARTMENT}>Nenhum</SelectItem>
+                {deptRows.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      )}
       <div className="space-y-1.5">
         <Label htmlFor={`${idPrefix}email`} className="text-xs font-medium">Email *</Label>
         <Input
@@ -78,12 +139,13 @@ export function UserFormFields({ userForm, setUserForm, units, showPassword = fa
             <SelectItem value="requester">Solicitante</SelectItem>
             <SelectItem value="buyer">Comprador</SelectItem>
             <SelectItem value="financial">Financeiro</SelectItem>
+            <SelectItem value="purchases_admin">Admin Compras</SelectItem>
             <SelectItem value="executor">Executor</SelectItem>
             <SelectItem value="driver">Motorista</SelectItem>
           </SelectContent>
         </Select>
       </div>
-      {userForm.role !== 'designer' && userForm.role !== 'admin' && userForm.role !== 'developer' && (
+      {userForm.role !== 'designer' && userForm.role !== 'admin' && userForm.role !== 'developer' && userForm.role !== 'purchases_admin' && (
         <div className="space-y-1.5">
           <Label htmlFor={`${idPrefix}primaryUnit`} className="text-xs font-medium">Unidade Primária *</Label>
           <Select

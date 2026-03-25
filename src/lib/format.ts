@@ -39,6 +39,11 @@ const ROLE_LABELS: Record<string, string> = {
   designer: 'Designer',
   developer: 'Desenvolvedor',
   requester: 'Solicitante',
+  buyer: 'Comprador',
+  financial: 'Financeiro',
+  purchases_admin: 'Admin Compras',
+  executor: 'Executor',
+  driver: 'Motorista',
 };
 
 export function getRoleName(role: string): string {
@@ -52,6 +57,11 @@ const ROLE_BADGE: Record<string, string> = {
   designer: 'DSG',
   developer: 'DEV',
   requester: 'REQ',
+  buyer: 'CMP',
+  financial: 'FIN',
+  purchases_admin: 'ACO',
+  executor: 'EXE',
+  driver: 'MOT',
 };
 
 export function getRoleBadge(role: string): string {
@@ -67,6 +77,8 @@ export function getRoleBadgeVariant(role: string): 'default' | 'secondary' | 'de
       return 'default';
     case 'warehouse':
       return 'secondary';
+    case 'purchases_admin':
+      return 'default';
     default:
       return 'outline';
   }

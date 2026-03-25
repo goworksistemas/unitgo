@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useRef } from 'react';
-import { Users, Building2, Package, List, TestTube2, Eye, LayoutDashboard, Settings2, ShoppingCart, ClipboardList, FileText, Landmark, Truck, BarChart3, Shield } from 'lucide-react';
+import { Users, Building2, Package, List, TestTube2, Eye, LayoutDashboard, Settings2, ShoppingCart, FileText, Landmark, Truck, BarChart3, Shield } from 'lucide-react';
 import { ProductsListPanel } from '../panels/ProductsListPanel';
 import { TestFlowPanel } from '../panels/TestFlowPanel';
 import { AdminResetPasswordDialog } from '../auth/AdminResetPasswordDialog';
@@ -19,12 +19,6 @@ import { SystemOverviewPanel } from '../developer/SystemOverviewPanel';
 import { SupplierManagementPanel } from '../purchases/admin/SupplierManagementPanel';
 import { CostCenterManagementPanel } from '../purchases/admin/CostCenterManagementPanel';
 import { ContractManagementPanel } from '../purchases/admin/ContractManagementPanel';
-import { PurchaseRequestApprovalPanel } from '../purchases/admin/PurchaseRequestApprovalPanel';
-import { ManagerPurchaseRequestsPanel } from '../purchases/manager/ManagerPurchaseRequestsPanel';
-import { ManagerApprovalHistoryPanel } from '../purchases/manager/ManagerApprovalHistoryPanel';
-import { ApprovedPurchaseRequestsPanel } from '../purchases/buyer/ApprovedPurchaseRequestsPanel';
-import { QuotationsView } from '../purchases/buyer/QuotationsView';
-import { BuyerPurchaseOrdersPanel } from '../purchases/buyer/BuyerPurchaseOrdersPanel';
 import { CreatePurchaseRequestPanel } from '../purchases/requester/CreatePurchaseRequestPanel';
 import { MyPurchaseRequestsPanel } from '../purchases/requester/MyPurchaseRequestsPanel';
 import { ViewModePopup } from '../shared/ViewModePopup';
@@ -66,11 +60,6 @@ export function DeveloperDashboard() {
       items: [
         { id: 'new-purchase', label: 'Nova Solicitação', icon: ShoppingCart },
         { id: 'my-purchases', label: 'Minhas Solicitações', icon: FileText },
-        { id: 'manager-requests', label: 'Solicitações Gestor', icon: ClipboardList },
-        { id: 'director-approvals', label: 'Aprovações Diretoria', icon: ClipboardList },
-        { id: 'approved-requests', label: 'Solicitações Aprovadas', icon: ClipboardList },
-        { id: 'quotations', label: 'Cotações', icon: FileText },
-        { id: 'orders', label: 'Pedidos', icon: Package },
         { id: 'suppliers', label: 'Fornecedores', icon: Building2 },
         { id: 'cost-centers', label: 'Centros de Custo', icon: Landmark },
         { id: 'contracts', label: 'Contratos', icon: FileText },
@@ -192,12 +181,6 @@ export function DeveloperDashboard() {
       switch (activeItem) {
         case 'cost-centers': return <CostCenterManagementPanel />;
         case 'contracts': return <ContractManagementPanel />;
-        case 'director-approvals': return <PurchaseRequestApprovalPanel />;
-        case 'manager-requests': return <ManagerPurchaseRequestsPanel />;
-        case 'approval-history': return <ManagerApprovalHistoryPanel />;
-        case 'approved-requests': return <ApprovedPurchaseRequestsPanel />;
-        case 'quotations': return <QuotationsView />;
-        case 'orders': return <BuyerPurchaseOrdersPanel />;
         case 'new-purchase': return <CreatePurchaseRequestPanel />;
         case 'my-purchases': return <MyPurchaseRequestsPanel />;
         case 'suppliers':
