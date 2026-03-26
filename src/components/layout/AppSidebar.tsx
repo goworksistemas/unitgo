@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -30,7 +30,7 @@ import {
 import { Building2, ChevronDown, ChevronRight, LogOut, KeyRound, ChevronsUpDown } from 'lucide-react';
 import { GoworkLogo } from '@/components/shared/GoworkLogo';
 import { DailyCodeDisplay } from '@/components/shared/DailyCodeDisplay';
-import { useNavigation } from '@/hooks/useNavigation';
+import { useNavigation, type NavigationSection, type NavigationSidebarGroup } from '@/hooks/useNavigation';
 import { useApp } from '@/contexts/AppContext';
 import { cn } from '@/lib/utils';
 import type { Unit, User } from '@/types';
@@ -64,7 +64,15 @@ export interface AppSidebarProps {
 }
 
 const navActiveClass =
-  'bg-blue-50 text-blue-900 dark:bg-blue-950/50 dark:text-blue-50 [&>svg]:text-blue-600 dark:[&>svg]:text-blue-400';
+  'rounded-lg bg-gradient-to-r from-blue-50 to-violet-50 text-blue-800 shadow-sm dark:from-blue-950/50 dark:to-violet-950/40 dark:text-blue-50 [&>svg]:text-blue-600 dark:[&>svg]:text-blue-300';
+
+const SIDEBAR_GROUP_ORDER: NavigationSidebarGroup[] = ['inicio', 'modulos', 'utilitarios'];
+
+const SIDEBAR_GROUP_LABEL: Record<NavigationSidebarGroup, string> = {
+  inicio: 'Início',
+  modulos: 'Módulos',
+  utilitarios: 'Utilitários',
+};
 
 export function AppSidebar({
   onSidebarPointerEnter,
@@ -105,6 +113,23 @@ export function AppSidebar({
       return next;
     });
   };
+
+  const groupedSections = useMemo(() => {
+    const buckets: Record<NavigationSidebarGroup, NavigationSection[]> = {
+      inicio: [],
+      modulos: [],
+      utilitarios: [],
+    };
+    for (const s of sections) {
+      const g = s.sidebarGroup ?? 'modulos';
+      buckets[g].push(s);
+    }
+    return SIDEBAR_GROUP_ORDER.filter((k) => buckets[k].length > 0).map((k) => ({
+      key: k,
+      label: SIDEBAR_GROUP_LABEL[k],
+      sections: buckets[k],
+    }));
+  }, [sections]);
 
   return (
     <Sidebar
@@ -161,26 +186,90 @@ export function AppSidebar({
         </>
       )}
 
-      {/* Navigation */}
-      <SidebarContent>
-        <SidebarGroup className="p-3">
-          <SidebarGroupLabel>Navegação</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {sections.map((section) => {
-                const isExpanded = expandedSections.has(section.id);
-                const isActive = activeSection === section.id && !activeItem;
-                const hasItems = section.items && section.items.length > 0;
+      {/* Navigation: blocos Início / Módulos / Utilitários */}
+      <SidebarContent className="gap-0">
+        {groupedSections.map((group) => (
+          <SidebarGroup key={group.key} className="p-3 pt-2">
+            <SidebarGroupLabel className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/45">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.sections.map((section) => {
+                  const isExpanded = expandedSections.has(section.id);
+                  const isActive = activeSection === section.id && !activeItem;
+                  const hasItems = section.items && section.items.length > 0;
 
-                return (
-                  <SidebarMenuItem key={section.id}>
-                    {hasItems ? (
-                      <>
+                  return (
+                    <SidebarMenuItem key={section.id}>
+                      {hasItems ? (
+                        <>
+                          <SidebarMenuButton
+                            onClick={() => toggleSection(section.id)}
+                            isActive={isActive}
+                            className={cn(
+                              'w-full rounded-lg text-foreground hover:bg-sidebar-accent',
+                              isActive && navActiveClass
+                            )}
+                          >
+                            <section.icon className="h-4 w-4 shrink-0" />
+                            <span className="group-data-[collapsible=icon]:hidden">{section.label}</span>
+                            {section.badge != null && (
+                              <span className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 text-xs px-2 py-0.5 rounded-full group-data-[collapsible=icon]:hidden">
+                                {section.badge}
+                              </span>
+                            )}
+                            {isExpanded ? (
+                              <ChevronDown className="ml-auto h-4 w-4 shrink-0 group-data-[collapsible=icon]:hidden" />
+                            ) : (
+                              <ChevronRight className="ml-auto h-4 w-4 shrink-0 group-data-[collapsible=icon]:hidden" />
+                            )}
+                          </SidebarMenuButton>
+                          {isExpanded && (
+                            <SidebarMenuSub>
+                              {section.items!.map((item, itemIdx) => {
+                                const prev = section.items![itemIdx - 1];
+                                const showSubgroup = item.group && item.group !== prev?.group;
+                                const isItemActive = activeSection === section.id && activeItem === item.id;
+                                return (
+                                  <React.Fragment key={item.id}>
+                                    {showSubgroup ? (
+                                      <li className="list-none">
+                                        <div className="mt-1 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/50">
+                                          {item.group}
+                                        </div>
+                                      </li>
+                                    ) : null}
+                                    <SidebarMenuSubItem>
+                                      <SidebarMenuSubButton
+                                        isActive={isItemActive}
+                                        onClick={() => setActiveSection(section.id, item.id)}
+                                        className={cn(
+                                          'rounded-md text-foreground hover:bg-sidebar-accent',
+                                          isItemActive && navActiveClass
+                                        )}
+                                      >
+                                        {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
+                                        <span>{item.label}</span>
+                                        {item.badge != null && (
+                                          <span className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 text-xs px-2 py-0.5 rounded-full">
+                                            {item.badge}
+                                          </span>
+                                        )}
+                                      </SidebarMenuSubButton>
+                                    </SidebarMenuSubItem>
+                                  </React.Fragment>
+                                );
+                              })}
+                            </SidebarMenuSub>
+                          )}
+                        </>
+                      ) : (
                         <SidebarMenuButton
-                          onClick={() => toggleSection(section.id)}
+                          onClick={() => setActiveSection(section.id)}
                           isActive={isActive}
                           className={cn(
-                            'w-full text-foreground hover:bg-sidebar-accent',
+                            'rounded-lg text-foreground hover:bg-sidebar-accent',
                             isActive && navActiveClass
                           )}
                         >
@@ -191,64 +280,15 @@ export function AppSidebar({
                               {section.badge}
                             </span>
                           )}
-                          {isExpanded ? (
-                            <ChevronDown className="ml-auto h-4 w-4 group-data-[collapsible=icon]:hidden" />
-                          ) : (
-                            <ChevronRight className="ml-auto h-4 w-4 group-data-[collapsible=icon]:hidden" />
-                          )}
                         </SidebarMenuButton>
-                        {isExpanded && (
-                          <SidebarMenuSub>
-                            {section.items!.map((item) => {
-                              const isItemActive = activeSection === section.id && activeItem === item.id;
-                              return (
-                                <SidebarMenuSubItem key={item.id}>
-                                  <SidebarMenuSubButton
-                                    isActive={isItemActive}
-                                    onClick={() => setActiveSection(section.id, item.id)}
-                                    className={cn(
-                                      'text-foreground hover:bg-sidebar-accent',
-                                      isItemActive && navActiveClass
-                                    )}
-                                  >
-                                    {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
-                                    <span>{item.label}</span>
-                                    {item.badge != null && (
-                                      <span className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 text-xs px-2 py-0.5 rounded-full">
-                                        {item.badge}
-                                      </span>
-                                    )}
-                                  </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                              );
-                            })}
-                          </SidebarMenuSub>
-                        )}
-                      </>
-                    ) : (
-                      <SidebarMenuButton
-                        onClick={() => setActiveSection(section.id)}
-                        isActive={isActive}
-                        className={cn(
-                          'text-foreground hover:bg-sidebar-accent',
-                          isActive && navActiveClass
-                        )}
-                      >
-                        <section.icon className="h-4 w-4 shrink-0" />
-                        <span className="group-data-[collapsible=icon]:hidden">{section.label}</span>
-                        {section.badge != null && (
-                          <span className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 text-xs px-2 py-0.5 rounded-full group-data-[collapsible=icon]:hidden">
-                            {section.badge}
-                          </span>
-                        )}
-                      </SidebarMenuButton>
-                    )}
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                      )}
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
 
         {/* Daily code for warehouse/controller roles */}
         {currentUser && ['controller', 'warehouse'].includes(currentUser.role) && (

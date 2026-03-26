@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
 import { LayoutDashboard, ClipboardList, Truck, Scan, ScrollText } from 'lucide-react';
@@ -10,7 +10,7 @@ import { SelectItemForStockDialog } from '../dialogs/SelectItemForStockDialog';
 import { CreateBatchDeliveryDialog } from '../dialogs/CreateBatchDeliveryDialog';
 import { QRCodeScanner } from '../shared/QRCodeScanner';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
-import type { NavigationSection } from '@/hooks/useNavigation';
+import { useNavigation, type NavigationSection } from '@/hooks/useNavigation';
 import { useAllowedTabs } from '@/hooks/useAllowedTabs';
 import { useWarehouseActions } from '../warehouse/useWarehouseActions';
 import { CostCenterManagementPanel } from '../purchases/admin/CostCenterManagementPanel';
@@ -27,6 +27,31 @@ interface WarehouseDashboardProps {
   isDeveloperMode?: boolean;
 }
 
+function getWarehousePageMeta(
+  item: string | undefined,
+  isDeliveryDriver: boolean,
+  isStorageWorker: boolean,
+): { title: string; subtitle?: string } {
+  const roleHint = isDeliveryDriver
+    ? 'Retirada e entrega'
+    : isStorageWorker
+      ? 'Pedidos, lotes e estoque'
+      : 'Almoxarifado';
+  switch (item) {
+    case 'requests':
+      return { title: 'Pedidos', subtitle: roleHint };
+    case 'logistics':
+      return { title: 'Lotes', subtitle: roleHint };
+    case 'cost-centers':
+      return { title: 'Centros de custo', subtitle: 'Compras' };
+    case 'contracts':
+      return { title: 'Contratos', subtitle: 'Compras' };
+    case 'overview':
+    default:
+      return { title: 'Visão geral', subtitle: roleHint };
+  }
+}
+
 export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboardProps) {
   const {
     currentUser, requests, items, getItemById, getUnitById, getUserById,
@@ -34,6 +59,7 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
     furnitureRequestsToDesigner, deliveryBatches, separateItemInBatch,
   } = useApp();
 
+  const { setTitle } = useNavigation();
   const [showAddFurniture, setShowAddFurniture] = useState(false);
   const [showAddStock, setShowAddStock] = useState(false);
   const [showCreateBatch, setShowCreateBatch] = useState(false);
@@ -51,27 +77,48 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
       'cost-centers': 'compras.centros_custo',
       'contracts': 'compras.contratos',
     };
-    const all: NavigationSection[] = [
-      { id: 'overview', label: 'Início', icon: LayoutDashboard },
+    const moduleItems: NonNullable<NavigationSection['items']> = [
+      { id: 'overview', label: 'Visão geral', icon: LayoutDashboard },
       { id: 'requests', label: 'Pedidos', icon: ClipboardList },
       { id: 'logistics', label: 'Lotes', icon: Truck },
     ];
     if (canAccessTab('compras.centros_custo'))
-      all.push({ id: 'cost-centers', label: 'Centros de Custo', icon: ClipboardList });
+      moduleItems.push({ id: 'cost-centers', label: 'Centros de Custo', icon: ClipboardList });
     if (canAccessTab('compras.contratos'))
-      all.push({ id: 'contracts', label: 'Contratos', icon: ClipboardList });
-    return all.filter((s) => {
-      const tabId = TAB_MAP[s.id];
+      moduleItems.push({ id: 'contracts', label: 'Contratos', icon: ClipboardList });
+    const filtered = moduleItems.filter((item) => {
+      const tabId = TAB_MAP[item.id];
       return !tabId || canAccessTab(tabId);
     });
+    return [
+      {
+        id: 'almox',
+        label: 'Almoxarifado',
+        icon: LayoutDashboard,
+        sidebarGroup: 'modulos' as const,
+        items: filtered,
+      },
+    ];
   }, [canAccessTab]);
 
-  const { activeSection } = useDashboardNav(
+  const { activeSection, activeItem, setActiveSection } = useDashboardNav(
     navigationSections,
-    'Almoxarifado',
-    isDeliveryDriver ? 'Materiais: retirada e entrega' : 'Materiais: pedidos, lotes e estoque',
-    'overview',
+    undefined,
+    undefined,
+    'almox',
   );
+
+  useEffect(() => {
+    if (activeSection === 'almox' && !activeItem) {
+      setActiveSection('almox', 'overview');
+    }
+  }, [activeSection, activeItem, setActiveSection]);
+
+  useEffect(() => {
+    if (activeSection !== 'almox') return;
+    const meta = getWarehousePageMeta(activeItem, isDeliveryDriver, isStorageWorker);
+    setTitle(meta.title, meta.subtitle);
+  }, [activeSection, activeItem, isDeliveryDriver, isStorageWorker, setTitle]);
 
   const warehouseMetrics = useMemo(() => {
     const warehouseRequests = requests.filter(r => r.status !== 'cancelled');
@@ -155,7 +202,8 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
   const lookups = { getItemById, getUnitById, getUserById };
 
   const renderContent = () => {
-    switch (activeSection) {
+    if (activeSection !== 'almox') return null;
+    switch (activeItem) {
       case 'cost-centers': return <CostCenterManagementPanel />;
       case 'contracts': return <ContractManagementPanel />;
       case 'overview':

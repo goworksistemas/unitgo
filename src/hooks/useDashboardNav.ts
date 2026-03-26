@@ -27,11 +27,11 @@ export function useDashboardNav(
   useEffect(() => {
     const sectionToUse = defaultSection || sections[0]?.id;
     if (!sectionToUse) return;
-    const currentExists = sections.some(s => s.id === state.activeSection);
+    const currentExists = sections.some((s) => s.id === state.activeSection);
     if (!state.activeSection || !currentExists) {
       setActiveSection(sectionToUse);
     }
-  }, [sections, defaultSection, setActiveSection]);
+  }, [sections, defaultSection, setActiveSection, state.activeSection]);
 
   return {
     activeSection: state.activeSection,

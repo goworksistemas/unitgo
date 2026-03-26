@@ -129,11 +129,12 @@ export function BuyerDashboard({ viewAsBuyerMode }: BuyerDashboardProps) {
 
   const navigationSections: NavigationSection[] = useMemo(
     () => [
-      { id: 'buyer-home', label: 'Início', icon: Home },
+      { id: 'buyer-home', label: 'Início', icon: Home, sidebarGroup: 'inicio' },
       {
         id: WORK_SECTION_ID,
         label: 'Operação',
         icon: Briefcase,
+        sidebarGroup: 'modulos',
         items: [
           { id: 'buyer-sc', label: 'Solicitações', icon: FileText },
           { id: 'buyer-quotations', label: 'Cotações', icon: FileSpreadsheet },
@@ -141,8 +142,8 @@ export function BuyerDashboard({ viewAsBuyerMode }: BuyerDashboardProps) {
           { id: 'buyer-approvals', label: 'Aprovações', icon: ClipboardCheck, badge: approvalsBadge },
         ],
       },
-      { id: 'buyer-indicators', label: 'Indicadores', icon: BarChart3 },
-      { id: 'buyer-suppliers', label: 'Fornecedores e contratos', icon: Building2 },
+      { id: 'buyer-indicators', label: 'Indicadores', icon: BarChart3, sidebarGroup: 'modulos' },
+      { id: 'buyer-suppliers', label: 'Fornecedores e contratos', icon: Building2, sidebarGroup: 'modulos' },
     ],
     [approvalsBadge]
   );

@@ -50,10 +50,10 @@ export function RequesterDashboard() {
     ];
 
     const all: NavigationSection[] = [
-      { id: 'stock', label: 'Estoque Disponível', icon: Package },
-      { id: 'requests', label: 'Meus Pedidos', icon: History },
-      { id: 'deliveries', label: 'Recebimentos', icon: CheckCircle2 },
-      { id: 'purchases', label: 'Compras', icon: ShoppingCart, items: purchaseItems },
+      { id: 'stock', label: 'Estoque Disponível', icon: Package, sidebarGroup: 'inicio' },
+      { id: 'requests', label: 'Meus Pedidos', icon: History, sidebarGroup: 'modulos' },
+      { id: 'deliveries', label: 'Recebimentos', icon: CheckCircle2, sidebarGroup: 'modulos' },
+      { id: 'purchases', label: 'Compras', icon: ShoppingCart, sidebarGroup: 'modulos', items: purchaseItems },
     ];
     return all.filter((s) => {
       const tabId = SECTION_TAB_MAP[s.id];
@@ -61,7 +61,12 @@ export function RequesterDashboard() {
     });
   }, [canAccessTab]);
 
-  const { activeSection, activeItem } = useDashboardNav(navigationSections, 'Minhas Solicitações', 'Solicite materiais do almoxarifado central', 'stock');
+  const { activeSection, activeItem } = useDashboardNav(
+    navigationSections,
+    'Minhas Solicitações',
+    'Solicite materiais do almoxarifado central',
+    'stock'
+  );
 
   const availableItems = items.filter(item => !item.isFurniture && item.active);
   const warehouseId = getWarehouseUnitId();

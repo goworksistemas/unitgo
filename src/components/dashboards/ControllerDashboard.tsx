@@ -15,6 +15,7 @@ import { ItemSearchPanel } from '../panels/ItemSearchPanel';
 import { PendingDeliveriesAlert } from '../controller/PendingDeliveriesAlert';
 import { LoanAlerts } from '../controller/LoanAlerts';
 import { ControllerDialogs, type StockDialogState } from '../controller/ControllerDialogs';
+
 function getControllerPageMeta(
   section: string,
   item: string | undefined,
@@ -134,6 +135,7 @@ export function ControllerDashboard() {
         id: 'estoque',
         label: 'Estoque',
         icon: Package,
+        sidebarGroup: 'modulos' as const,
         badge: totalEstoquePendentes > 0 ? totalEstoquePendentes : undefined,
         items: [
           { id: 'materiais', label: 'Materiais', icon: Boxes, badge: belowMinimumCount > 0 ? belowMinimumCount : undefined },
@@ -141,8 +143,20 @@ export function ControllerDashboard() {
           { id: 'loans', label: 'Empréstimos', icon: Calendar, badge: overdueLoans > 0 ? overdueLoans : undefined },
         ],
       },
-      { id: 'almoxarifado', label: 'Pedidos ao almox.', icon: PackageOpen, badge: pendingAlmoxarifado > 0 ? pendingAlmoxarifado : undefined },
-      { id: 'deliveries', label: 'Recebimentos', icon: Truck, badge: pendingDeliveries > 0 ? pendingDeliveries : undefined },
+      {
+        id: 'almoxarifado',
+        label: 'Pedidos ao almox.',
+        icon: PackageOpen,
+        sidebarGroup: 'modulos',
+        badge: pendingAlmoxarifado > 0 ? pendingAlmoxarifado : undefined,
+      },
+      {
+        id: 'deliveries',
+        label: 'Recebimentos',
+        icon: Truck,
+        sidebarGroup: 'modulos',
+        badge: pendingDeliveries > 0 ? pendingDeliveries : undefined,
+      },
     ];
   }, [currentUnit, deliveryBatches, requests, furnitureRemovalRequests, loans, unitStocks, getItemById]);
 
