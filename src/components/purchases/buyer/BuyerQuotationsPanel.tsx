@@ -31,37 +31,13 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import type { Quotation, QuotationItem, QuotationStatus } from '@/types/purchases';
+import type { Quotation, QuotationItem } from '@/types/purchases';
+import { quotationStatusBadgeClass, quotationStatusLabel } from './quotationStatus';
 
 const PRIMARY = '#3F76FF';
 
 interface BuyerQuotationsPanelProps {
   relaxedBuyerScope?: boolean;
-}
-
-function statusLabel(s: QuotationStatus): string {
-  const m: Record<QuotationStatus, string> = {
-    draft: 'Rascunho',
-    sent: 'Enviada',
-    responded: 'Respondida',
-    approved: 'Aprovada',
-    rejected: 'Rejeitada',
-  };
-  return m[s] ?? s;
-}
-
-function statusBadgeClass(s: QuotationStatus): string {
-  switch (s) {
-    case 'approved':
-      return 'bg-emerald-600 text-white border-transparent';
-    case 'rejected':
-      return 'bg-red-600 text-white border-transparent';
-    case 'sent':
-    case 'responded':
-      return 'bg-amber-100 text-amber-900 border-amber-300';
-    default:
-      return 'bg-slate-200 text-slate-800';
-  }
 }
 
 export default function BuyerQuotationsPanel({ relaxedBuyerScope }: BuyerQuotationsPanelProps) {
@@ -114,7 +90,7 @@ export default function BuyerQuotationsPanel({ relaxedBuyerScope }: BuyerQuotati
         cot.id,
         cot.solicitacaoId,
         sup?.razaoSocial ?? '',
-        statusLabel(cot.status),
+        quotationStatusLabel(cot.status),
       ]
         .join(' ')
         .toLowerCase();
@@ -268,8 +244,8 @@ export default function BuyerQuotationsPanel({ relaxedBuyerScope }: BuyerQuotati
                       <TableCell className="font-mono text-xs">{q.solicitacaoId.slice(0, 8)}…</TableCell>
                       <TableCell className="max-w-[200px] truncate">{sup?.razaoSocial ?? '—'}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={statusBadgeClass(q.status)}>
-                          {statusLabel(q.status)}
+                        <Badge variant="outline" className={quotationStatusBadgeClass(q.status)}>
+                          {quotationStatusLabel(q.status)}
                         </Badge>
                       </TableCell>
                       <TableCell>

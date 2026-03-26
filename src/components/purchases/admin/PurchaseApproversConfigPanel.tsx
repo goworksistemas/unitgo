@@ -85,10 +85,10 @@ export function PurchaseApproversConfigPanel() {
     setDepartmentsLoadError(null);
 
     const [configRes, deptsRes, linksRes] = await Promise.all([
-      supabase.from('approval_config').select('*').order('valor_limite_min'),
+      supabase.from('purchase_approval_config').select('*').order('valor_limite_min'),
       // Sem filtro is_active: evita lista vazia se a coluna for NULL ou divergir; inativos aparecem marcados no diálogo
-      supabase.from('departments').select('id, name, is_active').order('name'),
-      supabase.from('approval_config_departments').select('approval_config_id, department_id'),
+      supabase.from('org_departments').select('id, name, is_active').order('name'),
+      supabase.from('purchase_approval_config_departments').select('approval_config_id, department_id'),
     ]);
 
     if (configRes.error) {
@@ -155,7 +155,7 @@ export function PurchaseApproversConfigPanel() {
     return (
       <Card className="border-destructive/40">
         <CardHeader>
-          <CardTitle className="text-base text-destructive">Não foi possível carregar approval_config</CardTitle>
+          <CardTitle className="text-base text-destructive">Não foi possível carregar purchase_approval_config</CardTitle>
           <CardDescription>
             Verifique se a tabela existe no Supabase após o reset. Erro: {loadError}
           </CardDescription>
@@ -182,11 +182,11 @@ export function PurchaseApproversConfigPanel() {
             </p>
             <p>
               Se <strong>nenhum setor</strong> estiver selecionado, a regra vale para todos. Se setores forem
-              escolhidos, só se aplica a requisições/pedidos originados daqueles setores.
+              escolhidos, só se aplica a solicitações de compra/pedidos originados daqueles setores.
             </p>
             <p className="text-amber-700 dark:text-amber-400">
-              <strong>Pedidos</strong>: regras para o valor total do pedido de compra. <strong>Requisições</strong>:
-              regras para quando o fluxo usar valor estimado na requisição.
+              <strong>Pedidos</strong>: regras para o valor total do pedido de compra.{' '}
+              <strong>Solicitações de compra</strong>: regras para quando o fluxo usar valor estimado na solicitação.
             </p>
           </CardDescription>
         </CardHeader>
@@ -195,7 +195,7 @@ export function PurchaseApproversConfigPanel() {
       <Tabs defaultValue="pedido" className="w-full">
         <TabsList className="h-auto flex-wrap">
           <TabsTrigger value="pedido">Aprovadores de pedidos</TabsTrigger>
-          <TabsTrigger value="requisicao">Aprovadores de requisições</TabsTrigger>
+          <TabsTrigger value="requisicao">Aprovadores de solicitações de compra</TabsTrigger>
         </TabsList>
         <TabsContent value="pedido" className="mt-4">
           <ApproversTable
@@ -323,23 +323,23 @@ function ApproversTable({
       let configId: string;
 
       if (editing) {
-        const { error } = await supabase.from('approval_config').update(payload).eq('id', editing.id);
+        const { error } = await supabase.from('purchase_approval_config').update(payload).eq('id', editing.id);
         if (error) throw error;
         configId = editing.id;
       } else {
-        const { data, error } = await supabase.from('approval_config').insert(payload).select('id').single();
+        const { data, error } = await supabase.from('purchase_approval_config').insert(payload).select('id').single();
         if (error) throw error;
         configId = data.id;
       }
 
-      await supabase.from('approval_config_departments').delete().eq('approval_config_id', configId);
+      await supabase.from('purchase_approval_config_departments').delete().eq('approval_config_id', configId);
 
       if (form.departmentIds.length > 0) {
         const links = form.departmentIds.map((dId) => ({
           approval_config_id: configId,
           department_id: dId,
         }));
-        const { error: linkErr } = await supabase.from('approval_config_departments').insert(links);
+        const { error: linkErr } = await supabase.from('purchase_approval_config_departments').insert(links);
         if (linkErr) throw linkErr;
       }
 
@@ -356,7 +356,7 @@ function ApproversTable({
 
   const handleDelete = async (r: Row) => {
     if (!window.confirm('Remover esta faixa de aprovação?')) return;
-    const { error } = await supabase.from('approval_config').delete().eq('id', r.id);
+    const { error } = await supabase.from('purchase_approval_config').delete().eq('id', r.id);
     if (error) {
       toast.error(error.message);
       return;
@@ -371,12 +371,12 @@ function ApproversTable({
         <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
           <div>
             <CardTitle className="text-base">
-              {escopo === 'pedido' ? 'Pedidos de compra' : 'Requisições de compra'}
+              {escopo === 'pedido' ? 'Pedidos de compra' : 'Solicitações de compra'}
             </CardTitle>
             <CardDescription>
               {escopo === 'pedido'
                 ? 'Quem aprova o pedido conforme o valor total e setor de origem (regra de corte).'
-                : 'Quem aprova a requisição conforme o valor e setor de origem.'}
+                : 'Quem aprova a solicitação de compra conforme o valor e setor de origem.'}
             </CardDescription>
           </div>
           <Button type="button" size="sm" onClick={openCreate}>

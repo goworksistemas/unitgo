@@ -14,7 +14,7 @@
  * - requester: Solicitante (faz pedidos de materiais)
  * - buyer: Comprador (cotações, pedidos, fornecedores)
  * - financial: Financeiro (contratos, centros de custo, relatórios)
- * - purchases_admin: Administrador do módulo de compras (requisições, cotações, pedidos, aprovações e parametrização de alçadas)
+ * - purchases_admin: Administrador do módulo de compras (solicitações de compra, cotações, pedidos, aprovações e parametrização de alçadas)
  */
 export type UserRole = 'controller' | 'admin' | 'warehouse' | 'designer' | 'developer' | 'requester' | 'executor' | 'driver' | 'buyer' | 'financial' | 'purchases_admin';
 

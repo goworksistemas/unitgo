@@ -235,5 +235,5 @@ export interface Receiving {
   createdAt: Date;
 }
 
-/** Valor em `approval_config.role_name` para separar alçadas de pedido vs requisição */
+/** Valor em `purchase_approval_config.role_name` para separar alçadas de pedido vs requisição */
 export type ApprovalConfigEscopo = 'pedido' | 'requisicao';

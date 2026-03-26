@@ -1,10 +1,10 @@
 /**
- * Regras de aprovação por faixa de valor (`approval_config`) com filtro opcional por setor (department).
+ * Regras de aprovação por faixa de valor (`purchase_approval_config`) com filtro opcional por setor (department).
  *
  * Fluxo:
- * 1. Busca em `approval_config` as faixas ativas que cobrem o valor informado.
+ * 1. Busca em `purchase_approval_config` as faixas ativas que cobrem o valor informado.
  * 2. Se `departmentId` foi informado, filtra apenas as faixas vinculadas àquele setor
- *    (via `approval_config_departments`) — ou faixas sem vínculo algum (valem para todos).
+ *    (via `purchase_approval_config_departments`) — ou faixas sem vínculo algum (valem para todos).
  * 3. Prioriza a maior `valor_limite_min` compatível (regra mais restritiva).
  */
 
@@ -31,7 +31,7 @@ interface FetchFaixaOpts {
  */
 async function fetchFaixa({ valorTotal, supabase, roleFilter, departmentId }: FetchFaixaOpts) {
   let q = supabase
-    .from('approval_config')
+    .from('purchase_approval_config')
     .select('id, user_id, role_name')
     .eq('active', true)
     .lte('valor_limite_min', valorTotal)
@@ -56,7 +56,7 @@ async function fetchFaixa({ valorTotal, supabase, roleFilter, departmentId }: Fe
 
   const configIds = allRows.map((r: { id: string }) => r.id);
   const { data: links } = await supabase
-    .from('approval_config_departments')
+    .from('purchase_approval_config_departments')
     .select('approval_config_id, department_id')
     .in('approval_config_id', configIds);
 
@@ -134,7 +134,7 @@ export async function isUserAprovador(
   supabase: SupabaseClient,
   escopo?: ApprovalConfigEscopo
 ): Promise<boolean> {
-  let q = supabase.from('approval_config').select('id').eq('user_id', userId).eq('active', true);
+  let q = supabase.from('purchase_approval_config').select('id').eq('user_id', userId).eq('active', true);
   if (escopo) {
     q = q.eq('role_name', escopo);
   }

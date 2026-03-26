@@ -6,6 +6,7 @@ import {
   ClipboardList,
   FileText,
   LayoutList,
+  ScrollText,
   ShoppingCart,
   Timer,
 } from 'lucide-react';
@@ -192,6 +193,10 @@ export default function BuyerHomePanel({ relaxedBuyerScope }: BuyerHomePanelProp
             <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => go('buyer-suppliers')}>
               <Building2 className="h-4 w-4" />
               Fornecedores
+            </Button>
+            <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => go('buyer-contracts')}>
+              <ScrollText className="h-4 w-4" />
+              Contratos
             </Button>
           </CardContent>
         </Card>

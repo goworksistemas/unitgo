@@ -79,7 +79,7 @@ export function EditUserDialog({
 
       try {
         const { data, error } = await supabase
-          .from('departments')
+          .from('org_departments')
           .select('id, name, is_active')
           .order('name');
         if (!cancelled && !error && Array.isArray(data) && data.length > 0) {

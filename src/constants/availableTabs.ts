@@ -17,7 +17,7 @@ export const AVAILABLE_TABS: TabCategory[] = [
     label: 'Admin de Compras',
     tabs: [
       { id: 'compras_admin.visao', label: 'Dashboard de Compras' },
-      { id: 'compras_admin.requisicoes', label: 'Requisições' },
+      { id: 'compras_admin.requisicoes', label: 'Solicitações de compras' },
       { id: 'compras_admin.cotacoes', label: 'Cotações' },
       { id: 'compras_admin.aprovacoes', label: 'Aprovações' },
       { id: 'compras_admin.pedidos', label: 'Pedidos de Compra' },

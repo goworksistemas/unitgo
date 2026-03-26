@@ -150,7 +150,7 @@ app.post("/make-server-46b247d8/init-schema", async (c) => {
 
     // Check if floors column exists, if not add it
     const { data: columns } = await supabase
-      .from('units')
+      .from('org_units')
       .select('*')
       .limit(0);
     
@@ -198,7 +198,7 @@ app.post("/make-server-46b247d8/init-schema", async (c) => {
 app.post("/make-server-46b247d8/seed", async (c) => {
   try {
     // Check if already seeded
-    const { data: existingUnits } = await supabase.from('units').select('id').limit(1);
+    const { data: existingUnits } = await supabase.from('org_units').select('id').limit(1);
     if (existingUnits && existingUnits.length > 0) {
       return c.json({ message: "Database already seeded" });
     }
@@ -231,10 +231,10 @@ app.post("/make-server-46b247d8/seed", async (c) => {
       { name: "Móveis", description: "Cadeiras, mesas, armários e outros móveis" },
     ];
 
-    const { error: unitsError } = await supabase.from('units').insert(units);
+    const { error: unitsError } = await supabase.from('org_units').insert(units);
     if (unitsError) throw unitsError;
 
-    const { error: categoriesError } = await supabase.from('categories').insert(categories);
+    const { error: categoriesError } = await supabase.from('stock_categories').insert(categories);
     if (categoriesError) throw categoriesError;
 
     // Create initial users in auth.users and public.users
@@ -322,7 +322,7 @@ app.post("/make-server-46b247d8/migrate-unit-stocks", async (c) => {
     
     // 1. Buscar o UUID real da unidade "Almoxarifado Central"
     const { data: warehouseUnit, error: warehouseError } = await supabase
-      .from('units')
+      .from('org_units')
       .select('id, name')
       .eq('name', 'Almoxarifado Central')
       .single();
@@ -336,7 +336,7 @@ app.post("/make-server-46b247d8/migrate-unit-stocks", async (c) => {
     
     // 2. Buscar TODOS os unit_stocks (não podemos filtrar por 'unit-warehouse' porque a coluna é UUID)
     const { data: allStocks, error: fetchError } = await supabase
-      .from('unit_stocks')
+      .from('stock_unit_stocks')
       .select('*');
     
     if (fetchError) {
@@ -373,7 +373,7 @@ app.post("/make-server-46b247d8/migrate-unit-stocks", async (c) => {
     let updated = 0;
     for (const stock of invalidStocks) {
       const { error: updateError } = await supabase
-        .from('unit_stocks')
+        .from('stock_unit_stocks')
         .update({ unit_id: warehouseUnit.id })
         .eq('id', stock.id);
       
@@ -415,7 +415,7 @@ app.post("/make-server-46b247d8/migrate-text-to-uuid", async (c) => {
     
     // Verificar se todas as units têm IDs em formato UUID
     const { data: units, error: unitsError } = await supabase
-      .from('units')
+      .from('org_units')
       .select('id, name');
     
     if (unitsError) {
@@ -1343,7 +1343,7 @@ app.post("/make-server-46b247d8/auth/admin-reset-password", async (c) => {
 // ========== UNITS ==========
 app.get("/make-server-46b247d8/units", async (c) => {
   try {
-    const { data, error } = await supabase.from('units').select('*');
+    const { data, error } = await supabase.from('org_units').select('*');
     if (error) throw error;
     
     // Parse floors (handles JSON string or array)
@@ -1372,7 +1372,7 @@ app.post("/make-server-46b247d8/units", async (c) => {
       floors: Array.isArray(unitData.floors) ? unitData.floors : []
     };
     
-    const { data, error } = await supabase.from('units').insert(unitToInsert).select().single();
+    const { data, error } = await supabase.from('org_units').insert(unitToInsert).select().single();
     if (error) throw error;
     
     // Parse floors from database response
@@ -1400,7 +1400,7 @@ app.put("/make-server-46b247d8/units/:id", async (c) => {
     };
     
     const { data, error } = await supabase
-      .from('units')
+      .from('org_units')
       .update(updatesToApply)
       .eq('id', id)
       .select()
@@ -1424,7 +1424,7 @@ app.put("/make-server-46b247d8/units/:id", async (c) => {
 // ========== CATEGORIES ==========
 app.get("/make-server-46b247d8/categories", async (c) => {
   try {
-    const { data, error } = await supabase.from('categories').select('*');
+    const { data, error } = await supabase.from('stock_categories').select('*');
     if (error) throw error;
     return c.json(data || []);
   } catch (error) {
@@ -1438,7 +1438,7 @@ app.post("/make-server-46b247d8/categories", async (c) => {
     const newCategory = await c.req.json();
     // Remove temporary ID from frontend before inserting
     const { id, ...categoryData } = newCategory;
-    const { data, error } = await supabase.from('categories').insert(categoryData).select().single();
+    const { data, error } = await supabase.from('stock_categories').insert(categoryData).select().single();
     if (error) throw error;
     return c.json(data, 201);
   } catch (error) {
@@ -1506,7 +1506,7 @@ app.delete("/make-server-46b247d8/floors/:id", async (c) => {
 // ========== ITEMS ==========
 app.get("/make-server-46b247d8/items", async (c) => {
   try {
-    const { data, error } = await supabase.from('items').select('*');
+    const { data, error } = await supabase.from('stock_items').select('*');
     if (error) throw error;
     console.log(`✅ Retornando ${data?.length || 0} items`);
     return c.json(data || []);
@@ -1523,7 +1523,7 @@ app.post("/make-server-46b247d8/items", async (c) => {
     console.log('📦 Chaves do objeto:', Object.keys(newItem));
     // Remove temporary ID from frontend before inserting
     const { id, ...itemData } = newItem;
-    const { data, error } = await supabase.from('items').insert(itemData).select().single();
+    const { data, error } = await supabase.from('stock_items').insert(itemData).select().single();
     if (error) {
       console.error("❌ Error creating item:", error);
       throw error;
@@ -1540,7 +1540,7 @@ app.put("/make-server-46b247d8/items/:id", async (c) => {
   try {
     const id = c.req.param("id");
     const updates = await c.req.json();
-    const { data, error } = await supabase.from('items').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('stock_items').update(updates).eq('id', id).select().single();
     if (error) throw error;
     return c.json(data);
   } catch (error) {
@@ -1553,7 +1553,7 @@ app.put("/make-server-46b247d8/items/:id", async (c) => {
 app.get("/make-server-46b247d8/unit-stocks", async (c) => {
   try {
     console.log('📦 GET /unit-stocks - Buscando todos os stocks...');
-    const { data, error } = await supabase.from('unit_stocks').select('*');
+    const { data, error } = await supabase.from('stock_unit_stocks').select('*');
     if (error) throw error;
     
     // Transformar snake_case para camelCase
@@ -1608,7 +1608,7 @@ app.post("/make-server-46b247d8/unit-stocks", async (c) => {
     
     console.log('📦 Stock no formato DB (final):', JSON.stringify(dbStock, null, 2));
     
-    const { data, error } = await supabase.from('unit_stocks').insert(dbStock).select().single();
+    const { data, error } = await supabase.from('stock_unit_stocks').insert(dbStock).select().single();
     if (error) {
       console.error('❌ Erro do Supabase ao inserir stock:', error);
       throw error;
@@ -1657,7 +1657,7 @@ app.put("/make-server-46b247d8/unit-stocks/:id", async (c) => {
     
     if (updates.location !== undefined) dbUpdates.location = updates.location;
     
-    const { data, error } = await supabase.from('unit_stocks').update(dbUpdates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('stock_unit_stocks').update(dbUpdates).eq('id', id).select().single();
     if (error) throw error;
     
     // Transformar de volta para camelCase
@@ -1680,7 +1680,7 @@ app.put("/make-server-46b247d8/unit-stocks/:id", async (c) => {
 // ========== REQUESTS ==========
 app.get("/make-server-46b247d8/requests", async (c) => {
   try {
-    const { data, error } = await supabase.from('requests').select('*');
+    const { data, error } = await supabase.from('stock_requests').select('*');
     if (error) throw error;
     
     // Transform snake_case to camelCase for frontend
@@ -1733,7 +1733,7 @@ app.post("/make-server-46b247d8/requests", async (c) => {
     
     console.log("📝 Prepared for DB insert:", JSON.stringify(dbRequest, null, 2));
     
-    const { data, error } = await supabase.from('requests').insert(dbRequest).select().single();
+    const { data, error } = await supabase.from('stock_requests').insert(dbRequest).select().single();
     
     if (error) {
       console.error("❌ Supabase error creating request:", error);
@@ -1833,7 +1833,7 @@ app.put("/make-server-46b247d8/requests/:id", async (c) => {
     if (updates.rejected_reason !== undefined) dbUpdates.rejected_reason = updates.rejected_reason;
     else if (updates.rejectedReason !== undefined) dbUpdates.rejected_reason = updates.rejectedReason;
     
-    const { data, error } = await supabase.from('requests').update(dbUpdates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('stock_requests').update(dbUpdates).eq('id', id).select().single();
     if (error) throw error;
     
     // Transform response back to camelCase
@@ -1870,7 +1870,7 @@ app.put("/make-server-46b247d8/requests/:id", async (c) => {
 app.get("/make-server-46b247d8/movements", async (c) => {
   try {
     console.log('📝 GET /movements - Buscando todos os movements...');
-    const { data, error } = await supabase.from('simple_movements').select('*');
+    const { data, error } = await supabase.from('stock_simple_movements').select('*');
     if (error) throw error;
     
     // Map database columns to frontend fields
@@ -1932,7 +1932,7 @@ app.post("/make-server-46b247d8/movements", async (c) => {
     
     // 1. Verificar se existe unit_stock para este item+unidade
     let { data: existingStock, error: findError } = await supabase
-      .from('unit_stocks')
+      .from('stock_unit_stocks')
       .select('*')
       .eq('item_id', itemId)
       .eq('unit_id', unitId)
@@ -1946,7 +1946,7 @@ app.post("/make-server-46b247d8/movements", async (c) => {
     if (!existingStock) {
       console.log('📦 Criando novo stock para item_id:', itemId, 'unit_id:', unitId);
       const { data: newStock, error: createStockError } = await supabase
-        .from('unit_stocks')
+        .from('stock_unit_stocks')
         .insert({
           item_id: itemId,
           unit_id: unitId,
@@ -1992,7 +1992,7 @@ app.post("/make-server-46b247d8/movements", async (c) => {
     
     // 4. Atualizar a quantidade no unit_stock ANTES de criar o movimento
     const { error: updateError, data: updatedStock } = await supabase
-      .from('unit_stocks')
+      .from('stock_unit_stocks')
       .update({ quantity: newQuantity })
       .eq('item_id', itemId)
       .eq('unit_id', unitId)
@@ -2017,7 +2017,7 @@ app.post("/make-server-46b247d8/movements", async (c) => {
       notes: newMovement.notes || null,
     };
     
-    const { data, error } = await supabase.from('simple_movements').insert(dbMovement).select().single();
+    const { data, error } = await supabase.from('stock_simple_movements').insert(dbMovement).select().single();
     
     if (error) {
       console.error("❌ Erro ao criar movimento:", error);
@@ -2046,7 +2046,7 @@ app.post("/make-server-46b247d8/movements", async (c) => {
 // ========== LOANS ==========
 app.get("/make-server-46b247d8/loans", async (c) => {
   try {
-    const { data, error } = await supabase.from('loans').select('*');
+    const { data, error } = await supabase.from('stock_loans').select('*');
     if (error) throw error;
     
     // Transform snake_case to camelCase
@@ -2116,7 +2116,7 @@ app.post("/make-server-46b247d8/loans", async (c) => {
     
     console.log("📝 DB loan (snake_case):", JSON.stringify(dbLoan, null, 2));
     
-    const { data, error } = await supabase.from('loans').insert(dbLoan).select().single();
+    const { data, error } = await supabase.from('stock_loans').insert(dbLoan).select().single();
     if (error) {
       console.error("❌ Supabase error creating loan:", error);
       return c.json({ 
@@ -2175,7 +2175,7 @@ app.put("/make-server-46b247d8/loans/:id", async (c) => {
     
     console.log("📝 DB updates (snake_case):", JSON.stringify(dbUpdates, null, 2));
     
-    const { data, error } = await supabase.from('loans').update(dbUpdates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('stock_loans').update(dbUpdates).eq('id', id).select().single();
     if (error) {
       console.error("❌ Supabase error updating loan:", error);
       throw error;
@@ -2431,7 +2431,7 @@ app.put("/make-server-46b247d8/furniture-requests-to-designer/:id", async (c) =>
 // ========== UNIQUE PRODUCT INSTANCES ==========
 app.get("/make-server-46b247d8/individual-items", async (c) => {
   try {
-    const { data, error } = await supabase.from('unique_product_instances').select('*');
+    const { data, error } = await supabase.from('stock_unique_product_instances').select('*');
     if (error) throw error;
     return c.json(data || []);
   } catch (error) {
@@ -2445,7 +2445,7 @@ app.post("/make-server-46b247d8/individual-items", async (c) => {
     const newItem = await c.req.json();
     // Remove temporary ID from frontend before inserting
     const { id, ...itemData } = newItem;
-    const { data, error } = await supabase.from('unique_product_instances').insert(itemData).select().single();
+    const { data, error } = await supabase.from('stock_unique_product_instances').insert(itemData).select().single();
     if (error) throw error;
     return c.json(data, 201);
   } catch (error) {
@@ -2458,7 +2458,7 @@ app.put("/make-server-46b247d8/individual-items/:id", async (c) => {
   try {
     const id = c.req.param("id");
     const updates = await c.req.json();
-    const { data, error } = await supabase.from('unique_product_instances').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('stock_unique_product_instances').update(updates).eq('id', id).select().single();
     if (error) throw error;
     return c.json(data);
   } catch (error) {
@@ -2471,7 +2471,7 @@ app.put("/make-server-46b247d8/individual-items/:id", async (c) => {
 app.get("/make-server-46b247d8/delivery-batches", async (c) => {
   try {
     const { data, error } = await supabase
-      .from("delivery_batches")
+      .from("purchase_delivery_batches")
       .select("*")
       .order("created_at", { ascending: false });
 
@@ -2527,7 +2527,7 @@ app.post("/make-server-46b247d8/delivery-batches", async (c) => {
     const batchId = crypto.randomUUID();
     
     const { data, error } = await supabase
-      .from("delivery_batches")
+      .from("purchase_delivery_batches")
       .insert({
         id: batchId,
         request_ids: requestIds,
@@ -2561,7 +2561,7 @@ app.put("/make-server-46b247d8/delivery-batches/:id", async (c) => {
     
     // Primeiro, tenta buscar o lote existente
     const { data: existing } = await supabase
-      .from("delivery_batches")
+      .from("purchase_delivery_batches")
       .select("*")
       .eq("id", id)
       .maybeSingle();
@@ -2571,7 +2571,7 @@ app.put("/make-server-46b247d8/delivery-batches/:id", async (c) => {
       console.log(`⚠️ Lote ${id} não encontrado, criando automaticamente...`);
       
       const { data: created, error: createError } = await supabase
-        .from("delivery_batches")
+        .from("purchase_delivery_batches")
         .insert({
           id: id,
           request_ids: body.requestIds || [],
@@ -2611,7 +2611,7 @@ app.put("/make-server-46b247d8/delivery-batches/:id", async (c) => {
     if (body.confirmedByRequesterAt !== undefined) updates.confirmed_by_requester_at = body.confirmedByRequesterAt;
 
     const { data, error } = await supabase
-      .from("delivery_batches")
+      .from("purchase_delivery_batches")
       .update(updates)
       .eq("id", id)
       .select()
@@ -2631,7 +2631,7 @@ app.put("/make-server-46b247d8/delivery-batches/:id", async (c) => {
 app.get("/make-server-46b247d8/delivery-confirmations", async (c) => {
   try {
     const { data, error } = await supabase
-      .from("delivery_confirmations")
+      .from("purchase_delivery_confirmations")
       .select("*")
       .order("timestamp", { ascending: false });
 
@@ -2692,7 +2692,7 @@ app.post("/make-server-46b247d8/delivery-confirmations", async (c) => {
     const confirmationId = crypto.randomUUID();
     
     const { data, error } = await supabase
-      .from("delivery_confirmations")
+      .from("purchase_delivery_confirmations")
       .insert({
         id: confirmationId,
         batch_id: batchId || null,
@@ -2731,18 +2731,18 @@ app.post("/make-server-46b247d8/fix-delivery-tables", async (c) => {
   try {
     console.log('🔧 Gerando SQL para corrigir tabelas de delivery...');
     
-    const sqlToRun = `-- Corrigir tabelas delivery_batches e delivery_confirmations
+    const sqlToRun = `-- Corrigir tabelas purchase_delivery_batches e purchase_delivery_confirmations
 -- Execute este SQL no Supabase Dashboard > SQL Editor
 
--- Adicionar DEFAULT gen_random_uuid() nas colunas id
-ALTER TABLE delivery_batches 
+-- Adicionar DEFAULT gen_random_uuid() nas colunas id (se aplicável ao tipo da coluna no seu banco)
+ALTER TABLE purchase_delivery_batches 
   ALTER COLUMN id SET DEFAULT gen_random_uuid();
 
-ALTER TABLE delivery_confirmations 
+ALTER TABLE purchase_delivery_confirmations 
   ALTER COLUMN id SET DEFAULT gen_random_uuid();
 
 -- Se as tabelas não existem, criar do zero:
-CREATE TABLE IF NOT EXISTS delivery_batches (
+CREATE TABLE IF NOT EXISTS purchase_delivery_batches (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   request_ids UUID[] DEFAULT '{}',
   furniture_request_ids UUID[] DEFAULT '{}',
@@ -2759,7 +2759,7 @@ CREATE TABLE IF NOT EXISTS delivery_batches (
   notes TEXT
 );
 
-CREATE TABLE IF NOT EXISTS delivery_confirmations (
+CREATE TABLE IF NOT EXISTS purchase_delivery_confirmations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   batch_id TEXT,
   furniture_request_id UUID,
@@ -2774,9 +2774,9 @@ CREATE TABLE IF NOT EXISTS delivery_confirmations (
   daily_code TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_delivery_batches_status ON delivery_batches(status);
-CREATE INDEX IF NOT EXISTS idx_delivery_batches_target_unit ON delivery_batches(target_unit_id);
-CREATE INDEX IF NOT EXISTS idx_delivery_confirmations_batch ON delivery_confirmations(batch_id);`;
+CREATE INDEX IF NOT EXISTS idx_delivery_batches_status ON purchase_delivery_batches(status);
+CREATE INDEX IF NOT EXISTS idx_delivery_batches_target_unit ON purchase_delivery_batches(target_unit_id);
+CREATE INDEX IF NOT EXISTS idx_delivery_confirmations_batch ON purchase_delivery_confirmations(batch_id);`;
     
     console.log('📋 SQL gerado com sucesso');
     
@@ -2787,10 +2787,10 @@ CREATE INDEX IF NOT EXISTS idx_delivery_confirmations_batch ON delivery_confirma
         '1. Copie o SQL retornado em "sqlToExecute"',
         '2. Vá para Supabase Dashboard > SQL Editor',
         '3. Cole e execute o SQL',
-        '4. As tabelas delivery_batches e delivery_confirmations terão o DEFAULT corrigido',
+        '4. As tabelas purchase_delivery_batches e purchase_delivery_confirmations terão o DEFAULT corrigido',
         '5. Tente criar novos lotes/confirmações novamente'
       ],
-      reason: 'As colunas id nas tabelas delivery_batches e delivery_confirmations não têm DEFAULT gen_random_uuid(), causando erro de constraint violation'
+      reason: 'As colunas id nas tabelas purchase_delivery_batches e purchase_delivery_confirmations não têm DEFAULT gen_random_uuid(), causando erro de constraint violation'
     });
   } catch (error) {
     console.error('Erro ao gerar SQL de correção:', error);
@@ -2931,14 +2931,14 @@ app.get("/make-server-46b247d8/developer/check-furniture-table", async (c) => {
 app.post("/make-server-46b247d8/seed-purchases", async (c) => {
   try {
     // Verificar se tabelas existem
-    const { error: tableCheck } = await supabase.from('supplier_categories').select('id').limit(1);
+    const { error: tableCheck } = await supabase.from('purchase_supplier_categories').select('id').limit(1);
     if (tableCheck?.code === '42P01') {
       return c.json({ error: "Tabelas de compras não existem. Execute SQL-MODULO-COMPRAS.sql no Supabase SQL Editor primeiro." }, 400);
     }
 
     // Obter primeiro usuário e unidade para solicitante_id e unidade_id
     const { data: firstUser } = await supabase.from('users').select('id').limit(1).single();
-    const { data: firstUnit } = await supabase.from('units').select('id').limit(1).single();
+    const { data: firstUnit } = await supabase.from('org_units').select('id').limit(1).single();
     const solicitanteId = firstUser?.id ?? '00000000-0000-0000-0000-000000000001';
     const unidadeId = firstUnit?.id ?? '00000000-0000-0000-0000-000000000002';
     const responsavelId = firstUser?.id ?? solicitanteId;
@@ -2951,11 +2951,11 @@ app.post("/make-server-46b247d8/seed-purchases", async (c) => {
     ];
     const catIds = [];
     for (const cat of cats) {
-      const { data: existing } = await supabase.from('supplier_categories').select('id').eq('nome', cat.nome).limit(1).maybeSingle();
+      const { data: existing } = await supabase.from('purchase_supplier_categories').select('id').eq('nome', cat.nome).limit(1).maybeSingle();
       if (existing) {
         catIds.push(existing.id);
       } else {
-        const { data: inserted } = await supabase.from('supplier_categories').insert(cat).select('id').single();
+        const { data: inserted } = await supabase.from('purchase_supplier_categories').insert(cat).select('id').single();
         catIds.push(inserted?.id);
       }
     }
@@ -2969,14 +2969,14 @@ app.post("/make-server-46b247d8/seed-purchases", async (c) => {
       { razao_social: 'Limpeza Pro Ltda', cnpj: '11.222.333/0001-44', contato: 'Pedro Oliveira', email: 'contato@limpeza.com', telefone: '(11) 7777-8888', categoria_id: catLimpezaId, endereco: 'Rua Augusta, 500', status: 'active' },
     ];
     for (const s of suppliersToInsert) {
-      const { data: existing } = await supabase.from('suppliers').select('id').eq('cnpj', s.cnpj).maybeSingle();
+      const { data: existing } = await supabase.from('purchase_suppliers').select('id').eq('cnpj', s.cnpj).maybeSingle();
       if (!existing) {
-        await supabase.from('suppliers').insert(s);
+        await supabase.from('purchase_suppliers').insert(s);
       }
     }
-    let supplier1Id = (await supabase.from('suppliers').select('id').eq('cnpj', '12.345.678/0001-90').maybeSingle()).data?.id;
+    let supplier1Id = (await supabase.from('purchase_suppliers').select('id').eq('cnpj', '12.345.678/0001-90').maybeSingle()).data?.id;
     if (!supplier1Id) {
-      const { data: anySupplier } = await supabase.from('suppliers').select('id').limit(1).maybeSingle();
+      const { data: anySupplier } = await supabase.from('purchase_suppliers').select('id').limit(1).maybeSingle();
       supplier1Id = anySupplier?.id;
     }
     if (!supplier1Id) return c.json({ error: "Nenhum fornecedor encontrado. Verifique se os fornecedores foram inseridos." }, 500);
@@ -2988,17 +2988,17 @@ app.post("/make-server-46b247d8/seed-purchases", async (c) => {
       { codigo: 'CC-003', nome: 'TI', descricao: 'Tecnologia', status: 'active' },
     ];
     for (const cc of costCenters) {
-      const { data: existing } = await supabase.from('cost_centers').select('id').eq('codigo', cc.codigo).maybeSingle();
-      if (!existing) await supabase.from('cost_centers').insert(cc);
+      const { data: existing } = await supabase.from('org_cost_centers').select('id').eq('codigo', cc.codigo).maybeSingle();
+      if (!existing) await supabase.from('org_cost_centers').insert(cc);
     }
-    const { data: cc1 } = await supabase.from('cost_centers').select('id').eq('codigo', 'CC-001').single();
-    const { data: cc3 } = await supabase.from('cost_centers').select('id').eq('codigo', 'CC-003').single();
+    const { data: cc1 } = await supabase.from('org_cost_centers').select('id').eq('codigo', 'CC-001').single();
+    const { data: cc3 } = await supabase.from('org_cost_centers').select('id').eq('codigo', 'CC-003').single();
     if (!cc1?.id || !cc3?.id) return c.json({ error: "Erro ao criar centros de custo" }, 500);
 
     // 4. Contrato
-    let contratoId = (await supabase.from('contracts').select('id').eq('numero', 'CT-2025-001').maybeSingle()).data?.id;
+    let contratoId = (await supabase.from('purchase_contracts').select('id').eq('numero', 'CT-2025-001').maybeSingle()).data?.id;
     if (!contratoId) {
-      const { data: newContrato } = await supabase.from('contracts').insert({
+      const { data: newContrato } = await supabase.from('purchase_contracts').insert({
         numero: 'CT-2025-001', nome: 'Contrato Material Escritório', cnpj_cliente: '12.345.678/0001-99', valor_total: 80000, valor_consumido: 0, data_inicio: '2025-01-01', data_fim: '2025-12-31', centro_custo_id: cc1.id, status: 'active',
       }).select('id').single();
       contratoId = newContrato?.id;
@@ -3031,11 +3031,11 @@ app.post("/make-server-46b247d8/seed-purchases", async (c) => {
     }
 
     // 6. Cotação (evitar duplicata)
-    let cotacaoId = (await supabase.from('quotations').select('id').eq('solicitacao_id', pr1Id).eq('status', 'approved').limit(1).maybeSingle()).data?.id;
+    let cotacaoId = (await supabase.from('purchase_quotations').select('id').eq('solicitacao_id', pr1Id).eq('status', 'approved').limit(1).maybeSingle()).data?.id;
     if (!cotacaoId) {
-      const { data: moedaBrl } = await supabase.from('currencies').select('id').eq('codigo', 'BRL').limit(1).maybeSingle();
+      const { data: moedaBrl } = await supabase.from('org_currencies').select('id').eq('codigo', 'BRL').limit(1).maybeSingle();
       const qItens = [{ id: 'qitem-1', cotacao_id: '', item_solicitacao_id: 'item-1', descricao: 'Papel A4 75g 500 folhas', quantidade: 50, unidade_medida: 'resma', preco_unitario: 18.90, valor_total: 945 }, { id: 'qitem-2', cotacao_id: '', item_solicitacao_id: 'item-2', descricao: 'Caneta esferográfica azul', quantidade: 100, unidade_medida: 'un', preco_unitario: 1.50, valor_total: 150 }];
-      const { data: cotacao } = await supabase.from('quotations').insert({
+      const { data: cotacao } = await supabase.from('purchase_quotations').insert({
         solicitacao_id: pr1Id, fornecedor_id: supplier1Id, moeda_id: moedaBrl?.id, forma_pagamento: 'Boleto', condicoes_pagamento: '30 dias', prazo_entrega: 5,
         status: 'approved', itens: qItens, enviado_em: new Date().toISOString(), respondido_em: new Date().toISOString(),
       }).select('id').single();
@@ -3055,9 +3055,9 @@ app.post("/make-server-46b247d8/seed-purchases", async (c) => {
     if (!pedidoId) return c.json({ error: "Erro ao criar pedido" }, 500);
 
     // 8. Recebimentos (evitar duplicata)
-    const existingRec = (await supabase.from('receivings').select('id').eq('pedido_id', pedidoId).limit(1).maybeSingle()).data;
+    const existingRec = (await supabase.from('purchase_receivings').select('id').eq('pedido_id', pedidoId).limit(1).maybeSingle()).data;
     if (!existingRec) {
-      await supabase.from('receivings').insert([
+      await supabase.from('purchase_receivings').insert([
         { pedido_id: pedidoId, item_id: 'item-1', quantidade_esperada: 50, quantidade_recebida: 50, responsavel_id: responsavelId, local_entrega: 'Recepção', status: 'fully_received' },
         { pedido_id: pedidoId, item_id: 'item-2', quantidade_esperada: 100, quantidade_recebida: 100, responsavel_id: responsavelId, local_entrega: 'Recepção', status: 'fully_received' },
       ]);
@@ -3073,7 +3073,7 @@ app.post("/make-server-46b247d8/seed-purchases", async (c) => {
 // --- Supplier Categories ---
 app.get("/make-server-46b247d8/supplier-categories", async (c) => {
   try {
-    const { data, error } = await supabase.from('supplier_categories').select('*');
+    const { data, error } = await supabase.from('purchase_supplier_categories').select('*');
     if (error) throw error;
     return c.json(data || []);
   } catch (error) {
@@ -3086,7 +3086,7 @@ app.post("/make-server-46b247d8/supplier-categories", async (c) => {
   try {
     const body = await c.req.json();
     const { id, ...rest } = body;
-    const { data, error } = await supabase.from('supplier_categories').insert(rest).select().single();
+    const { data, error } = await supabase.from('purchase_supplier_categories').insert(rest).select().single();
     if (error) throw error;
     return c.json(data, 201);
   } catch (error) {
@@ -3099,7 +3099,7 @@ app.put("/make-server-46b247d8/supplier-categories/:id", async (c) => {
   try {
     const id = c.req.param("id");
     const updates = await c.req.json();
-    const { data, error } = await supabase.from('supplier_categories').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('purchase_supplier_categories').update(updates).eq('id', id).select().single();
     if (error) throw error;
     return c.json(data);
   } catch (error) {
@@ -3111,7 +3111,7 @@ app.put("/make-server-46b247d8/supplier-categories/:id", async (c) => {
 // --- Suppliers ---
 app.get("/make-server-46b247d8/suppliers", async (c) => {
   try {
-    const { data, error } = await supabase.from('suppliers').select('*').order('razao_social');
+    const { data, error } = await supabase.from('purchase_suppliers').select('*').order('razao_social');
     if (error) throw error;
     return c.json(data || []);
   } catch (error) {
@@ -3124,7 +3124,7 @@ app.post("/make-server-46b247d8/suppliers", async (c) => {
   try {
     const body = await c.req.json();
     const { id, ...rest } = body;
-    const { data, error } = await supabase.from('suppliers').insert(rest).select().single();
+    const { data, error } = await supabase.from('purchase_suppliers').insert(rest).select().single();
     if (error) throw error;
     return c.json(data, 201);
   } catch (error) {
@@ -3137,7 +3137,7 @@ app.put("/make-server-46b247d8/suppliers/:id", async (c) => {
   try {
     const id = c.req.param("id");
     const updates = await c.req.json();
-    const { data, error } = await supabase.from('suppliers').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('purchase_suppliers').update(updates).eq('id', id).select().single();
     if (error) throw error;
     return c.json(data);
   } catch (error) {
@@ -3149,7 +3149,7 @@ app.put("/make-server-46b247d8/suppliers/:id", async (c) => {
 app.delete("/make-server-46b247d8/suppliers/:id", async (c) => {
   try {
     const id = c.req.param("id");
-    const { error } = await supabase.from('suppliers').delete().eq('id', id);
+    const { error } = await supabase.from('purchase_suppliers').delete().eq('id', id);
     if (error) throw error;
     return c.json({ success: true });
   } catch (error) {
@@ -3161,7 +3161,7 @@ app.delete("/make-server-46b247d8/suppliers/:id", async (c) => {
 // --- Cost Centers ---
 app.get("/make-server-46b247d8/cost-centers", async (c) => {
   try {
-    const { data, error } = await supabase.from('cost_centers').select('*').order('codigo');
+    const { data, error } = await supabase.from('org_cost_centers').select('*').order('codigo');
     if (error) throw error;
     return c.json(data || []);
   } catch (error) {
@@ -3174,7 +3174,7 @@ app.post("/make-server-46b247d8/cost-centers", async (c) => {
   try {
     const body = await c.req.json();
     const { id, ...rest } = body;
-    const { data, error } = await supabase.from('cost_centers').insert(rest).select().single();
+    const { data, error } = await supabase.from('org_cost_centers').insert(rest).select().single();
     if (error) throw error;
     return c.json(data, 201);
   } catch (error) {
@@ -3187,7 +3187,7 @@ app.put("/make-server-46b247d8/cost-centers/:id", async (c) => {
   try {
     const id = c.req.param("id");
     const updates = await c.req.json();
-    const { data, error } = await supabase.from('cost_centers').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('org_cost_centers').update(updates).eq('id', id).select().single();
     if (error) throw error;
     return c.json(data);
   } catch (error) {
@@ -3199,7 +3199,7 @@ app.put("/make-server-46b247d8/cost-centers/:id", async (c) => {
 // --- Contracts ---
 app.get("/make-server-46b247d8/contracts", async (c) => {
   try {
-    const { data, error } = await supabase.from('contracts').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('purchase_contracts').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     return c.json(data || []);
   } catch (error) {
@@ -3212,7 +3212,7 @@ app.post("/make-server-46b247d8/contracts", async (c) => {
   try {
     const body = await c.req.json();
     const { id, saldo, ...rest } = body;
-    const { data, error } = await supabase.from('contracts').insert(rest).select().single();
+    const { data, error } = await supabase.from('purchase_contracts').insert(rest).select().single();
     if (error) throw error;
     return c.json(data, 201);
   } catch (error) {
@@ -3226,7 +3226,7 @@ app.put("/make-server-46b247d8/contracts/:id", async (c) => {
     const id = c.req.param("id");
     const updates = await c.req.json();
     delete updates.saldo;
-    const { data, error } = await supabase.from('contracts').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('purchase_contracts').update(updates).eq('id', id).select().single();
     if (error) throw error;
     return c.json(data);
   } catch (error) {
@@ -3238,7 +3238,7 @@ app.put("/make-server-46b247d8/contracts/:id", async (c) => {
 // --- Currencies ---
 app.get("/make-server-46b247d8/currencies", async (c) => {
   try {
-    const { data, error } = await supabase.from('currencies').select('*').order('codigo');
+    const { data, error } = await supabase.from('org_currencies').select('*').order('codigo');
     if (error) throw error;
     return c.json(data || []);
   } catch (error) {
@@ -3251,7 +3251,7 @@ app.get("/make-server-46b247d8/currencies", async (c) => {
 app.get("/make-server-46b247d8/departments", async (c) => {
   try {
     const { data, error } = await supabase
-      .from("departments")
+      .from("org_departments")
       .select("id, name, is_active")
       .order("name");
     if (error) {
@@ -3419,7 +3419,7 @@ app.put("/make-server-46b247d8/purchase-requests/:id/reject-director", async (c)
 // --- Quotations ---
 app.get("/make-server-46b247d8/quotations", async (c) => {
   try {
-    const { data, error } = await supabase.from('quotations').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('purchase_quotations').select('*').order('created_at', { ascending: false });
     return purchasesListResponse(c, "quotations", error, data as unknown[] | null);
   } catch (error) {
     console.error("quotations GET catch:", error);
@@ -3431,7 +3431,7 @@ app.post("/make-server-46b247d8/quotations", async (c) => {
   try {
     const body = await c.req.json();
     const { id, ...rest } = body;
-    const { data, error } = await supabase.from('quotations').insert(rest).select().single();
+    const { data, error } = await supabase.from('purchase_quotations').insert(rest).select().single();
     if (error) throw error;
     return c.json(data, 201);
   } catch (error) {
@@ -3444,7 +3444,7 @@ app.put("/make-server-46b247d8/quotations/:id", async (c) => {
   try {
     const id = c.req.param("id");
     const updates = await c.req.json();
-    const { data, error } = await supabase.from('quotations').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('purchase_quotations').update(updates).eq('id', id).select().single();
     if (error) throw error;
     return c.json(data);
   } catch (error) {
@@ -3799,7 +3799,7 @@ app.get("/make-server-46b247d8/user-allowed-tabs/:userId", async (c) => {
 // --- Receivings ---
 app.get("/make-server-46b247d8/receivings", async (c) => {
   try {
-    const { data, error } = await supabase.from('receivings').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('purchase_receivings').select('*').order('created_at', { ascending: false });
     return purchasesListResponse(c, "receivings", error, data as unknown[] | null);
   } catch (error) {
     console.error("receivings GET catch:", error);
@@ -3811,7 +3811,7 @@ app.post("/make-server-46b247d8/receivings", async (c) => {
   try {
     const body = await c.req.json();
     const { id, ...rest } = body;
-    const { data, error } = await supabase.from('receivings').insert(rest).select().single();
+    const { data, error } = await supabase.from('purchase_receivings').insert(rest).select().single();
     if (error) throw error;
     return c.json(data, 201);
   } catch (error) {

@@ -40,7 +40,7 @@ export function PurchasesAdminDashboard() {
   const navigationSections: NavigationSection[] = useMemo(() => {
     const all: NavigationSection[] = [
       { id: 'visao', label: 'Dashboard', icon: LayoutDashboard },
-      { id: 'requisicoes', label: 'Requisições', icon: ClipboardList },
+      { id: 'requisicoes', label: 'Solicitações de compras', icon: ClipboardList },
       { id: 'cotacoes', label: 'Cotações', icon: Scale },
       { id: 'aprovacoes', label: 'Aprovações', icon: Gavel },
       { id: 'pedidos', label: 'Pedidos de Compra', icon: ShoppingBag },
@@ -55,7 +55,7 @@ export function PurchasesAdminDashboard() {
   const { activeSection, setActiveSection } = useDashboardNav(
     navigationSections,
     'Admin de Compras',
-    'Operação completa do fluxo (requisição, cotação, pedido, aprovações) e parametrização de alçadas',
+    'Operação completa do fluxo (solicitação de compra, cotação, pedido, aprovações) e parametrização de alçadas',
     'visao'
   );
 
@@ -85,7 +85,7 @@ export function PurchasesAdminDashboard() {
     case 'requisicoes':
       return (
         <AdminScreen
-          title="Requisições"
+          title="Solicitações de compras"
           description="Visão global de todas as unidades: filtrar, acompanhar, editar, cancelar ou redirecionar. O Admin de Compras atua como gestor operacional do fluxo (não só aprovador)."
         />
       );
@@ -100,9 +100,9 @@ export function PurchasesAdminDashboard() {
       return (
         <AdminScreen
           title="Aprovações"
-          description="Fila do que está pendente (requisições e pedidos), histórico e intervenção. O mesmo perfil também executa cotações e emissão de pedidos quando necessário — aqui o foco é decidir e destravar aprovações."
+          description="Fila do que está pendente (solicitações de compra e pedidos), histórico e intervenção. O mesmo perfil também executa cotações e emissão de pedidos quando necessário — aqui o foco é decidir e destravar aprovações."
           metrics={[
-            { label: 'Requisições aguardando aprovação', value: pendingReqApprovals },
+            { label: 'Solicitações de compra aguardando aprovação', value: pendingReqApprovals },
             { label: 'Pedidos aguardando aprovação', value: pendingOrderApprovals },
           ]}
         />
@@ -123,7 +123,7 @@ export function PurchasesAdminDashboard() {
         <div className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <MetricCard
-              title="Em aprovação (requisições)"
+              title="Em aprovação (solicitações de compra)"
               value={pendingReqApprovals}
               onOpen={() => setActiveSection('aprovacoes')}
             />
@@ -155,7 +155,7 @@ export function PurchasesAdminDashboard() {
                 <p>
                   Em <strong>Configurações</strong> você define <strong>quem aprova</strong> (por usuário), as{' '}
                   <strong>faixas de valor</strong> e os <strong>setores</strong> atendidos por cada aprovador — para
-                  pedidos e, separadamente, para requisições.
+                  pedidos e, separadamente, para solicitações de compra.
                 </p>
               </CardDescription>
             </CardHeader>
@@ -176,7 +176,7 @@ export function PurchasesAdminDashboard() {
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-3">Acesso rápido</h3>
             <div className="flex flex-wrap gap-2">
-              <QuickLink label="Requisições" onClick={() => setActiveSection('requisicoes')} />
+              <QuickLink label="Solicitações de compras" onClick={() => setActiveSection('requisicoes')} />
               <QuickLink label="Cotações" onClick={() => setActiveSection('cotacoes')} />
               <QuickLink label="Aprovações" onClick={() => setActiveSection('aprovacoes')} />
               <QuickLink label="Pedidos" onClick={() => setActiveSection('pedidos')} />
@@ -187,10 +187,10 @@ export function PurchasesAdminDashboard() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Resumo do pipeline</CardTitle>
-              <CardDescription>Contagem atual no sistema (requisições por macro-etapa).</CardDescription>
+              <CardDescription>Contagem atual no sistema (solicitações de compra por macro-etapa).</CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-1">
-              <p>Total de requisições: {purchaseRequests.length}</p>
+              <p>Total de solicitações de compra: {purchaseRequests.length}</p>
               <p>Total de cotações: {quotations.length}</p>
               <p>Total de pedidos: {purchaseOrders.length}</p>
             </CardContent>
