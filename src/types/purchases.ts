@@ -50,6 +50,8 @@ export interface Contract {
   numero: string;
   nome: string;
   cnpjCliente: string;
+  /** Fornecedor vinculado ao contrato (obrigatório em cadastros novos). */
+  fornecedorId?: string;
   valorTotal: number;
   valorConsumido: number;
   saldo: number;

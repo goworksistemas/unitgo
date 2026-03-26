@@ -58,7 +58,8 @@
   --sidebar-foreground: #14181b;
   --sidebar-primary: #3F76FF;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f8f9fa;
+  /* Hover itens menu (referência tipo Gestio: leve tom azulado) */
+  --sidebar-accent: #eef3ff;
   --sidebar-accent-foreground: #14181b;
   --sidebar-border: #d8dee4;
   --sidebar-ring: #3F76FF;

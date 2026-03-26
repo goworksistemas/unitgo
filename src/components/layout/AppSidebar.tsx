@@ -58,7 +58,18 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-export function AppSidebar() {
+export interface AppSidebarProps {
+  onSidebarPointerEnter?: React.PointerEventHandler<HTMLDivElement>;
+  onSidebarPointerLeave?: React.PointerEventHandler<HTMLDivElement>;
+}
+
+const navActiveClass =
+  'bg-blue-50 text-blue-900 dark:bg-blue-950/50 dark:text-blue-50 [&>svg]:text-blue-600 dark:[&>svg]:text-blue-400';
+
+export function AppSidebar({
+  onSidebarPointerEnter,
+  onSidebarPointerLeave,
+}: AppSidebarProps = {}) {
   const { state, setActiveSection } = useNavigation();
   const { sections, activeSection, activeItem } = state;
   const { currentUser, currentUnit, getAvailableUnits, setCurrentUnit, logout } = useApp();
@@ -96,9 +107,17 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border bg-background transition-all duration-200">
-      <SidebarHeader className="px-4 py-4 flex items-center justify-center gap-2 min-w-0 overflow-hidden group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
+    <Sidebar
+      collapsible="icon"
+      className="border-r border-sidebar-border bg-sidebar shadow-sm transition-all duration-200 ease-out"
+      onPointerEnter={onSidebarPointerEnter}
+      onPointerLeave={onSidebarPointerLeave}
+    >
+      <SidebarHeader className="flex min-w-0 items-center justify-center gap-2 overflow-hidden px-4 py-4 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-3">
         <GoworkLogo variant="full" size="medium" className="shrink-0 group-data-[collapsible=icon]:hidden" />
+        <div className="hidden w-full justify-center group-data-[collapsible=icon]:flex">
+          <GoworkLogo variant="compact" size="small" className="shrink-0" />
+        </div>
       </SidebarHeader>
 
       <SidebarSeparator />
@@ -161,9 +180,8 @@ export function AppSidebar() {
                           onClick={() => toggleSection(section.id)}
                           isActive={isActive}
                           className={cn(
-                            "w-full",
-                            isActive && "bg-purple-50 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100 [&>svg]:text-purple-600 dark:[&>svg]:text-purple-400",
-                            "text-foreground hover:bg-muted"
+                            'w-full text-foreground hover:bg-sidebar-accent',
+                            isActive && navActiveClass
                           )}
                         >
                           <section.icon className="h-4 w-4 shrink-0" />
@@ -189,8 +207,8 @@ export function AppSidebar() {
                                     isActive={isItemActive}
                                     onClick={() => setActiveSection(section.id, item.id)}
                                     className={cn(
-                                      isItemActive && "bg-purple-50 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100 [&>svg]:text-purple-600 dark:[&>svg]:text-purple-400",
-                                      "text-foreground hover:bg-muted"
+                                      'text-foreground hover:bg-sidebar-accent',
+                                      isItemActive && navActiveClass
                                     )}
                                   >
                                     {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
@@ -212,8 +230,8 @@ export function AppSidebar() {
                         onClick={() => setActiveSection(section.id)}
                         isActive={isActive}
                         className={cn(
-                          isActive && "bg-purple-50 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100 [&>svg]:text-purple-600 dark:[&>svg]:text-purple-400",
-                          "text-foreground hover:bg-muted"
+                          'text-foreground hover:bg-sidebar-accent',
+                          isActive && navActiveClass
                         )}
                       >
                         <section.icon className="h-4 w-4 shrink-0" />

@@ -2999,7 +2999,16 @@ app.post("/make-server-46b247d8/seed-purchases", async (c) => {
     let contratoId = (await supabase.from('purchase_contracts').select('id').eq('numero', 'CT-2025-001').maybeSingle()).data?.id;
     if (!contratoId) {
       const { data: newContrato } = await supabase.from('purchase_contracts').insert({
-        numero: 'CT-2025-001', nome: 'Contrato Material Escritório', cnpj_cliente: '12.345.678/0001-99', valor_total: 80000, valor_consumido: 0, data_inicio: '2025-01-01', data_fim: '2025-12-31', centro_custo_id: cc1.id, status: 'active',
+        numero: 'CT-2025-001',
+        nome: 'Contrato Material Escritório',
+        cnpj_cliente: '12.345.678/0001-99',
+        fornecedor_id: supplier1Id,
+        valor_total: 80000,
+        valor_consumido: 0,
+        data_inicio: '2025-01-01',
+        data_fim: '2025-12-31',
+        centro_custo_id: cc1.id,
+        status: 'active',
       }).select('id').single();
       contratoId = newContrato?.id;
     }

@@ -8,7 +8,6 @@ import {
   ShoppingCart,
   Building2,
   Briefcase,
-  ScrollText,
 } from 'lucide-react';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import { useNavigation } from '@/hooks/useNavigation';
@@ -25,16 +24,10 @@ const BuyerPurchaseOrdersPanel = lazy(() => import('@/components/purchases/Buyer
 const BuyerApprovalsHubPanel = lazy(() => import('@/components/purchases/buyer/BuyerApprovalsHubPanel'));
 const BuyerIndicatorsPanel = lazy(() => import('@/components/purchases/buyer/BuyerIndicatorsPanel'));
 const BuyerQuotationsPanel = lazy(() => import('@/components/purchases/buyer/BuyerQuotationsPanel'));
-const SupplierManagementPanel = lazy(
+const BuyerSuppliersContractsPanel = lazy(
   () =>
-    import('@/components/purchases/admin/SupplierManagementPanel').then((m) => ({
-      default: m.SupplierManagementPanel,
-    }))
-);
-const ContractManagementPanel = lazy(
-  () =>
-    import('@/components/purchases/admin/ContractManagementPanel').then((m) => ({
-      default: m.ContractManagementPanel,
+    import('@/components/purchases/admin/BuyerSuppliersContractsPanel').then((m) => ({
+      default: m.BuyerSuppliersContractsPanel,
     }))
 );
 
@@ -64,12 +57,8 @@ const SECTION_META: Record<string, { title: string; subtitle?: string }> = {
     subtitle: 'Volume e valor dos seus pedidos',
   },
   'buyer-suppliers': {
-    title: 'Fornecedores',
-    subtitle: 'Cadastro e consulta',
-  },
-  'buyer-contracts': {
-    title: 'Contratos',
-    subtitle: 'Gestão de contratos e saldos para vincular às SCs',
+    title: 'Fornecedores e contratos',
+    subtitle: 'Cadastro de fornecedores e contratos vinculados',
   },
 };
 
@@ -153,8 +142,7 @@ export function BuyerDashboard({ viewAsBuyerMode }: BuyerDashboardProps) {
         ],
       },
       { id: 'buyer-indicators', label: 'Indicadores', icon: BarChart3 },
-      { id: 'buyer-suppliers', label: 'Fornecedores', icon: Building2 },
-      { id: 'buyer-contracts', label: 'Contratos', icon: ScrollText },
+      { id: 'buyer-suppliers', label: 'Fornecedores e contratos', icon: Building2 },
     ],
     [approvalsBadge]
   );
@@ -206,9 +194,7 @@ export function BuyerDashboard({ viewAsBuyerMode }: BuyerDashboardProps) {
           <BuyerPurchaseOrdersPanel onOpenOrderForm={openForm} simulatedBuyer={relaxed} />
         )}
 
-        {panelKey === 'buyer-suppliers' && <SupplierManagementPanel />}
-
-        {panelKey === 'buyer-contracts' && <ContractManagementPanel />}
+        {panelKey === 'buyer-suppliers' && <BuyerSuppliersContractsPanel />}
       </Suspense>
 
       <BuyerPurchaseOrderForm
