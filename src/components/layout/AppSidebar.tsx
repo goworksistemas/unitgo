@@ -19,7 +19,6 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,10 +81,32 @@ export function AppSidebar({
   const { state, setActiveSection } = useNavigation();
   const { sections, activeSection, activeItem } = state;
   const { currentUser, currentUnit, getAvailableUnits, setCurrentUnit, logout } = useApp();
-  const { state: sidebarState, isMobile, layoutExpanded } = useSidebar();
+  const {
+    state: sidebarState,
+    isMobile,
+    layoutExpanded,
+    open: sidebarOpen,
+    openMobile,
+  } = useSidebar();
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set([activeSection]));
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [appVersion, setAppVersion] = useState<string | null>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [unitMenuOpen, setUnitMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!sidebarOpen) {
+      setUserMenuOpen(false);
+      setUnitMenuOpen(false);
+    }
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    if (isMobile && !openMobile) {
+      setUserMenuOpen(false);
+      setUnitMenuOpen(false);
+    }
+  }, [isMobile, openMobile]);
 
   useEffect(() => {
     fetch('/version.json')
@@ -109,9 +130,16 @@ export function AppSidebar({
 
   /** Controlador / executor: manter “Estoque unidade” expandido (inclui pedidos ao almox.). */
   useEffect(() => {
-    if (currentUser?.role !== 'controller' && currentUser?.role !== 'executor') return;
-    if (sections.some((s) => s.id === 'estoque')) {
-      setExpandedSections((prev) => new Set(prev).add('estoque'));
+    if (currentUser?.role === 'controller' || currentUser?.role === 'executor') {
+      if (sections.some((s) => s.id === 'estoque')) {
+        setExpandedSections((prev) => new Set(prev).add('estoque'));
+      }
+    }
+    /** Almoxarifado: manter “Almoxarifado” expandido (visão geral, pedidos, lotes, compras). */
+    if (currentUser?.role === 'warehouse') {
+      if (sections.some((s) => s.id === 'almox')) {
+        setExpandedSections((prev) => new Set(prev).add('almox'));
+      }
     }
   }, [currentUser?.role, sections]);
 
@@ -156,9 +184,15 @@ export function AppSidebar({
     }));
   }, [sections]);
 
+  const footerCollapsedHint =
+    sidebarState === 'collapsed' && !isMobile && currentUser
+      ? `${currentUser.name} — ${ROLE_LABELS[currentUser.role] || currentUser.role}${appVersion ? ` · v${appVersion}` : ''}`
+      : undefined;
+
   const userFooterTrigger = (
     <button
       type="button"
+      title={footerCollapsedHint}
       className={cn(
         'flex min-w-0 items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-sidebar-accent',
         'w-full overflow-hidden',
@@ -216,26 +250,17 @@ export function AppSidebar({
             </Select>
           </div>
           <div className="hidden group-data-[layout-expanded=false]:flex flex-col items-center justify-center px-2 py-2">
-            <DropdownMenu>
-              <Tooltip delayDuration={300}>
-                <TooltipTrigger asChild>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-                      aria-label="Trocar unidade"
-                    >
-                      <Building2 className="h-4 w-4 shrink-0" />
-                    </button>
-                  </DropdownMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={8} className="max-w-[220px]">
-                  <p className="text-xs font-medium">Unidade</p>
-                  <p className="text-xs text-muted-foreground">
-                    {currentUnit?.name ?? unitPlaceholder}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+            <DropdownMenu open={unitMenuOpen} onOpenChange={setUnitMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                  aria-label="Trocar unidade"
+                  title={`Unidade: ${currentUnit?.name ?? unitPlaceholder}`}
+                >
+                  <Building2 className="h-4 w-4 shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="start" className="w-56">
                 <DropdownMenuLabel>Unidade</DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -262,20 +287,14 @@ export function AppSidebar({
             <span className="text-xs font-medium truncate">{currentUnit.name}</span>
           </div>
           <div className="hidden group-data-[layout-expanded=false]:flex flex-col items-center justify-center px-2 py-2">
-            <Tooltip delayDuration={300}>
-              <TooltipTrigger asChild>
-                <span
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/80"
-                  tabIndex={0}
-                  aria-label={`Unidade: ${currentUnit.name}`}
-                >
-                  <Building2 className="h-4 w-4 shrink-0" />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8}>
-                <p className="text-xs font-medium">{currentUnit.name}</p>
-              </TooltipContent>
-            </Tooltip>
+            <span
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/80"
+              tabIndex={0}
+              aria-label={`Unidade: ${currentUnit.name}`}
+              title={currentUnit.name}
+            >
+              <Building2 className="h-4 w-4 shrink-0" />
+            </span>
           </div>
           <SidebarSeparator />
         </>
@@ -418,29 +437,14 @@ export function AppSidebar({
           </div>
         ) : null}
         <div className="p-3 min-w-0 group-data-[layout-expanded=false]:flex group-data-[layout-expanded=false]:justify-center group-data-[layout-expanded=false]:p-2">
-          <DropdownMenu>
-            {sidebarState === 'collapsed' && !isMobile ? (
-              <Tooltip delayDuration={300}>
-                <TooltipTrigger asChild>
-                  <DropdownMenuTrigger asChild>{userFooterTrigger}</DropdownMenuTrigger>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={8} className="max-w-[240px]">
-                  <p className="font-medium">{currentUser?.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {currentUser ? ROLE_LABELS[currentUser.role] || currentUser.role : ''}
-                  </p>
-                  {appVersion ? (
-                    <p className="mt-1 text-xs text-muted-foreground/80">v{appVersion}</p>
-                  ) : null}
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <DropdownMenuTrigger asChild>{userFooterTrigger}</DropdownMenuTrigger>
-            )}
+          <DropdownMenu open={userMenuOpen} onOpenChange={setUserMenuOpen}>
+            <DropdownMenuTrigger asChild>{userFooterTrigger}</DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top" className="w-56">
-              <DropdownMenuLabel>
-                <p className="text-sm">{currentUser?.name}</p>
-                <p className="text-xs text-muted-foreground">{currentUser?.email}</p>
+              <DropdownMenuLabel className="grid gap-0.5 font-normal">
+                <span className="text-sm font-medium leading-tight">{currentUser?.name}</span>
+                <span className="text-xs font-normal leading-tight text-muted-foreground">
+                  {currentUser?.email}
+                </span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setShowChangePassword(true)}>

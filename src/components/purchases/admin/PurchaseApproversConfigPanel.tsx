@@ -166,28 +166,39 @@ export function PurchaseApproversConfigPanel() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Como funcionam as alçadas</CardTitle>
-          <CardDescription className="space-y-2 text-sm">
-            <p>
-              Cada linha associa <strong>um usuário</strong> a uma <strong>faixa de valor</strong> e,
-              opcionalmente, a <strong>um ou mais setores</strong>. O motor escolhe a faixa em que o valor
-              está entre o mínimo e o máximo (máximo vazio = sem teto), entre as regras{' '}
-              <strong>ativas</strong>, priorizando a maior faixa mínima compatível.
+      <Card className="border-border/60 bg-muted/20 shadow-none">
+        <CardHeader className="space-y-2 px-4 py-3 sm:px-5">
+          <CardTitle className="text-sm font-medium leading-tight text-foreground/90">
+            Alçadas — em resumo
+          </CardTitle>
+          <CardDescription className="space-y-0 text-xs leading-relaxed">
+            <ul className="list-disc space-y-1 pl-3.5 [li]:marker:text-muted-foreground/40">
+              <li>
+                Cada linha: aprovador + faixa de valor (máximo vazio = sem teto) e setores opcionais.
+              </li>
+              <li>
+                Entre regras ativas, vale a que cobre o valor com o <span className="text-foreground/80">maior mínimo</span>{' '}
+                compatível.
+              </li>
+              <li>
+                Sem setores → regra geral. Com setores → só pedidos/SC originados neles.
+              </li>
+            </ul>
+            <p className="mt-1.5 pl-3.5 text-[11px] italic text-muted-foreground/85">
+              Ex.: R$ 0–4.999,99 (A); a partir de R$ 5.000 (B, sem teto).
             </p>
-            <p>
-              Exemplo: usuário A de <strong>R$ 0,00</strong> a <strong>R$ 4.999,99</strong>; usuário B de{' '}
-              <strong>R$ 5.000,00</strong> sem teto.
-            </p>
-            <p>
-              Se <strong>nenhum setor</strong> estiver selecionado, a regra vale para todos. Se setores forem
-              escolhidos, só se aplica a solicitações de compra/pedidos originados daqueles setores.
-            </p>
-            <p className="text-amber-700 dark:text-amber-400">
-              <strong>Pedidos</strong>: regras para o valor total do pedido de compra.{' '}
-              <strong>Solicitações de compra</strong>: regras para quando o fluxo usar valor estimado na solicitação.
-            </p>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 border-t border-border/50 pt-2 text-[11px]">
+              <span>
+                <span className="font-medium text-foreground/80">Pedidos</span>
+                {' · '}
+                valor total do pedido
+              </span>
+              <span>
+                <span className="font-medium text-foreground/80">Solicitações</span>
+                {' · '}
+                valor estimado na SC
+              </span>
+            </div>
           </CardDescription>
         </CardHeader>
       </Card>
