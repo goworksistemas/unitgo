@@ -35,13 +35,18 @@ describe("BuyerHomePanel", () => {
     hoisted.usePurchases.mockReturnValue(purchaseContextEmpty());
   });
 
-  it("mostra carregamento quando isLoadingPurchases", () => {
+  it("com isLoadingPurchases mostra aviso mas mantém botões clicáveis", async () => {
+    const user = userEvent.setup();
     hoisted.usePurchases.mockReturnValue({
       ...purchaseContextEmpty(),
       isLoadingPurchases: true,
     });
     render(<BuyerHomePanel />);
-    expect(screen.getByText("Carregando resumo…")).toBeInTheDocument();
+    expect(screen.getByText(/Sincronizando dados de compras/i)).toBeInTheDocument();
+    const btn = screen.getByRole("button", { name: /Itens a tratar nas SCs/i });
+    expect(btn).toBeEnabled();
+    await user.click(btn);
+    expect(hoisted.setActiveSection).toHaveBeenCalledWith("buyer-work", "buyer-sc");
   });
 
   it("sem usuário, métricas ficam em zero", () => {

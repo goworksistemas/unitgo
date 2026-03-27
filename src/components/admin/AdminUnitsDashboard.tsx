@@ -22,12 +22,12 @@ export function AdminUnitsDashboard({ onSwitchToController }: AdminUnitsDashboar
       { id: 'tracking', label: 'Acompanhamento', icon: Search },
     ];
     return [
-      { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
-      { id: 'requests', label: 'Pedidos', icon: Clock },
-      { id: 'stock', label: 'Estoque', icon: Package },
-      { id: 'transfers', label: 'Transferências', icon: ArrowRightLeft },
-      { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-      { id: 'purchases', label: 'Compras', icon: ShoppingCart, items: purchaseItems },
+      { id: 'overview', label: 'Painel', icon: LayoutDashboard, sidebarGroup: 'inicio' },
+      { id: 'requests', label: 'Pedidos', icon: Clock, sidebarGroup: 'modulos' },
+      { id: 'stock', label: 'Estoque', icon: Package, sidebarGroup: 'modulos' },
+      { id: 'transfers', label: 'Transferências', icon: ArrowRightLeft, sidebarGroup: 'modulos' },
+      { id: 'analytics', label: 'Analytics', icon: BarChart3, sidebarGroup: 'modulos' },
+      { id: 'purchases', label: 'Compras', icon: ShoppingCart, sidebarGroup: 'modulos', items: purchaseItems },
     ];
   }, []);
 

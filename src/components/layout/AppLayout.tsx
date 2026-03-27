@@ -9,12 +9,16 @@ import { AppSidebar } from './AppSidebar';
 import { ThemeContext } from '@/App';
 import { NavigationContext, type NavigationSection, type NavigationState } from '@/hooks/useNavigation';
 
-const SIDEBAR_HOVER_CLOSE_MS = 280;
+/** Tempo antes de recolher após o ponteiro sair da sidebar (evita fechar no meio da animação). */
+const SIDEBAR_HOVER_CLOSE_MS = 420;
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
+/**
+ * Menu lateral: expande ao passar o mouse na faixa da sidebar; Ctrl+B / botão fixam aberto ou fecham.
+ */
 export function AppLayout({ children }: AppLayoutProps) {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const [sidebarHovered, setSidebarHovered] = useState(false);
@@ -44,7 +48,6 @@ export function AppLayout({ children }: AppLayoutProps) {
     }, SIDEBAR_HOVER_CLOSE_MS);
   }, [clearHoverCloseTimer]);
 
-  /** Botão / Ctrl+B: abrir fixa o menu; fechar solta o pin e encolhe. */
   const handleSidebarOpenChange = useCallback(
     (next: boolean) => {
       if (next) {
@@ -55,7 +58,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         clearHoverCloseTimer();
       }
     },
-    [clearHoverCloseTimer]
+    [clearHoverCloseTimer],
   );
 
   const [navState, setNavState] = useState<NavigationState>({
@@ -104,7 +107,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         <DialogContainerProvider>
           <SidebarInset className="bg-transparent">
             <header className="flex h-[52px] shrink-0 items-center gap-3 border-b border-border/80 bg-card px-4 shadow-sm">
-              <SidebarTrigger className="-ml-0.5 shrink-0" title="Fixar menu (Ctrl+B)" />
+              <SidebarTrigger
+                className="-ml-0.5 shrink-0"
+                title="Fixar menu aberto ou fechar (Ctrl+B). Passe o mouse na barra esquerda para expandir."
+              />
               <Separator orientation="vertical" className="h-5" />
               <nav
                 className="flex min-w-0 flex-1 items-center gap-1.5 text-sm text-muted-foreground"

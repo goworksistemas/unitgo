@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
-import { Package, Armchair, Scan, PackageOpen, Calendar, Truck, Boxes } from 'lucide-react';
+import { Package, Armchair, Scan, PackageOpen, Calendar, Truck, Boxes, Home } from 'lucide-react';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import { useNavigation } from '@/hooks/useNavigation';
 import type { NavigationSection } from '@/hooks/useNavigation';
@@ -24,6 +24,11 @@ function getControllerPageMeta(
 ): { title: string; subtitle?: string } {
   const u = unitName ?? 'Unidade';
   switch (section) {
+    case 'controller-inicio':
+      return {
+        title: 'Painel',
+        subtitle: `${u} · Resumo e acesso rápido às áreas principais`,
+      };
     case 'estoque':
       if (item === 'materiais') {
         return {
@@ -132,6 +137,12 @@ export function ControllerDashboard() {
     const totalEstoquePendentes = pendingRemovals + overdueLoans + belowMinimumCount;
     return [
       {
+        id: 'controller-inicio',
+        label: 'Painel',
+        icon: Home,
+        sidebarGroup: 'inicio' as const,
+      },
+      {
         id: 'estoque',
         label: 'Estoque',
         icon: Package,
@@ -164,7 +175,7 @@ export function ControllerDashboard() {
     navigationSections,
     undefined,
     undefined,
-    'estoque',
+    'controller-inicio',
   );
 
   useEffect(() => {
@@ -184,7 +195,8 @@ export function ControllerDashboard() {
     setTitle(title, subtitle);
   }, [activeSection, activeItem, currentUnit, setTitle, roleLabel]);
 
-  const showEstoqueOverviewBand = activeSection === 'estoque';
+  const showEstoqueOverviewBand =
+    activeSection === 'controller-inicio' || activeSection === 'estoque';
 
   if (!currentUnit) {
     return (
@@ -202,6 +214,79 @@ export function ControllerDashboard() {
 
   const renderContent = () => {
     switch (activeSection) {
+      case 'controller-inicio':
+        return (
+          <div className="space-y-6">
+            <header className="space-y-1">
+              <h2 className="text-lg font-semibold tracking-tight">Acesso rápido</h2>
+              <p className="text-sm text-muted-foreground max-w-2xl">
+                Atalhos para as telas mais usadas nesta unidade. O resumo acima acompanha alertas e pendências.
+              </p>
+            </header>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-h-[4.5rem] flex-col items-start justify-center gap-1 py-3 px-4 text-left"
+                onClick={() => setActiveSection('estoque', 'materiais')}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <Boxes className="h-4 w-4 shrink-0" aria-hidden />
+                  Materiais
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">Buscar, consumir e movimentar</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-h-[4.5rem] flex-col items-start justify-center gap-1 py-3 px-4 text-left"
+                onClick={() => setActiveSection('estoque', 'moveis')}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <Armchair className="h-4 w-4 shrink-0" aria-hidden />
+                  Móveis
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">Patrimônio e retiradas</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-h-[4.5rem] flex-col items-start justify-center gap-1 py-3 px-4 text-left"
+                onClick={() => setActiveSection('estoque', 'loans')}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <Calendar className="h-4 w-4 shrink-0" aria-hidden />
+                  Empréstimos
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">Devoluções e vencimentos</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-h-[4.5rem] flex-col items-start justify-center gap-1 py-3 px-4 text-left"
+                onClick={() => setActiveSection('almoxarifado')}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <PackageOpen className="h-4 w-4 shrink-0" aria-hidden />
+                  Pedidos ao almox.
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">Solicitações ao estoque central</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-h-[4.5rem] flex-col items-start justify-center gap-1 py-3 px-4 text-left"
+                onClick={() => setActiveSection('deliveries')}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <Truck className="h-4 w-4 shrink-0" aria-hidden />
+                  Recebimentos
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">Lotes e confirmação de entrega</span>
+              </Button>
+            </div>
+          </div>
+        );
       case 'almoxarifado':
         return <AlmoxarifadoPanel />;
       case 'deliveries':

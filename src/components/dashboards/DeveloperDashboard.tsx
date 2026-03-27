@@ -41,12 +41,13 @@ export function DeveloperDashboard() {
   const { setSections, setTitle, setActiveSection: navSetActive } = useNavigation();
 
   const navigationSections: NavigationSection[] = useMemo(() => [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'view-as', label: 'Visualizar como', icon: Eye },
+    { id: 'dashboard', label: 'Painel', icon: LayoutDashboard, sidebarGroup: 'inicio' },
+    { id: 'view-as', label: 'Visualizar como', icon: Eye, sidebarGroup: 'modulos' },
     {
       id: 'admin',
       label: 'Admin',
       icon: Settings2,
+      sidebarGroup: 'modulos' as const,
       items: [
         { id: 'users', label: 'Usuários', icon: Users },
         { id: 'units', label: 'Unidades', icon: Building2 },
@@ -60,6 +61,7 @@ export function DeveloperDashboard() {
       id: 'purchases',
       label: 'Compras',
       icon: ShoppingCart,
+      sidebarGroup: 'modulos' as const,
       items: [
         { id: 'new-purchase', label: 'Nova Solicitação', icon: ShoppingCart },
         { id: 'my-purchases', label: 'Minhas Solicitações', icon: FileText },
@@ -74,7 +76,8 @@ export function DeveloperDashboard() {
     navigationSections,
     'Painel do Desenvolvedor',
     'Gestão do Sistema',
-    'dashboard'
+    'dashboard',
+    !state.viewAsRole
   );
 
   const prevViewAsRoleRef = useRef(state.viewAsRole);

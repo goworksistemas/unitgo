@@ -90,11 +90,11 @@ export function FinancialDashboard() {
       'reports': 'financeiro.relatorios',
     };
     const all: NavigationSection[] = [
-      { id: 'overview', label: 'Visão Executiva', icon: BarChart3 },
-      { id: 'contracts', label: 'Gestão de Contratos', icon: FileText },
-      { id: 'cost-centers', label: 'Centros de Custo', icon: Landmark },
-      { id: 'alerts', label: 'Alertas', icon: Bell },
-      { id: 'reports', label: 'Relatórios', icon: Download },
+      { id: 'overview', label: 'Painel', icon: BarChart3, sidebarGroup: 'inicio' },
+      { id: 'contracts', label: 'Gestão de Contratos', icon: FileText, sidebarGroup: 'modulos' },
+      { id: 'cost-centers', label: 'Centros de Custo', icon: Landmark, sidebarGroup: 'modulos' },
+      { id: 'alerts', label: 'Alertas', icon: Bell, sidebarGroup: 'modulos' },
+      { id: 'reports', label: 'Relatórios', icon: Download, sidebarGroup: 'modulos' },
     ];
     return all.filter((s) => {
       const tabId = TAB_MAP[s.id];

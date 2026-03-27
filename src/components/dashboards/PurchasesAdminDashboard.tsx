@@ -39,12 +39,12 @@ export function PurchasesAdminDashboard() {
 
   const navigationSections: NavigationSection[] = useMemo(() => {
     const all: NavigationSection[] = [
-      { id: 'visao', label: 'Dashboard', icon: LayoutDashboard },
-      { id: 'requisicoes', label: 'Solicitações de compras', icon: ClipboardList },
-      { id: 'cotacoes', label: 'Cotações', icon: Scale },
-      { id: 'aprovacoes', label: 'Aprovações', icon: Gavel },
-      { id: 'pedidos', label: 'Pedidos de Compra', icon: ShoppingBag },
-      { id: 'configuracoes', label: 'Configurações', icon: Settings },
+      { id: 'visao', label: 'Painel', icon: LayoutDashboard, sidebarGroup: 'inicio' },
+      { id: 'requisicoes', label: 'Solicitações de compras', icon: ClipboardList, sidebarGroup: 'modulos' },
+      { id: 'cotacoes', label: 'Cotações', icon: Scale, sidebarGroup: 'modulos' },
+      { id: 'aprovacoes', label: 'Aprovações', icon: Gavel, sidebarGroup: 'modulos' },
+      { id: 'pedidos', label: 'Pedidos de Compra', icon: ShoppingBag, sidebarGroup: 'modulos' },
+      { id: 'configuracoes', label: 'Configurações', icon: Settings, sidebarGroup: 'modulos' },
     ];
     return all.filter((s) => {
       const tabId = TAB_MAP[s.id];

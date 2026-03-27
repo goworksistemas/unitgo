@@ -75,9 +75,10 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
 
   const warehouseUnitId = getWarehouseUnitId();
 
-  const navigationSections: NavigationSection[] = useMemo(() => [
-    { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
-  ], []);
+  const navigationSections: NavigationSection[] = useMemo(
+    () => [{ id: 'overview', label: 'Painel', icon: LayoutDashboard, sidebarGroup: 'inicio' as const }],
+    [],
+  );
 
   const { activeSection, setActiveSection } = useDashboardNav(
     navigationSections,

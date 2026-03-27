@@ -2,12 +2,20 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import {
   Home,
   ClipboardCheck,
-  BarChart3,
+  LayoutDashboard,
   FileText,
   FileSpreadsheet,
   ShoppingCart,
   Building2,
-  Briefcase,
+  ListOrdered,
+  PackageCheck,
+  Receipt,
+  Sparkles,
+  PieChart,
+  Tags,
+  Scale,
+  BarChart3,
+  Settings,
 } from 'lucide-react';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import { useNavigation } from '@/hooks/useNavigation';
@@ -30,6 +38,47 @@ const BuyerSuppliersContractsPanel = lazy(
       default: m.BuyerSuppliersContractsPanel,
     }))
 );
+const BuyerOrdersOverviewPanel = lazy(() =>
+  import('@/components/purchases/buyer/BuyerOrdersOverviewPanel').then((m) => ({
+    default: m.BuyerOrdersOverviewPanel,
+  }))
+);
+const BuyerReceivingsPanel = lazy(() =>
+  import('@/components/purchases/buyer/BuyerReceivingsPanel').then((m) => ({ default: m.BuyerReceivingsPanel }))
+);
+const BuyerInvoicesPanel = lazy(() =>
+  import('@/components/purchases/buyer/BuyerInvoicesPanel').then((m) => ({ default: m.BuyerInvoicesPanel }))
+);
+const BuyerPurchaseSuggestionsPanel = lazy(() =>
+  import('@/components/purchases/buyer/BuyerPurchaseSuggestionsPanel').then((m) => ({
+    default: m.BuyerPurchaseSuggestionsPanel,
+  }))
+);
+const BuyerBudgetPlanningPanel = lazy(() =>
+  import('@/components/purchases/buyer/BuyerBudgetPlanningPanel').then((m) => ({
+    default: m.BuyerBudgetPlanningPanel,
+  }))
+);
+const BuyerPurchaseReportsPanel = lazy(() =>
+  import('@/components/purchases/buyer/BuyerPurchaseReportsPanel').then((m) => ({
+    default: m.BuyerPurchaseReportsPanel,
+  }))
+);
+const BuyerPurchaseSettingsPanel = lazy(() =>
+  import('@/components/purchases/buyer/BuyerPurchaseSettingsPanel').then((m) => ({
+    default: m.BuyerPurchaseSettingsPanel,
+  }))
+);
+const BuyerSupplierCategoriesPanel = lazy(() =>
+  import('@/components/purchases/buyer/BuyerSupplierCategoriesPanel').then((m) => ({
+    default: m.BuyerSupplierCategoriesPanel,
+  }))
+);
+const BuyerApprovalTiersInfoPanel = lazy(() =>
+  import('@/components/purchases/buyer/BuyerApprovalTiersInfoPanel').then((m) => ({
+    default: m.BuyerApprovalTiersInfoPanel,
+  }))
+);
 
 const SECTION_META: Record<string, { title: string; subtitle?: string }> = {
   'buyer-home': {
@@ -37,28 +86,64 @@ const SECTION_META: Record<string, { title: string; subtitle?: string }> = {
     subtitle: 'Resumo e atalhos do seu trabalho',
   },
   'buyer-sc': {
-    title: 'Solicitações de compra',
-    subtitle: 'SCs da sua fila — itens a cotar e acompanhar',
+    title: 'Solicitações',
+    subtitle: 'Solicitações de compra abertas pelos usuários — o ponto de entrada do fluxo',
+  },
+  'buyer-orders-overview': {
+    title: 'Ordens de pedidos',
+    subtitle: 'Visão geral dos pedidos de compra em andamento',
   },
   'buyer-quotations': {
     title: 'Cotações',
-    subtitle: 'Propostas de fornecedores vinculadas às suas SCs',
+    subtitle: 'Cotações enviadas a fornecedores para uma requisição',
   },
   'buyer-orders': {
-    title: 'Pedidos de compra',
-    subtitle: 'PCs emitidos — aprovação, envio e entrega',
+    title: 'Pedidos',
+    subtitle: 'Pedidos de compra gerados a partir da cotação vencedora',
   },
   'buyer-approvals': {
-    title: 'Fila de aprovações',
+    title: 'Aprovações',
     subtitle: 'SCs e pedidos aguardando gestão ou alçada',
   },
-  'buyer-indicators': {
-    title: 'Indicadores',
-    subtitle: 'Volume e valor dos seus pedidos',
+  'buyer-receivings': {
+    title: 'Recebimentos',
+    subtitle: 'Registro do recebimento físico dos itens comprados',
+  },
+  'buyer-invoices': {
+    title: 'Notas recebidas',
+    subtitle: 'Notas fiscais vinculadas aos pedidos recebidos',
+  },
+  'buyer-suggestions': {
+    title: 'Sugestões de compras',
+    subtitle: 'Itens com estoque abaixo do mínimo que precisam ser recomprados',
+  },
+  'buyer-budget': {
+    title: 'Planejamento orçamentário',
+    subtitle: 'Gastos previstos vs realizados por centro de custo ou contrato',
   },
   'buyer-suppliers': {
     title: 'Fornecedores e contratos',
-    subtitle: 'Cadastro de fornecedores e contratos vinculados',
+    subtitle: 'Cadastro de fornecedores e contratos',
+  },
+  'buyer-mgmt-categories': {
+    title: 'Categorias de fornecedor',
+    subtitle: 'Classificação usada no cadastro de fornecedores',
+  },
+  'buyer-mgmt-approvals': {
+    title: 'Alçadas de aprovação',
+    subtitle: 'Fluxo de decisão para solicitações e pedidos',
+  },
+  'buyer-reports': {
+    title: 'Relatórios',
+    subtitle: 'Exportações e histórico de compras',
+  },
+  'buyer-purchase-config': {
+    title: 'Configurações',
+    subtitle: 'Moedas, centros de custo e orientações sobre regras do módulo',
+  },
+  'buyer-indicators': {
+    title: 'Dashboard',
+    subtitle: 'Volume e valor dos seus pedidos',
   },
 };
 
@@ -131,19 +216,53 @@ export function BuyerDashboard({ viewAsBuyerMode }: BuyerDashboardProps) {
     () => [
       { id: 'buyer-home', label: 'Início', icon: Home, sidebarGroup: 'inicio' },
       {
+        id: 'buyer-indicators',
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        sidebarGroup: 'inicio',
+      },
+      {
         id: WORK_SECTION_ID,
-        label: 'Operação',
-        icon: Briefcase,
+        label: 'Compras',
+        icon: ShoppingCart,
         sidebarGroup: 'modulos',
         items: [
           { id: 'buyer-sc', label: 'Solicitações', icon: FileText },
+          { id: 'buyer-orders-overview', label: 'Ordens de pedidos', icon: ListOrdered },
           { id: 'buyer-quotations', label: 'Cotações', icon: FileSpreadsheet },
           { id: 'buyer-orders', label: 'Pedidos', icon: ShoppingCart },
           { id: 'buyer-approvals', label: 'Aprovações', icon: ClipboardCheck, badge: approvalsBadge },
+          { id: 'buyer-receivings', label: 'Recebimentos', icon: PackageCheck },
+          { id: 'buyer-invoices', label: 'Notas recebidas', icon: Receipt },
+          { id: 'buyer-suggestions', label: 'Sugestões de compras', icon: Sparkles },
+          { id: 'buyer-budget', label: 'Planejamento orçamentário', icon: PieChart },
+          {
+            id: 'buyer-suppliers',
+            label: 'Fornecedores e contratos',
+            icon: Building2,
+            group: 'Gerenciamento',
+          },
+          {
+            id: 'buyer-mgmt-categories',
+            label: 'Categorias de fornecedor',
+            icon: Tags,
+            group: 'Gerenciamento',
+          },
+          {
+            id: 'buyer-mgmt-approvals',
+            label: 'Alçadas de aprovação',
+            icon: Scale,
+            group: 'Gerenciamento',
+          },
+          {
+            id: 'buyer-reports',
+            label: 'Relatórios',
+            icon: BarChart3,
+            group: 'Relatórios',
+          },
+          { id: 'buyer-purchase-config', label: 'Configurações', icon: Settings },
         ],
       },
-      { id: 'buyer-indicators', label: 'Indicadores', icon: BarChart3, sidebarGroup: 'modulos' },
-      { id: 'buyer-suppliers', label: 'Fornecedores e contratos', icon: Building2, sidebarGroup: 'modulos' },
     ],
     [approvalsBadge]
   );
@@ -189,6 +308,10 @@ export function BuyerDashboard({ viewAsBuyerMode }: BuyerDashboardProps) {
 
         {panelKey === 'buyer-sc' && <BuyerPurchaseRequestsPanel simulatedBuyer={relaxed} />}
 
+        {panelKey === 'buyer-orders-overview' && (
+          <BuyerOrdersOverviewPanel relaxedBuyerScope={relaxed} />
+        )}
+
         {panelKey === 'buyer-quotations' && <BuyerQuotationsPanel relaxedBuyerScope={relaxed} />}
 
         {panelKey === 'buyer-orders' && (
@@ -196,6 +319,24 @@ export function BuyerDashboard({ viewAsBuyerMode }: BuyerDashboardProps) {
         )}
 
         {panelKey === 'buyer-suppliers' && <BuyerSuppliersContractsPanel />}
+
+        {panelKey === 'buyer-receivings' && <BuyerReceivingsPanel relaxedBuyerScope={relaxed} />}
+
+        {panelKey === 'buyer-invoices' && <BuyerInvoicesPanel relaxedBuyerScope={relaxed} />}
+
+        {panelKey === 'buyer-suggestions' && (
+          <BuyerPurchaseSuggestionsPanel relaxedBuyerScope={relaxed} />
+        )}
+
+        {panelKey === 'buyer-budget' && <BuyerBudgetPlanningPanel relaxedBuyerScope={relaxed} />}
+
+        {panelKey === 'buyer-reports' && <BuyerPurchaseReportsPanel relaxedBuyerScope={relaxed} />}
+
+        {panelKey === 'buyer-purchase-config' && <BuyerPurchaseSettingsPanel />}
+
+        {panelKey === 'buyer-mgmt-categories' && <BuyerSupplierCategoriesPanel />}
+
+        {panelKey === 'buyer-mgmt-approvals' && <BuyerApprovalTiersInfoPanel />}
       </Suspense>
 
       <BuyerPurchaseOrderForm

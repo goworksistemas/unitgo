@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
-import { Package, History, CheckCircle2, Scan, ShoppingCart, FileText, ScrollText, Landmark } from 'lucide-react';
+import { Package, History, CheckCircle2, Scan, ShoppingCart, FileText, ScrollText, Landmark, LayoutDashboard } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { RequesterConfirmationPanel } from '../panels/RequesterConfirmationPanel';
 import { QRCodeScanner } from '../shared/QRCodeScanner';
@@ -20,6 +20,7 @@ import type { NavigationSection } from '@/hooks/useNavigation';
 import { useAllowedTabs } from '@/hooks/useAllowedTabs';
 
 const SECTION_TAB_MAP: Record<string, string> = {
+  'requester-home': 'solicitante.estoque',
   'stock': 'solicitante.estoque',
   'requests': 'solicitante.minhas',
   'deliveries': 'solicitante.recebimentos',
@@ -50,7 +51,8 @@ export function RequesterDashboard() {
     ];
 
     const all: NavigationSection[] = [
-      { id: 'stock', label: 'Estoque Disponível', icon: Package, sidebarGroup: 'inicio' },
+      { id: 'requester-home', label: 'Painel', icon: LayoutDashboard, sidebarGroup: 'inicio' },
+      { id: 'stock', label: 'Estoque disponível', icon: Package, sidebarGroup: 'modulos' },
       { id: 'requests', label: 'Meus Pedidos', icon: History, sidebarGroup: 'modulos' },
       { id: 'deliveries', label: 'Recebimentos', icon: CheckCircle2, sidebarGroup: 'modulos' },
       { id: 'purchases', label: 'Compras', icon: ShoppingCart, sidebarGroup: 'modulos', items: purchaseItems },
@@ -63,9 +65,9 @@ export function RequesterDashboard() {
 
   const { activeSection, activeItem } = useDashboardNav(
     navigationSections,
-    'Minhas Solicitações',
-    'Solicite materiais do almoxarifado central',
-    'stock'
+    'Painel do solicitante',
+    'Estoque, pedidos, recebimentos e compras da sua unidade',
+    'requester-home'
   );
 
   const availableItems = items.filter(item => !item.isFurniture && item.active);
@@ -103,7 +105,7 @@ export function RequesterDashboard() {
         />
       </div>
 
-      {activeSection === 'stock' && (
+      {(activeSection === 'requester-home' || activeSection === 'stock') && (
         <div className="space-y-4">
           <Tabs defaultValue="estoque" className="w-full">
             <TabsList className="h-auto rounded-none bg-transparent border-b border-border p-0 mb-4 gap-0 w-full justify-start">

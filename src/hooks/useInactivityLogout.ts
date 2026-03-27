@@ -22,8 +22,6 @@ export function useInactivityLogout(
 
     // Se usuário está logado, criar novos timeouts
     if (isLoggedIn) {
-      console.log('⏱️ Timer de inatividade reiniciado (1 hora)');
-      
       // Aviso 5 minutos antes do logout
       if (onWarning) {
         warningTimeoutRef.current = setTimeout(() => {
@@ -54,15 +52,8 @@ export function useInactivityLogout(
       return;
     }
 
-    // Eventos que indicam atividade do usuário
-    const events = [
-      'mousedown',
-      'mousemove',
-      'keypress',
-      'scroll',
-      'touchstart',
-      'click',
-    ];
+    // Atividade: sem mousemove (disparava a cada pixel e poluía o console / CPU).
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
 
     // Resetar timer em qualquer atividade
     events.forEach(event => {

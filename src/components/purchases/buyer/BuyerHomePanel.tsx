@@ -66,14 +66,6 @@ export default function BuyerHomePanel({ relaxedBuyerScope }: BuyerHomePanelProp
     return { scParaTrabalhar, cotacoesAbertas, pedidosEmAprovacao, scEmAprovacao };
   }, [currentUser, purchaseRequests, quotations, purchaseOrders, relaxedBuyerScope]);
 
-  if (isLoadingPurchases) {
-    return (
-      <div className="rounded-xl border border-border/60 bg-card p-8 text-center text-muted-foreground text-sm">
-        Carregando resumo…
-      </div>
-    );
-  }
-
   const tiles: {
     title: string;
     value: number;
@@ -123,6 +115,19 @@ export default function BuyerHomePanel({ relaxedBuyerScope }: BuyerHomePanelProp
 
   return (
     <div className="space-y-8">
+      {isLoadingPurchases ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-lg border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100"
+        >
+          <span className="font-medium">Sincronizando dados de compras…</span>
+          <span className="block text-xs opacity-90 mt-0.5">
+            Os números podem aparecer como zero até terminar; você já pode usar os atalhos abaixo.
+          </span>
+        </div>
+      ) : null}
+
       <header className="space-y-1">
         <h1 className="text-xl font-semibold tracking-tight">Olá — seu painel de compras</h1>
         <p className="text-sm text-muted-foreground max-w-2xl">
@@ -187,15 +192,50 @@ export default function BuyerHomePanel({ relaxedBuyerScope }: BuyerHomePanelProp
             </Button>
             <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => go('buyer-indicators')}>
               <BarChart3 className="h-4 w-4" />
-              Indicadores
+              Dashboard
             </Button>
-            <Button variant="outline" size="sm" className="justify-start gap-2" onClick={() => go('buyer-suppliers')}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="justify-start gap-2"
+              onClick={() => go(WORK_SECTION_ID, 'buyer-suppliers')}
+            >
               <Building2 className="h-4 w-4" />
               Fornecedores e contratos
             </Button>
           </CardContent>
         </Card>
       </section>
+
+      {import.meta.env.DEV ? (
+        <details className="rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          <summary className="cursor-pointer font-medium text-foreground/80">
+            Diagnóstico (só em dev)
+          </summary>
+          <dl className="mt-2 grid gap-1 font-mono">
+            <div>
+              <dt className="inline text-muted-foreground">isLoadingPurchases</dt>{' '}
+              <dd className="inline">{String(isLoadingPurchases)}</dd>
+            </div>
+            <div>
+              <dt className="inline text-muted-foreground">SCs (total na fila)</dt>{' '}
+              <dd className="inline">{purchaseRequests.length}</dd>
+            </div>
+            <div>
+              <dt className="inline text-muted-foreground">Cotações</dt>{' '}
+              <dd className="inline">{quotations.length}</dd>
+            </div>
+            <div>
+              <dt className="inline text-muted-foreground">Pedidos</dt>{' '}
+              <dd className="inline">{purchaseOrders.length}</dd>
+            </div>
+          </dl>
+          <p className="mt-2 text-[11px] leading-snug">
+            Se a tela &quot;piscava&quot;, costumava ser o painel trocando para &quot;Carregando…&quot; a cada
+            atualização de compras. Agora o aviso é só no topo e os botões continuam ativos.
+          </p>
+        </details>
+      ) : null}
     </div>
   );
 }

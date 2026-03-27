@@ -97,6 +97,14 @@ export function AppSidebar({
     setExpandedSections((prev) => new Set(prev).add(activeSection));
   }, [activeSection]);
 
+  /** Comprador: manter “Compras” expandido para ver todo o fluxo sem clique extra. */
+  useEffect(() => {
+    if (currentUser?.role !== 'buyer') return;
+    if (sections.some((s) => s.id === 'buyer-work')) {
+      setExpandedSections((prev) => new Set(prev).add('buyer-work'));
+    }
+  }, [currentUser?.role, sections]);
+
   const availableUnits = getAvailableUnits();
 
   const shouldShowUnitSelector =
@@ -250,7 +258,7 @@ export function AppSidebar({
                                         )}
                                       >
                                         {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
-                                        <span>{item.label}</span>
+                                        <span className="whitespace-normal text-left leading-snug">{item.label}</span>
                                         {item.badge != null && (
                                           <span className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 text-xs px-2 py-0.5 rounded-full">
                                             {item.badge}

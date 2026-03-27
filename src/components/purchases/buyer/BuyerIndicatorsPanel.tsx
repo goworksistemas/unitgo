@@ -58,7 +58,7 @@ export default function BuyerIndicatorsPanel({ relaxedBuyerScope }: BuyerIndicat
   if (isLoadingPurchases) {
     return (
       <Card>
-        <CardContent className="py-12 text-center text-muted-foreground">Carregando indicadores…</CardContent>
+        <CardContent className="py-12 text-center text-muted-foreground">Carregando dashboard…</CardContent>
       </Card>
     );
   }
@@ -66,10 +66,10 @@ export default function BuyerIndicatorsPanel({ relaxedBuyerScope }: BuyerIndicat
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold tracking-tight">Indicadores</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-sm text-muted-foreground max-w-2xl">
-          Resumo dos pedidos de compra no seu escopo, por data de emissão no sistema. Métricas adicionais do ERP
-          podem ser integradas depois.
+          Indicadores dos pedidos de compra no seu escopo, por data de emissão. Métricas adicionais do ERP podem ser
+          integradas depois.
           {relaxedBuyerScope && (
             <span className="block mt-2 text-amber-700 dark:text-amber-400">
               Pré-visualização: inclui todos os pedidos com comprador atribuído.

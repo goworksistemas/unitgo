@@ -92,6 +92,12 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
     });
     return [
       {
+        id: 'warehouse-home',
+        label: 'Painel',
+        icon: LayoutDashboard,
+        sidebarGroup: 'inicio' as const,
+      },
+      {
         id: 'almox',
         label: 'Almoxarifado',
         icon: LayoutDashboard,
@@ -105,7 +111,7 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
     navigationSections,
     undefined,
     undefined,
-    'almox',
+    'warehouse-home',
   );
 
   useEffect(() => {
@@ -115,6 +121,11 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
   }, [activeSection, activeItem, setActiveSection]);
 
   useEffect(() => {
+    if (activeSection === 'warehouse-home') {
+      const meta = getWarehousePageMeta('overview', isDeliveryDriver, isStorageWorker);
+      setTitle(meta.title, meta.subtitle);
+      return;
+    }
     if (activeSection !== 'almox') return;
     const meta = getWarehousePageMeta(activeItem, isDeliveryDriver, isStorageWorker);
     setTitle(meta.title, meta.subtitle);
@@ -201,47 +212,50 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
 
   const lookups = { getItemById, getUnitById, getUserById };
 
+  const renderWarehouseOverview = () => (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground max-w-2xl">
+        {isStorageWorker
+          ? 'Resumo dos pedidos de material e estoque do almoxarifado. Use Pedidos para aprovar e Lotes para montar entregas.'
+          : 'Acompanhe retiradas e entregas. Pedidos mostra o que está em rota.'}
+      </p>
+      <Tabs defaultValue="resumo" className="w-full">
+        <TabsList className="h-auto rounded-lg bg-muted/50 p-1 mb-4 w-full max-w-md justify-start gap-1">
+          <TabsTrigger value="resumo" className="gap-2 data-[state=active]:shadow-sm">
+            <LayoutDashboard className="h-4 w-4 shrink-0" />
+            Resumo
+          </TabsTrigger>
+          <TabsTrigger value="historico" className="gap-2 data-[state=active]:shadow-sm">
+            <ScrollText className="h-4 w-4 shrink-0" />
+            Movimentações
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="resumo" className="mt-0 space-y-6">
+          <OverviewPanel
+            pendingCount={pendingRequests.length}
+            approvedCount={approvedRequests.length}
+            awaitingPickupCount={awaitingPickupRequests.length}
+            outForDeliveryCount={outForDeliveryRequests.length}
+            lowStockItems={lowStockItems}
+            getItemById={getItemById}
+          />
+          <StockPanel onAddFurniture={() => setShowAddFurniture(true)} onAddStock={() => setShowAddStock(true)} />
+        </TabsContent>
+        <TabsContent value="historico" className="mt-0">
+          <UnitMovementsHistory unitId={actions.warehouseUnitId} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+
   const renderContent = () => {
+    if (activeSection === 'warehouse-home') return renderWarehouseOverview();
     if (activeSection !== 'almox') return null;
     switch (activeItem) {
       case 'cost-centers': return <CostCenterManagementPanel />;
       case 'contracts': return <ContractManagementPanel />;
       case 'overview':
-        return (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground max-w-2xl">
-              {isStorageWorker
-                ? 'Resumo dos pedidos de material e estoque do almoxarifado. Use Pedidos para aprovar e Lotes para montar entregas.'
-                : 'Acompanhe retiradas e entregas. Pedidos mostra o que está em rota.'}
-            </p>
-            <Tabs defaultValue="resumo" className="w-full">
-              <TabsList className="h-auto rounded-lg bg-muted/50 p-1 mb-4 w-full max-w-md justify-start gap-1">
-                <TabsTrigger value="resumo" className="gap-2 data-[state=active]:shadow-sm">
-                  <LayoutDashboard className="h-4 w-4 shrink-0" />
-                  Painel
-                </TabsTrigger>
-                <TabsTrigger value="historico" className="gap-2 data-[state=active]:shadow-sm">
-                  <ScrollText className="h-4 w-4 shrink-0" />
-                  Movimentações
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="resumo" className="mt-0 space-y-6">
-                <OverviewPanel
-                  pendingCount={pendingRequests.length}
-                  approvedCount={approvedRequests.length}
-                  awaitingPickupCount={awaitingPickupRequests.length}
-                  outForDeliveryCount={outForDeliveryRequests.length}
-                  lowStockItems={lowStockItems}
-                  getItemById={getItemById}
-                />
-                <StockPanel onAddFurniture={() => setShowAddFurniture(true)} onAddStock={() => setShowAddStock(true)} />
-              </TabsContent>
-              <TabsContent value="historico" className="mt-0">
-                <UnitMovementsHistory unitId={actions.warehouseUnitId} />
-              </TabsContent>
-            </Tabs>
-          </div>
-        );
+        return renderWarehouseOverview();
       case 'requests':
         return (
           <RequestsPanel

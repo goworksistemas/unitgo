@@ -3,7 +3,7 @@
  * Gerencia estado e operações de purchase requests, suppliers, quotations, etc.
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react';
 import { api } from '../utils/api';
 import { supabase } from '../utils/supabase/client';
 import { toast } from 'sonner';
@@ -67,9 +67,11 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [receivings, setReceivings] = useState<Receiving[]>([]);
   const [isLoadingPurchases, setIsLoadingPurchases] = useState(true);
+  const realtimeRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadPurchases = useCallback(async () => {
-    setIsLoadingPurchases(true);
+  /** `silent`: atualização em background (realtime / botão atualizar) — não liga o spinner global. */
+  const loadPurchases = useCallback(async (silent = false) => {
+    if (!silent) setIsLoadingPurchases(true);
     try {
       const results = await Promise.allSettled([
         api.purchaseRequests.getAll(),
@@ -125,17 +127,25 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
       setPurchaseOrders([]);
       setReceivings([]);
     } finally {
-      setIsLoadingPurchases(false);
+      if (!silent) setIsLoadingPurchases(false);
     }
   }, []);
 
   useEffect(() => {
-    loadPurchases();
+    void loadPurchases(false);
   }, [loadPurchases]);
 
-  const refreshPurchases = useCallback(() => loadPurchases(), [loadPurchases]);
+  const refreshPurchases = useCallback(() => loadPurchases(true), [loadPurchases]);
 
   useEffect(() => {
+    const scheduleRealtimeRefresh = () => {
+      if (realtimeRefreshTimerRef.current) clearTimeout(realtimeRefreshTimerRef.current);
+      realtimeRefreshTimerRef.current = setTimeout(() => {
+        realtimeRefreshTimerRef.current = null;
+        void loadPurchases(true);
+      }, 500);
+    };
+
     const channel = supabase
       .channel('fila-compras')
       .on(
@@ -146,14 +156,18 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
           table: 'purchase_requests',
         },
         () => {
-          refreshPurchases();
+          scheduleRealtimeRefresh();
         }
       )
       .subscribe();
     return () => {
+      if (realtimeRefreshTimerRef.current) {
+        clearTimeout(realtimeRefreshTimerRef.current);
+        realtimeRefreshTimerRef.current = null;
+      }
       supabase.removeChannel(channel);
     };
-  }, [refreshPurchases]);
+  }, [loadPurchases]);
 
   const createPurchaseRequest = useCallback(
     async (data: Omit<PurchaseRequest, 'id' | 'createdAt' | 'updatedAt'>) => {

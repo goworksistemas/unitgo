@@ -16,11 +16,11 @@ export function AdminWarehouseDashboard({ onSwitchToDesigner }: AdminWarehouseDa
   const { units, items, users, unitStocks, furnitureRequestsToDesigner, furnitureTransfers, furnitureRemovalRequests, getItemById, getUnitById, getUserById } = useApp();
 
   const navigationSections: NavigationSection[] = [
-    { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
-    { id: 'requests', label: 'Solicitações', icon: Clock },
-    { id: 'transfers', label: 'Transferências', icon: ArrowRightLeft },
-    { id: 'removals', label: 'Remoções', icon: AlertTriangle },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'overview', label: 'Painel', icon: LayoutDashboard, sidebarGroup: 'inicio' },
+    { id: 'requests', label: 'Solicitações', icon: Clock, sidebarGroup: 'modulos' },
+    { id: 'transfers', label: 'Transferências', icon: ArrowRightLeft, sidebarGroup: 'modulos' },
+    { id: 'removals', label: 'Remoções', icon: AlertTriangle, sidebarGroup: 'modulos' },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, sidebarGroup: 'modulos' },
   ];
 
   const { activeSection } = useDashboardNav(navigationSections, 'Dashboard Administrativo - Design', 'Visão geral do sistema de gestão de móveis', 'overview');
