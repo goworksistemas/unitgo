@@ -1,7 +1,18 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
-import { Package, Armchair, Scan, PackageOpen, Calendar, Truck, Boxes, Home } from 'lucide-react';
+import {
+  Package,
+  Armchair,
+  Scan,
+  PackageOpen,
+  Calendar,
+  Truck,
+  Boxes,
+  Home,
+  ShoppingCart,
+  LayoutDashboard,
+} from 'lucide-react';
 import { useDashboardNav } from '@/hooks/useDashboardNav';
 import { useNavigation } from '@/hooks/useNavigation';
 import type { NavigationSection } from '@/hooks/useNavigation';
@@ -15,6 +26,11 @@ import { ItemSearchPanel } from '../panels/ItemSearchPanel';
 import { PendingDeliveriesAlert } from '../controller/PendingDeliveriesAlert';
 import { LoanAlerts } from '../controller/LoanAlerts';
 import { ControllerDialogs, type StockDialogState } from '../controller/ControllerDialogs';
+import { ControllerOverviewPanel } from '../controller/ControllerOverviewPanel';
+import { CreatePurchaseRequestPanel } from '../purchases/requester/CreatePurchaseRequestPanel';
+
+const COMPRAS_SECTION_ID = 'controller-compras';
+const CONTROLLER_DASHBOARD_ID = 'controller-dashboard';
 
 function getControllerPageMeta(
   section: string,
@@ -29,7 +45,18 @@ function getControllerPageMeta(
         title: 'Painel',
         subtitle: `${u} · Resumo e acesso rápido às áreas principais`,
       };
+    case CONTROLLER_DASHBOARD_ID:
+      return {
+        title: 'Dashboard',
+        subtitle: `${u} · Indicadores de estoque, entregas e empréstimos`,
+      };
     case 'estoque':
+      if (item === 'almoxarifado') {
+        return {
+          title: 'Pedidos ao almoxarifado',
+          subtitle: `${u} · Solicitações de materiais ao estoque central`,
+        };
+      }
       if (item === 'materiais') {
         return {
           title: 'Materiais',
@@ -48,16 +75,16 @@ function getControllerPageMeta(
           subtitle: `${u} · Itens emprestados e devoluções`,
         };
       }
-      return { title: 'Estoque', subtitle: u };
-    case 'almoxarifado':
-      return {
-        title: 'Solicitações ao almoxarifado',
-        subtitle: `${u} · Materiais com o estoque central`,
-      };
+      return { title: 'Estoque unidade', subtitle: u };
     case 'deliveries':
       return {
         title: 'Recebimentos',
-        subtitle: `${u} · Confirme entregas com QR Code`,
+        subtitle: `${u} · Confirme entregas com QR Code ou marque o recebido`,
+      };
+    case COMPRAS_SECTION_ID:
+      return {
+        title: 'Solicitação ao setor de compras',
+        subtitle: `${u} · Nova solicitação de compra para análise do comprador`,
       };
     default:
       return { title: roleLabel, subtitle: u };
@@ -134,7 +161,8 @@ export function ControllerDashboard() {
       const item = getItemById(s.itemId);
       return s.unitId === currentUnit.id && item && !item.isFurniture && s.quantity < s.minimumQuantity;
     }).length;
-    const totalEstoquePendentes = pendingRemovals + overdueLoans + belowMinimumCount;
+    const totalEstoquePendentes =
+      pendingRemovals + overdueLoans + belowMinimumCount + pendingAlmoxarifado;
     return [
       {
         id: 'controller-inicio',
@@ -143,8 +171,14 @@ export function ControllerDashboard() {
         sidebarGroup: 'inicio' as const,
       },
       {
+        id: CONTROLLER_DASHBOARD_ID,
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        sidebarGroup: 'inicio' as const,
+      },
+      {
         id: 'estoque',
-        label: 'Estoque',
+        label: 'Estoque unidade',
         icon: Package,
         sidebarGroup: 'modulos' as const,
         badge: totalEstoquePendentes > 0 ? totalEstoquePendentes : undefined,
@@ -152,21 +186,26 @@ export function ControllerDashboard() {
           { id: 'materiais', label: 'Materiais', icon: Boxes, badge: belowMinimumCount > 0 ? belowMinimumCount : undefined },
           { id: 'moveis', label: 'Móveis', icon: Armchair, badge: pendingRemovals > 0 ? pendingRemovals : undefined },
           { id: 'loans', label: 'Empréstimos', icon: Calendar, badge: overdueLoans > 0 ? overdueLoans : undefined },
+          {
+            id: 'almoxarifado',
+            label: 'Pedidos ao almox.',
+            icon: PackageOpen,
+            badge: pendingAlmoxarifado > 0 ? pendingAlmoxarifado : undefined,
+          },
         ],
-      },
-      {
-        id: 'almoxarifado',
-        label: 'Pedidos ao almox.',
-        icon: PackageOpen,
-        sidebarGroup: 'modulos',
-        badge: pendingAlmoxarifado > 0 ? pendingAlmoxarifado : undefined,
       },
       {
         id: 'deliveries',
         label: 'Recebimentos',
         icon: Truck,
-        sidebarGroup: 'modulos',
+        sidebarGroup: 'modulos' as const,
         badge: pendingDeliveries > 0 ? pendingDeliveries : undefined,
+      },
+      {
+        id: COMPRAS_SECTION_ID,
+        label: 'Compras',
+        icon: ShoppingCart,
+        sidebarGroup: 'modulos' as const,
       },
     ];
   }, [currentUnit, deliveryBatches, requests, furnitureRemovalRequests, loans, unitStocks, getItemById]);
@@ -196,7 +235,10 @@ export function ControllerDashboard() {
   }, [activeSection, activeItem, currentUnit, setTitle, roleLabel]);
 
   const showEstoqueOverviewBand =
-    activeSection === 'controller-inicio' || activeSection === 'estoque';
+    activeSection === 'controller-inicio' ||
+    activeSection === CONTROLLER_DASHBOARD_ID ||
+    activeSection === 'estoque' ||
+    activeSection === 'deliveries';
 
   if (!currentUnit) {
     return (
@@ -214,6 +256,17 @@ export function ControllerDashboard() {
 
   const renderContent = () => {
     switch (activeSection) {
+      case CONTROLLER_DASHBOARD_ID:
+        return (
+          <ControllerOverviewPanel
+            currentUnit={currentUnit}
+            unitKPIs={unitKPIs}
+            deliveryBatches={deliveryBatches}
+            onConfirmReceipt={setScannedBatchId}
+            onViewDeliveryDetails={setSelectedBatchForTimeline}
+            getItemById={getItemById}
+          />
+        );
       case 'controller-inicio':
         return (
           <div className="space-y-6">
@@ -224,6 +277,18 @@ export function ControllerDashboard() {
               </p>
             </header>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-h-[4.5rem] flex-col items-start justify-center gap-1 py-3 px-4 text-left"
+                onClick={() => setActiveSection(CONTROLLER_DASHBOARD_ID)}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <LayoutDashboard className="h-4 w-4 shrink-0" aria-hidden />
+                  Dashboard
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">Indicadores da unidade</span>
+              </Button>
               <Button
                 type="button"
                 variant="outline"
@@ -264,7 +329,7 @@ export function ControllerDashboard() {
                 type="button"
                 variant="outline"
                 className="h-auto min-h-[4.5rem] flex-col items-start justify-center gap-1 py-3 px-4 text-left"
-                onClick={() => setActiveSection('almoxarifado')}
+                onClick={() => setActiveSection('estoque', 'almoxarifado')}
               >
                 <span className="flex items-center gap-2 font-medium">
                   <PackageOpen className="h-4 w-4 shrink-0" aria-hidden />
@@ -282,13 +347,25 @@ export function ControllerDashboard() {
                   <Truck className="h-4 w-4 shrink-0" aria-hidden />
                   Recebimentos
                 </span>
-                <span className="text-xs font-normal text-muted-foreground">Lotes e confirmação de entrega</span>
+                <span className="text-xs font-normal text-muted-foreground">Confirmar entregas e QR Code</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto min-h-[4.5rem] flex-col items-start justify-center gap-1 py-3 px-4 text-left"
+                onClick={() => setActiveSection(COMPRAS_SECTION_ID)}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <ShoppingCart className="h-4 w-4 shrink-0" aria-hidden />
+                  Compras
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">Nova solicitação ao setor de compras</span>
               </Button>
             </div>
           </div>
         );
-      case 'almoxarifado':
-        return <AlmoxarifadoPanel />;
+      case COMPRAS_SECTION_ID:
+        return <CreatePurchaseRequestPanel />;
       case 'deliveries':
         return (
           <DeliveriesPanel
@@ -309,6 +386,8 @@ export function ControllerDashboard() {
             />
           );
           case 'loans': return <LoansPanel />;
+          case 'almoxarifado':
+            return <AlmoxarifadoPanel />;
           case 'moveis':
           default:
             return (

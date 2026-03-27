@@ -14,11 +14,12 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarSeparator,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,6 +82,7 @@ export function AppSidebar({
   const { state, setActiveSection } = useNavigation();
   const { sections, activeSection, activeItem } = state;
   const { currentUser, currentUnit, getAvailableUnits, setCurrentUnit, logout } = useApp();
+  const { state: sidebarState, isMobile, layoutExpanded } = useSidebar();
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set([activeSection]));
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [appVersion, setAppVersion] = useState<string | null>(null);
@@ -105,6 +107,14 @@ export function AppSidebar({
     }
   }, [currentUser?.role, sections]);
 
+  /** Controlador / executor: manter “Estoque unidade” expandido (inclui pedidos ao almox.). */
+  useEffect(() => {
+    if (currentUser?.role !== 'controller' && currentUser?.role !== 'executor') return;
+    if (sections.some((s) => s.id === 'estoque')) {
+      setExpandedSections((prev) => new Set(prev).add('estoque'));
+    }
+  }, [currentUser?.role, sections]);
+
   const availableUnits = getAvailableUnits();
 
   const shouldShowUnitSelector =
@@ -121,6 +131,13 @@ export function AppSidebar({
       return next;
     });
   };
+
+  const unitPlaceholder =
+    currentUser?.role === 'designer' ||
+    currentUser?.role === 'developer' ||
+    currentUser?.role === 'purchases_admin'
+      ? 'Selecione uma unidade'
+      : 'Selecione';
 
   const groupedSections = useMemo(() => {
     const buckets: Record<NavigationSidebarGroup, NavigationSection[]> = {
@@ -139,16 +156,40 @@ export function AppSidebar({
     }));
   }, [sections]);
 
+  const userFooterTrigger = (
+    <button
+      type="button"
+      className={cn(
+        'flex min-w-0 items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-sidebar-accent',
+        'w-full overflow-hidden',
+        'group-data-[layout-expanded=false]:mx-auto group-data-[layout-expanded=false]:size-9 group-data-[layout-expanded=false]:justify-center group-data-[layout-expanded=false]:gap-0 group-data-[layout-expanded=false]:p-0 group-data-[layout-expanded=false]:shrink-0',
+      )}
+    >
+      <Avatar className="h-8 w-8 shrink-0">
+        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+          {currentUser ? getInitials(currentUser.name) : '??'}
+        </AvatarFallback>
+      </Avatar>
+      <div className="min-w-0 flex-1 overflow-hidden group-data-[layout-expanded=false]:hidden">
+        <p className="truncate text-sm font-medium text-sidebar-foreground">{currentUser?.name}</p>
+        <p className="truncate text-xs text-sidebar-foreground/60">
+          {currentUser ? ROLE_LABELS[currentUser.role] || currentUser.role : ''}
+        </p>
+      </div>
+      <ChevronsUpDown className="h-4 w-4 shrink-0 text-sidebar-foreground/40 group-data-[layout-expanded=false]:hidden" />
+    </button>
+  );
+
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-sidebar-border bg-sidebar shadow-sm transition-all duration-200 ease-out"
+      className="border-r border-sidebar-border bg-sidebar shadow-sm"
       onPointerEnter={onSidebarPointerEnter}
       onPointerLeave={onSidebarPointerLeave}
     >
-      <SidebarHeader className="flex min-w-0 items-center justify-center gap-2 overflow-hidden px-4 py-4 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-3">
-        <GoworkLogo variant="full" size="medium" className="shrink-0 group-data-[collapsible=icon]:hidden" />
-        <div className="hidden w-full justify-center group-data-[collapsible=icon]:flex">
+      <SidebarHeader className="flex min-w-0 items-center justify-center gap-2 overflow-hidden px-4 py-4 group-data-[layout-expanded=false]:justify-center group-data-[layout-expanded=false]:px-2 group-data-[layout-expanded=false]:py-3">
+        <GoworkLogo variant="full" size="medium" className="shrink-0 group-data-[layout-expanded=false]:hidden" />
+        <div className="hidden w-full justify-center group-data-[layout-expanded=false]:flex">
           <GoworkLogo variant="compact" size="small" className="shrink-0" />
         </div>
       </SidebarHeader>
@@ -158,20 +199,14 @@ export function AppSidebar({
       {/* Unit selector */}
       {shouldShowUnitSelector && (
         <>
-          <div className="px-4 py-4 group-data-[collapsible=icon]:hidden">
+          <div className="px-4 py-4 group-data-[layout-expanded=false]:hidden">
             <label className="text-xs font-medium text-sidebar-foreground/70 flex items-center gap-2 mb-2">
               <Building2 className="h-3 w-3 shrink-0" />
               Unidade
             </label>
             <Select value={currentUnit?.id || ''} onValueChange={setCurrentUnit}>
               <SelectTrigger className="w-full h-9 text-sm min-w-0">
-                <SelectValue placeholder={
-                  currentUser?.role === 'designer' ||
-                  currentUser?.role === 'developer' ||
-                  currentUser?.role === 'purchases_admin'
-                    ? 'Selecione uma unidade'
-                    : 'Selecione'
-                } />
+                <SelectValue placeholder={unitPlaceholder} />
               </SelectTrigger>
               <SelectContent>
                 {availableUnits.map(unit => (
@@ -180,17 +215,69 @@ export function AppSidebar({
               </SelectContent>
             </Select>
           </div>
-          <SidebarSeparator className="group-data-[collapsible=icon]:hidden" />
+          <div className="hidden group-data-[layout-expanded=false]:flex flex-col items-center justify-center px-2 py-2">
+            <DropdownMenu>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-sidebar text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                      aria-label="Trocar unidade"
+                    >
+                      <Building2 className="h-4 w-4 shrink-0" />
+                    </button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={8} className="max-w-[220px]">
+                  <p className="text-xs font-medium">Unidade</p>
+                  <p className="text-xs text-muted-foreground">
+                    {currentUnit?.name ?? unitPlaceholder}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent side="right" align="start" className="w-56">
+                <DropdownMenuLabel>Unidade</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {availableUnits.map((unit) => (
+                  <DropdownMenuItem
+                    key={unit.id}
+                    onClick={() => setCurrentUnit(unit.id)}
+                    className={cn(currentUnit?.id === unit.id && 'bg-accent')}
+                  >
+                    {unit.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <SidebarSeparator />
         </>
       )}
 
       {!shouldShowUnitSelector && availableUnits.length === 1 && currentUnit && (
         <>
-          <div className="px-4 py-4 flex items-center gap-2 text-sidebar-foreground/70 min-w-0 overflow-hidden group-data-[collapsible=icon]:hidden">
+          <div className="px-4 py-4 flex items-center gap-2 text-sidebar-foreground/70 min-w-0 overflow-hidden group-data-[layout-expanded=false]:hidden">
             <Building2 className="h-3 w-3 shrink-0" />
             <span className="text-xs font-medium truncate">{currentUnit.name}</span>
           </div>
-          <SidebarSeparator className="group-data-[collapsible=icon]:hidden" />
+          <div className="hidden group-data-[layout-expanded=false]:flex flex-col items-center justify-center px-2 py-2">
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <span
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/80"
+                  tabIndex={0}
+                  aria-label={`Unidade: ${currentUnit.name}`}
+                >
+                  <Building2 className="h-4 w-4 shrink-0" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={8}>
+                <p className="text-xs font-medium">{currentUnit.name}</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <SidebarSeparator />
         </>
       )}
 
@@ -221,16 +308,16 @@ export function AppSidebar({
                             )}
                           >
                             <section.icon className="h-4 w-4 shrink-0" />
-                            <span className="group-data-[collapsible=icon]:hidden">{section.label}</span>
+                            <span className="group-data-[layout-expanded=false]:hidden">{section.label}</span>
                             {section.badge != null && (
-                              <span className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 text-xs px-2 py-0.5 rounded-full group-data-[collapsible=icon]:hidden">
+                              <span className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 text-xs px-2 py-0.5 rounded-full group-data-[layout-expanded=false]:hidden">
                                 {section.badge}
                               </span>
                             )}
                             {isExpanded ? (
-                              <ChevronDown className="ml-auto h-4 w-4 shrink-0 group-data-[collapsible=icon]:hidden" />
+                              <ChevronDown className="ml-auto h-4 w-4 shrink-0 group-data-[layout-expanded=false]:hidden" />
                             ) : (
-                              <ChevronRight className="ml-auto h-4 w-4 shrink-0 group-data-[collapsible=icon]:hidden" />
+                              <ChevronRight className="ml-auto h-4 w-4 shrink-0 group-data-[layout-expanded=false]:hidden" />
                             )}
                           </SidebarMenuButton>
                           {isExpanded && (
@@ -282,9 +369,9 @@ export function AppSidebar({
                           )}
                         >
                           <section.icon className="h-4 w-4 shrink-0" />
-                          <span className="group-data-[collapsible=icon]:hidden">{section.label}</span>
+                          <span className="group-data-[layout-expanded=false]:hidden">{section.label}</span>
                           {section.badge != null && (
-                            <span className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 text-xs px-2 py-0.5 rounded-full group-data-[collapsible=icon]:hidden">
+                            <span className="ml-auto bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 text-xs px-2 py-0.5 rounded-full group-data-[layout-expanded=false]:hidden">
                               {section.badge}
                             </span>
                           )}
@@ -301,8 +388,8 @@ export function AppSidebar({
         {/* Daily code for warehouse/controller roles */}
         {currentUser && ['controller', 'warehouse'].includes(currentUser.role) && (
           <>
-            <SidebarSeparator className="group-data-[collapsible=icon]:hidden" />
-            <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+            <SidebarSeparator className="group-data-[layout-expanded=false]:hidden" />
+            <SidebarGroup className="group-data-[layout-expanded=false]:hidden">
               <SidebarGroupLabel>Código Diário</SidebarGroupLabel>
               <SidebarGroupContent>
                 <div className="px-2">
@@ -315,40 +402,41 @@ export function AppSidebar({
       </SidebarContent>
 
       {/* Footer: user info + actions */}
-      <SidebarFooter className="min-w-0 overflow-hidden shrink-0">
+      <SidebarFooter className="min-w-0 shrink-0 overflow-x-hidden overflow-y-hidden">
         <SidebarSeparator />
-        {appVersion && (
-          <div className="px-4 pt-3 group-data-[collapsible=icon]:hidden">
-            <p className="text-xs text-sidebar-foreground/50 truncate">v{appVersion}</p>
+        {appVersion ? (
+          <div
+            className={cn(
+              'overflow-x-hidden px-4 transition-[opacity,max-height,padding-top] duration-200 ease-[cubic-bezier(0.33,1,0.68,1)]',
+              layoutExpanded
+                ? 'max-h-10 pt-3 opacity-100'
+                : 'pointer-events-none max-h-0 pt-0 opacity-0',
+            )}
+            aria-hidden={!layoutExpanded}
+          >
+            <p className="truncate text-xs text-sidebar-foreground/50">v{appVersion}</p>
           </div>
-        )}
-        <div className="p-3 min-w-0">
+        ) : null}
+        <div className="p-3 min-w-0 group-data-[layout-expanded=false]:flex group-data-[layout-expanded=false]:justify-center group-data-[layout-expanded=false]:p-2">
           <DropdownMenu>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-3 w-full rounded-lg p-2 hover:bg-sidebar-accent transition-colors text-left min-w-0 overflow-hidden">
-                <Avatar className="h-8 w-8 shrink-0">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                    {currentUser ? getInitials(currentUser.name) : '??'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0 overflow-hidden group-data-[collapsible=icon]:hidden">
-                  <p className="text-sm font-medium text-sidebar-foreground truncate">
-                    {currentUser?.name}
-                  </p>
-                  <p className="text-xs text-sidebar-foreground/60 truncate">
+            {sidebarState === 'collapsed' && !isMobile ? (
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>{userFooterTrigger}</DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={8} className="max-w-[240px]">
+                  <p className="font-medium">{currentUser?.name}</p>
+                  <p className="text-xs text-muted-foreground">
                     {currentUser ? ROLE_LABELS[currentUser.role] || currentUser.role : ''}
                   </p>
-                </div>
-                <ChevronsUpDown className="h-4 w-4 text-sidebar-foreground/40 shrink-0 group-data-[collapsible=icon]:hidden" />
-                  </button>
-                </DropdownMenuTrigger>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                {appVersion ? `v${appVersion}` : 'Usuário'}
-              </TooltipContent>
-            </Tooltip>
+                  {appVersion ? (
+                    <p className="mt-1 text-xs text-muted-foreground/80">v{appVersion}</p>
+                  ) : null}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <DropdownMenuTrigger asChild>{userFooterTrigger}</DropdownMenuTrigger>
+            )}
             <DropdownMenuContent align="start" side="top" className="w-56">
               <DropdownMenuLabel>
                 <p className="text-sm">{currentUser?.name}</p>

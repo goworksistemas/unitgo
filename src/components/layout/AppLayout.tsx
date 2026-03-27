@@ -1,5 +1,10 @@
 import React, { useState, useCallback, useMemo, useContext, useRef, useEffect } from 'react';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+  SIDEBAR_DESKTOP_TRANSITION_MS,
+} from '@/components/ui/sidebar';
 import { DialogContainerProvider } from '@/contexts/DialogContainerContext';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -9,8 +14,8 @@ import { AppSidebar } from './AppSidebar';
 import { ThemeContext } from '@/App';
 import { NavigationContext, type NavigationSection, type NavigationState } from '@/hooks/useNavigation';
 
-/** Tempo antes de recolher após o ponteiro sair da sidebar (evita fechar no meio da animação). */
-const SIDEBAR_HOVER_CLOSE_MS = 420;
+/** Tempo antes de recolher após o ponteiro sair (após a animação de largura + layout interno). */
+const SIDEBAR_HOVER_CLOSE_MS = SIDEBAR_DESKTOP_TRANSITION_MS + 100;
 
 interface AppLayoutProps {
   children: React.ReactNode;
