@@ -41,13 +41,13 @@ export function DeveloperDashboard() {
   const { setSections, setTitle, setActiveSection: navSetActive } = useNavigation();
 
   const navigationSections: NavigationSection[] = useMemo(() => [
-    { id: 'dashboard', label: 'Painel', icon: LayoutDashboard, sidebarGroup: 'inicio' },
-    { id: 'view-as', label: 'Visualizar como', icon: Eye, sidebarGroup: 'modulos' },
+    { id: 'dashboard', label: 'Painel', icon: LayoutDashboard, accent: 'blue' },
+    { id: 'view-as', label: 'Visualizar como', icon: Eye, accent: 'sky' },
     {
       id: 'admin',
       label: 'Admin',
       icon: Settings2,
-      sidebarGroup: 'modulos' as const,
+      accent: 'slate',
       items: [
         { id: 'users', label: 'Usuários', icon: Users },
         { id: 'units', label: 'Unidades', icon: Building2 },
@@ -61,7 +61,7 @@ export function DeveloperDashboard() {
       id: 'purchases',
       label: 'Compras',
       icon: ShoppingCart,
-      sidebarGroup: 'modulos' as const,
+      accent: 'indigo',
       items: [
         { id: 'new-purchase', label: 'Nova Solicitação', icon: ShoppingCart },
         { id: 'my-purchases', label: 'Minhas Solicitações', icon: FileText },

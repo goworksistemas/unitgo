@@ -168,19 +168,19 @@ export function ControllerDashboard() {
         id: 'controller-inicio',
         label: 'Painel',
         icon: Home,
-        sidebarGroup: 'inicio' as const,
+        accent: 'blue',
       },
       {
         id: CONTROLLER_DASHBOARD_ID,
         label: 'Dashboard',
         icon: LayoutDashboard,
-        sidebarGroup: 'inicio' as const,
+        accent: 'sky',
       },
       {
         id: 'estoque',
         label: 'Estoque unidade',
         icon: Package,
-        sidebarGroup: 'modulos' as const,
+        accent: 'emerald',
         badge: totalEstoquePendentes > 0 ? totalEstoquePendentes : undefined,
         items: [
           { id: 'materiais', label: 'Materiais', icon: Boxes, badge: belowMinimumCount > 0 ? belowMinimumCount : undefined },
@@ -198,14 +198,14 @@ export function ControllerDashboard() {
         id: 'deliveries',
         label: 'Recebimentos',
         icon: Truck,
-        sidebarGroup: 'modulos' as const,
+        accent: 'teal',
         badge: pendingDeliveries > 0 ? pendingDeliveries : undefined,
       },
       {
         id: COMPRAS_SECTION_ID,
         label: 'Compras',
         icon: ShoppingCart,
-        sidebarGroup: 'modulos' as const,
+        accent: 'indigo',
       },
     ];
   }, [currentUnit, deliveryBatches, requests, furnitureRemovalRequests, loans, unitStocks, getItemById]);

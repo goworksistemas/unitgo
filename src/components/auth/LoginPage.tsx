@@ -3,7 +3,7 @@ import { useApp } from '../../contexts/AppContext';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { LogIn, Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import logoGowork from '../../assets/gowork-removebg-preview.png';
+const logoSupplyGo = '/logo_supply.png';
 import { authService } from '../../utils/auth';
 import { toast } from 'sonner';
 import { ForgotPasswordDialog } from './ForgotPasswordDialog';
@@ -164,13 +164,19 @@ export function LoginPage() {
   return (
     <div className="dark flex min-h-screen">
       {/* Lado esquerdo — Logo centralizado */}
-      <div className="hidden w-1/2 items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-cyan-950 px-8 lg:flex">
+      <div className="hidden w-1/2 items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-black px-8 lg:flex">
         <div className="flex flex-col items-center justify-center text-center">
           <img
-            src={logoGowork}
-            alt="Gowork"
-            className="max-h-[75vh] w-auto max-w-full object-contain"
+            src={logoSupplyGo}
+            alt="SupplyGo"
+            className="h-48 w-48 max-w-full object-contain drop-shadow-2xl"
           />
+          <h2 className="mt-6 text-4xl font-bold tracking-tight text-white">
+            Supply<span className="text-blue-400">Go</span>
+          </h2>
+          <p className="mt-2 text-sm font-medium uppercase tracking-[0.2em] text-slate-400">
+            Controle de Estoque
+          </p>
           <p className="mt-10 max-w-sm text-lg leading-relaxed text-slate-300">
             Acesso seguro para colaboradores e gestores. Gerencie móveis e
             materiais de todas as unidades.
@@ -181,12 +187,15 @@ export function LoginPage() {
       {/* Lado direito — Formulário de Login */}
       <div className="flex flex-1 flex-col justify-center bg-slate-950 px-6 py-12 lg:px-16">
         <div className="mx-auto w-full max-w-md">
-          <div className="mb-8 flex items-center justify-center rounded-xl bg-slate-900 p-8 lg:hidden">
+          <div className="mb-8 flex flex-col items-center justify-center rounded-xl bg-slate-900 p-6 lg:hidden">
             <img
-              src={logoGowork}
-              alt="Gowork"
-              className="h-36 w-auto object-contain sm:h-44"
+              src={logoSupplyGo}
+              alt="SupplyGo"
+              className="h-28 w-28 object-contain sm:h-32 sm:w-32"
             />
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-white">
+              Supply<span className="text-blue-400">Go</span>
+            </h2>
           </div>
 
           <h1 className="text-2xl font-bold text-white">Acessar Sistema</h1>
@@ -291,7 +300,7 @@ export function LoginPage() {
           </form>
 
           <p className="mt-8 text-center text-xs text-slate-500">
-            © 2024 Gowork - Sistema de Controle de Estoque
+            © 2026 SupplyGo — Sistema de Controle de Estoque
           </p>
         </div>
       </div>

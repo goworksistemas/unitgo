@@ -27,7 +27,7 @@ export function BuyerApprovalTiersInfoPanel() {
         </Card>
         <Card className="border-border/60 shadow-sm">
           <CardHeader className="pb-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-500/10 text-slate-600 dark:text-slate-400">
               <Scale className="h-4 w-4" aria-hidden />
             </div>
             <CardTitle className="text-sm pt-2">Pedido de compra</CardTitle>

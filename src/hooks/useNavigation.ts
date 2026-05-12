@@ -1,7 +1,23 @@
-import { createContext, useContext, useCallback } from 'react';
+import { createContext, useContext } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
-/** Blocos do menu lateral (separação tipo Gestio: Início / Módulos / Utilitários). */
+/**
+ * Cor accent aplicada ao grupo no sidebar (chip do ícone, flyout, barra ativa).
+ * Cada token é resolvido para classes Tailwind no AppSidebar (ACCENT_TOKENS).
+ */
+export type NavigationAccent =
+  | 'blue'
+  | 'green'
+  | 'indigo'
+  | 'sky'
+  | 'amber'
+  | 'pink'
+  | 'emerald'
+  | 'teal'
+  | 'violet'
+  | 'slate';
+
+/** @deprecated mantido por compatibilidade — o novo sidebar não usa esta divisão. */
 export type NavigationSidebarGroup = 'inicio' | 'modulos' | 'utilitarios';
 
 export interface NavigationItem {
@@ -13,14 +29,27 @@ export interface NavigationItem {
   group?: string;
 }
 
+export interface NavigationSubgroup {
+  /** Rótulo exibido em caixa alta dentro do grupo expandido. */
+  label: string;
+  items: NavigationItem[];
+}
+
 export interface NavigationSection {
   id: string;
   label: string;
   icon: LucideIcon;
   badge?: number | string;
-  /** Agrupamento no menu; padrão `modulos`. */
-  sidebarGroup?: NavigationSidebarGroup;
+  /** Cor de destaque do grupo no sidebar (chip, flyout, barra ativa). */
+  accent?: NavigationAccent;
+  /** Texto auxiliar exibido no botão "i" do cabeçalho do flyout. */
+  info?: string;
+  /** Itens diretos do grupo. Ignorado quando `subgroups` é fornecido. */
   items?: NavigationItem[];
+  /** Quando definido, os itens são organizados em subgrupos com rótulo. */
+  subgroups?: NavigationSubgroup[];
+  /** @deprecated não utilizado pelo sidebar atual; mantido para compatibilidade. */
+  sidebarGroup?: NavigationSidebarGroup;
 }
 
 export interface NavigationState {

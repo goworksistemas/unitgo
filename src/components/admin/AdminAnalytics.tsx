@@ -509,7 +509,7 @@ export function AdminAnalytics() {
       case 'request': return 'bg-cyan-100 text-cyan-700 border-cyan-300';
       case 'transfer': return 'bg-yellow-100 text-yellow-700 border-yellow-300';
       case 'removal': return 'bg-red-100 text-red-700 border-red-300';
-      case 'delivery': return 'bg-purple-100 text-purple-700 border-purple-300';
+      case 'delivery': return 'bg-slate-100 text-slate-700 border-slate-300';
       case 'approval': return 'bg-emerald-100 text-emerald-700 border-emerald-300';
       case 'rejection': return 'bg-rose-100 text-rose-700 border-rose-300';
       default: return 'bg-muted text-muted-foreground border-border';

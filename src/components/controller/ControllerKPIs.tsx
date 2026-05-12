@@ -21,8 +21,8 @@ export function ControllerKPIs({ totalMaterials = 0, totalFurniture, activeLoans
         </div>
       </div>
       <div className="flex items-center gap-2.5 px-5 py-2.5 flex-1 min-w-[100px]">
-        <div className="w-[26px] h-[26px] rounded-md p-1.5 bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-          <Armchair className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+        <div className="w-[26px] h-[26px] rounded-md p-1.5 bg-slate-100 dark:bg-slate-900/30 flex items-center justify-center shrink-0">
+          <Armchair className="w-4 h-4 text-slate-600 dark:text-slate-400" />
         </div>
         <div>
           <p className="text-[11px] text-muted-foreground">Móveis</p>

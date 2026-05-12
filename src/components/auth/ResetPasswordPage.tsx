@@ -6,7 +6,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { Key, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { GoworkLogo } from '../shared/GoworkLogo';
+import { SupplyGoLogo } from '../shared/SupplyGoLogo';
 import { supabase } from '../../utils/supabase/client';
 
 export function ResetPasswordPage() {
@@ -108,7 +108,7 @@ export function ResetPasswordPage() {
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-3 md:p-4">
         <div className="w-full max-w-md">
           <div className="flex flex-col items-center space-y-4">
-            <GoworkLogo variant="full" size="large" />
+            <SupplyGoLogo variant="full" size="large" />
             <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
             <p className="text-muted-foreground">Validando sessão...</p>
           </div>
@@ -123,7 +123,7 @@ export function ResetPasswordPage() {
         {/* Header */}
         <div className="text-center mb-6 md:mb-8 flex flex-col items-center">
           <div className="mb-4">
-            <GoworkLogo variant="full" size="large" />
+            <SupplyGoLogo variant="full" size="large" />
           </div>
           <h1 className="text-slate-900 dark:text-white mb-2">Sistema de Controle de Estoque</h1>
           <p className="text-muted-foreground text-sm md:text-base">Gerencie móveis e materiais de todas as unidades</p>
@@ -214,7 +214,7 @@ export function ResetPasswordPage() {
         {/* Footer */}
         <div className="mt-6 text-center">
           <p className="text-xs text-slate-500 dark:text-slate-500">
-            © 2024 Gowork - Sistema de Controle de Estoque
+            © 2026 SupplyGo — Sistema de Controle de Estoque
           </p>
         </div>
       </div>

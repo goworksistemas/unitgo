@@ -290,7 +290,7 @@ export function FurnitureWarehousePanel({ isDeveloperMode = false }: FurnitureWa
             )}
             {separator && request.separatedAt && (
               <div className="flex items-center gap-2">
-                <PackageCheck className="h-3 w-3 text-purple-600" />
+                <PackageCheck className="h-3 w-3 text-slate-600" />
                 <span>Separado: <strong className="text-foreground">{separator.name}</strong> em {formatDate(request.separatedAt)}</span>
               </div>
             )}
@@ -536,7 +536,7 @@ export function FurnitureWarehousePanel({ isDeveloperMode = false }: FurnitureWa
               )}
               {reviewDialog.action === 'separate_and_assign' && (
                 <>
-                  <Package className="h-5 w-5 text-purple-600" />
+                  <Package className="h-5 w-5 text-slate-600" />
                   Marcar como Separado e Atribuir Motorista
                 </>
               )}

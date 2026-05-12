@@ -52,9 +52,9 @@ export function StockMovementsTimeline({ unitId }: StockMovementsTimelineProps) 
         return {
           label: 'Empréstimo',
           icon: ArrowRightLeft,
-          color: 'text-purple-600 dark:text-purple-400',
-          bgColor: 'bg-purple-50 dark:bg-purple-950/30',
-          borderColor: 'border-l-purple-500',
+          color: 'text-slate-600 dark:text-slate-400',
+          bgColor: 'bg-slate-50 dark:bg-slate-950/30',
+          borderColor: 'border-l-slate-500',
         };
       case 'return':
         return {

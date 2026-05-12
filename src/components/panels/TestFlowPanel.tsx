@@ -177,7 +177,7 @@ export function TestFlowPanel() {
               <Card>
                 <CardContent className="pt-6">
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-purple-600">{stats.myRequests}</p>
+                    <p className="text-3xl font-bold text-slate-600">{stats.myRequests}</p>
                     <p className="text-sm text-muted-foreground mt-1">Minhas Solicitações</p>
                   </div>
                 </CardContent>

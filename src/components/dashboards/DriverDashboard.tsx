@@ -76,7 +76,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
   const warehouseUnitId = getWarehouseUnitId();
 
   const navigationSections: NavigationSection[] = useMemo(
-    () => [{ id: 'overview', label: 'Painel', icon: LayoutDashboard, sidebarGroup: 'inicio' as const }],
+    () => [{ id: 'overview', label: 'Painel', icon: LayoutDashboard, accent: 'blue' }],
     [],
   );
 
@@ -275,15 +275,15 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
       : 0;
 
     return (
-      <Card key={request.id} className="border-2 border-purple-200 dark:border-purple-700 bg-purple-50/30 dark:bg-purple-900/20">
+      <Card key={request.id} className="border-2 border-slate-200 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-900/20">
         <CardContent className="p-3 md:p-4">
           <div className="flex items-start gap-2 md:gap-3 mb-2 md:mb-3">
-            <div className="p-2 md:p-3 rounded-lg bg-purple-100 dark:bg-purple-900/30">
-              <Armchair className="h-6 w-6 md:h-8 md:w-8 text-purple-600" />
+            <div className="p-2 md:p-3 rounded-lg bg-slate-100 dark:bg-slate-900/30">
+              <Armchair className="h-6 w-6 md:h-8 md:w-8 text-slate-600" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-base md:text-lg mb-1 truncate">{item?.name}</h3>
-              <div className="flex items-center gap-2 text-xs md:text-sm text-purple-700 dark:text-purple-300">
+              <div className="flex items-center gap-2 text-xs md:text-sm text-slate-700 dark:text-slate-300">
                 <Clock className="h-3 w-3 md:h-4 md:w-4" />
                 <span>Coletado há {elapsed} min</span>
               </div>
@@ -291,7 +291,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
             </div>
           </div>
 
-          <div className="text-xs md:text-sm text-muted-foreground text-center p-2 md:p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+          <div className="text-xs md:text-sm text-muted-foreground text-center p-2 md:p-3 bg-slate-100 dark:bg-slate-900/30 rounded-lg">
             Entregue este móvel no almoxarifado central
           </div>
         </CardContent>
@@ -392,11 +392,11 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
                 </CardContent>
               </Card>
 
-              <Card className="border-2 border-purple-600 dark:border-purple-500">
+              <Card className="border-2 border-slate-600 dark:border-slate-500">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between mb-1 md:mb-2">
-                    <Truck className="h-6 w-6 md:h-8 md:w-8 text-purple-600 dark:text-purple-400" />
-                    <div className="text-2xl md:text-4xl font-bold text-purple-600 dark:text-purple-400">{totalInTransit}</div>
+                    <Truck className="h-6 w-6 md:h-8 md:w-8 text-slate-600 dark:text-slate-400" />
+                    <div className="text-2xl md:text-4xl font-bold text-slate-600 dark:text-slate-400">{totalInTransit}</div>
                   </div>
                   <p className="text-xs md:text-sm font-medium text-foreground">Em Trânsito</p>
                 </CardContent>
@@ -513,7 +513,7 @@ export function DriverDashboard({ isDeveloperMode = false }: DriverDashboardProp
               {(furnitureInTransit.length > 0 || furnitureDeliveryInTransit.length > 0) && (
                 <div>
                   <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <Truck className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <Truck className="h-5 w-5 text-slate-600 dark:text-slate-400" />
                     Em Trânsito
                   </h2>
                   <div className="space-y-3">

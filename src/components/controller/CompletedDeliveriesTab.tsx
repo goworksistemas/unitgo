@@ -112,7 +112,7 @@ export function CompletedDeliveriesTab({
                               {new Date(confirmation.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                             </div>
                             <div className="text-xs text-muted-foreground pl-5">
-                              <Badge variant="outline" className={`text-xs ${isCodeMethod ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'bg-primary/10 text-primary'}`}>
+                              <Badge variant="outline" className={`text-xs ${isCodeMethod ? 'bg-slate-50 dark:bg-slate-900/30 text-slate-700 dark:text-slate-300' : 'bg-primary/10 text-primary'}`}>
                                 {isCodeMethod ? 'Código Posterior' : 'QR Code Presencial'}
                               </Badge>
                             </div>

@@ -25,7 +25,7 @@ const roleConfig: Partial<Record<UserRole, { label: string; icon: React.ReactNod
   controller: {
     label: 'Controlador',
     icon: <ShieldCheck className="w-4 h-4" />,
-    color: 'bg-purple-500',
+    color: 'bg-slate-500',
     description: 'Controle total de estoque e movimentações'
   },
   admin: {
@@ -85,7 +85,7 @@ const roleConfig: Partial<Record<UserRole, { label: string; icon: React.ReactNod
   purchases_admin: {
     label: 'Admin Compras',
     icon: <ShoppingCart className="w-4 h-4" />,
-    color: 'bg-violet-600',
+    color: 'bg-slate-600',
     description: 'Fluxo completo de compras + parametrização de aprovadores e alçadas por valor'
   },
 };

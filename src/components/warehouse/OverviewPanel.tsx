@@ -42,7 +42,7 @@ export function OverviewPanel({
       <Card className="min-w-[132px] shrink-0 snap-start border-border shadow-sm md:min-w-0">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3">
           <CardTitle className="text-xs font-medium text-muted-foreground">Retirada</CardTitle>
-          <PackageCheck className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+          <PackageCheck className="h-4 w-4 text-slate-600 dark:text-slate-400" />
         </CardHeader>
         <CardContent className="pb-3 pt-0">
           <div className="text-2xl font-semibold tabular-nums">{awaitingPickupCount}</div>

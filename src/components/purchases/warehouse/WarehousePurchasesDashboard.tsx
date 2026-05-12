@@ -65,7 +65,7 @@ export function WarehousePurchasesDashboard() {
                         {format(new Date(o.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
                       </p>
                     </div>
-                    <Badge variant="outline" className={o.status === 'nf_issued' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700' : 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700'}>
+                    <Badge variant="outline" className={o.status === 'nf_issued' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700' : 'bg-slate-50 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700'}>
                       {o.status === 'nf_issued' ? 'NF Emitida' : 'Em Trânsito'}
                     </Badge>
                   </div>

@@ -44,13 +44,13 @@ export function DesignerDashboard() {
       contracts: 'compras.contratos',
     };
     const all: NavigationSection[] = [
-      { id: 'overview', label: 'Painel', icon: LayoutDashboard, sidebarGroup: 'inicio' },
-      { id: 'requests', label: 'Pedidos das unidades', icon: Inbox, sidebarGroup: 'modulos' },
+      { id: 'overview', label: 'Painel', icon: LayoutDashboard, accent: 'blue' },
+      { id: 'requests', label: 'Pedidos das unidades', icon: Inbox, accent: 'amber' },
     ];
     if (canAccessTab('compras.centros_custo'))
-      all.push({ id: 'cost-centers', label: 'Centros de Custo', icon: Inbox, sidebarGroup: 'modulos' });
+      all.push({ id: 'cost-centers', label: 'Centros de Custo', icon: Inbox, accent: 'indigo' });
     if (canAccessTab('compras.contratos'))
-      all.push({ id: 'contracts', label: 'Contratos', icon: Inbox, sidebarGroup: 'modulos' });
+      all.push({ id: 'contracts', label: 'Contratos', icon: Inbox, accent: 'violet' });
     return all.filter((s) => {
       const tabId = TAB_MAP[s.id];
       return !tabId || canAccessTab(tabId);

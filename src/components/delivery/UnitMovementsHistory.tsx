@@ -123,9 +123,9 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
         return {
           label: 'Empréstimo',
           icon: ArrowRightLeft,
-          color: 'text-purple-600 dark:text-purple-400',
-          bgColor: 'bg-purple-100 dark:bg-purple-900/30',
-          borderColor: 'border-purple-200 dark:border-purple-800',
+          color: 'text-slate-600 dark:text-slate-400',
+          bgColor: 'bg-slate-100 dark:bg-slate-900/30',
+          borderColor: 'border-slate-200 dark:border-slate-800',
         };
       case 'return':
         return {
@@ -214,8 +214,8 @@ export function UnitMovementsHistory(props: UnitMovementsHistoryProps = {}) {
         <Card>
           <CardContent className="pt-4 md:pt-6 pb-4">
             <div className="space-y-2">
-              <p className="text-xs md:text-sm text-purple-600 dark:text-purple-400">Empréstimos</p>
-              <p className="text-2xl md:text-3xl font-bold text-purple-600 dark:text-purple-400">{totalLoans}</p>
+              <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400">Empréstimos</p>
+              <p className="text-2xl md:text-3xl font-bold text-slate-600 dark:text-slate-400">{totalLoans}</p>
             </div>
           </CardContent>
         </Card>

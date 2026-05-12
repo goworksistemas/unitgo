@@ -214,18 +214,18 @@ export function BuyerDashboard({ viewAsBuyerMode }: BuyerDashboardProps) {
 
   const navigationSections: NavigationSection[] = useMemo(
     () => [
-      { id: 'buyer-home', label: 'Início', icon: Home, sidebarGroup: 'inicio' },
+      { id: 'buyer-home', label: 'Início', icon: Home, accent: 'blue' },
       {
         id: 'buyer-indicators',
         label: 'Dashboard',
         icon: LayoutDashboard,
-        sidebarGroup: 'inicio',
+        accent: 'sky',
       },
       {
         id: WORK_SECTION_ID,
         label: 'Compras',
         icon: ShoppingCart,
-        sidebarGroup: 'modulos',
+        accent: 'indigo',
         items: [
           { id: 'buyer-sc', label: 'Solicitações', icon: FileText },
           { id: 'buyer-orders-overview', label: 'Ordens de pedidos', icon: ListOrdered },

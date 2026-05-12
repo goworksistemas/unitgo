@@ -105,7 +105,7 @@ export function BuyerPurchaseReportsPanel({ relaxedBuyerScope }: BuyerPurchaseRe
 
         <Card className="border-border/60 shadow-sm flex flex-col">
           <CardHeader>
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-500/10 text-slate-600 dark:text-slate-400">
               <FileSpreadsheet className="h-5 w-5" aria-hidden />
             </div>
             <CardTitle className="text-base pt-2">Cotações</CardTitle>

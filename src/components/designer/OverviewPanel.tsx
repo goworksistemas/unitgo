@@ -29,7 +29,7 @@ export function OverviewPanel({
       description: 'Armazenagem ou descarte',
       value: pendingRemovalApprovals,
       icon: ShieldCheck,
-      iconClass: 'text-violet-600 dark:text-violet-400',
+      iconClass: 'text-slate-600 dark:text-slate-400',
       hint: 'Aba: Aprovar retiradas',
     },
     {

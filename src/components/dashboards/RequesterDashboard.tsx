@@ -51,11 +51,11 @@ export function RequesterDashboard() {
     ];
 
     const all: NavigationSection[] = [
-      { id: 'requester-home', label: 'Painel', icon: LayoutDashboard, sidebarGroup: 'inicio' },
-      { id: 'stock', label: 'Estoque disponível', icon: Package, sidebarGroup: 'modulos' },
-      { id: 'requests', label: 'Meus Pedidos', icon: History, sidebarGroup: 'modulos' },
-      { id: 'deliveries', label: 'Recebimentos', icon: CheckCircle2, sidebarGroup: 'modulos' },
-      { id: 'purchases', label: 'Compras', icon: ShoppingCart, sidebarGroup: 'modulos', items: purchaseItems },
+      { id: 'requester-home', label: 'Painel', icon: LayoutDashboard, accent: 'blue' },
+      { id: 'stock', label: 'Estoque disponível', icon: Package, accent: 'emerald' },
+      { id: 'requests', label: 'Meus Pedidos', icon: History, accent: 'sky' },
+      { id: 'deliveries', label: 'Recebimentos', icon: CheckCircle2, accent: 'teal' },
+      { id: 'purchases', label: 'Compras', icon: ShoppingCart, accent: 'indigo', items: purchaseItems },
     ];
     return all.filter((s) => {
       const tabId = SECTION_TAB_MAP[s.id];

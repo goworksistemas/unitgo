@@ -95,13 +95,13 @@ export function WarehouseDashboard({ isDeveloperMode = false }: WarehouseDashboa
         id: 'warehouse-home',
         label: 'Painel',
         icon: LayoutDashboard,
-        sidebarGroup: 'inicio' as const,
+        accent: 'blue',
       },
       {
         id: 'almox',
         label: 'Almoxarifado',
         icon: LayoutDashboard,
-        sidebarGroup: 'modulos' as const,
+        accent: 'teal',
         items: filtered,
       },
     ];

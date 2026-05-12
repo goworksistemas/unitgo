@@ -1,71 +1,50 @@
-import React, { useState, useCallback, useMemo, useContext, useRef, useEffect } from 'react';
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-  SIDEBAR_DESKTOP_TRANSITION_MS,
-} from '@/components/ui/sidebar';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { ChevronRight, Home, Menu, Moon, Sun } from 'lucide-react';
 import { DialogContainerProvider } from '@/contexts/DialogContainerContext';
-import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ChevronRight, Home, Moon, Sun } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { AppSidebar } from './AppSidebar';
 import { ThemeContext } from '@/App';
 import { NavigationContext, type NavigationSection, type NavigationState } from '@/hooks/useNavigation';
+import { cn } from '@/lib/utils';
 
-/** Tempo antes de recolher após o ponteiro sair (após a animação de largura + layout interno). */
-const SIDEBAR_HOVER_CLOSE_MS = SIDEBAR_DESKTOP_TRANSITION_MS + 100;
+const DESKTOP_SIDEBAR_EXPANDED_KEY = 'supplygo-desktop-sidebar-expanded';
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
-/**
- * Menu lateral: expande ao passar o mouse na faixa da sidebar; Ctrl+B / botão fixam aberto ou fecham.
- */
 export function AppLayout({ children }: AppLayoutProps) {
   const { theme, toggleTheme } = useContext(ThemeContext);
-  const [sidebarHovered, setSidebarHovered] = useState(false);
-  const [sidebarPinned, setSidebarPinned] = useState(false);
-  const sidebarOpen = sidebarPinned || sidebarHovered;
-  const hoverCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clearHoverCloseTimer = useCallback(() => {
-    if (hoverCloseTimerRef.current) {
-      clearTimeout(hoverCloseTimerRef.current);
-      hoverCloseTimerRef.current = null;
+  const [desktopSidebarExpanded, setDesktopSidebarExpanded] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      const stored = window.localStorage.getItem(DESKTOP_SIDEBAR_EXPANDED_KEY);
+      return stored === null ? true : stored === 'true';
+    } catch {
+      return true;
     }
+  });
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(DESKTOP_SIDEBAR_EXPANDED_KEY, desktopSidebarExpanded ? 'true' : 'false');
+    } catch {
+      /* ignore */
+    }
+  }, [desktopSidebarExpanded]);
+
+  const handleToggleSidebar = useCallback(() => {
+    setDesktopSidebarExpanded((v) => !v);
   }, []);
 
-  useEffect(() => () => clearHoverCloseTimer(), [clearHoverCloseTimer]);
+  const handleCloseMobile = useCallback(() => setIsMobileMenuOpen(false), []);
 
-  const handleSidebarPointerEnter = useCallback(() => {
-    clearHoverCloseTimer();
-    setSidebarHovered(true);
-  }, [clearHoverCloseTimer]);
-
-  const handleSidebarPointerLeave = useCallback(() => {
-    clearHoverCloseTimer();
-    hoverCloseTimerRef.current = window.setTimeout(() => {
-      setSidebarHovered(false);
-      hoverCloseTimerRef.current = null;
-    }, SIDEBAR_HOVER_CLOSE_MS);
-  }, [clearHoverCloseTimer]);
-
-  const handleSidebarOpenChange = useCallback(
-    (next: boolean) => {
-      if (next) {
-        setSidebarPinned(true);
-      } else {
-        setSidebarPinned(false);
-        setSidebarHovered(false);
-        clearHoverCloseTimer();
-      }
-    },
-    [clearHoverCloseTimer],
-  );
-
+  /* ───────────────────────────── Navigation Context ───────────────────────────── */
   const [navState, setNavState] = useState<NavigationState>({
     sections: [],
     activeSection: '',
@@ -74,49 +53,62 @@ export function AppLayout({ children }: AppLayoutProps) {
   });
 
   const setSections = useCallback((sections: NavigationSection[]) => {
-    setNavState(prev => {
-      if (prev.sections === sections) return prev;
-      return { ...prev, sections };
-    });
+    setNavState((prev) => (prev.sections === sections ? prev : { ...prev, sections }));
   }, []);
 
   const setActiveSection = useCallback((sectionId: string, itemId?: string) => {
-    setNavState(prev => ({
-      ...prev,
-      activeSection: sectionId,
-      activeItem: itemId,
-    }));
+    setNavState((prev) => ({ ...prev, activeSection: sectionId, activeItem: itemId }));
   }, []);
 
   const setTitle = useCallback((title: string, subtitle?: string) => {
-    setNavState(prev => {
+    setNavState((prev) => {
       if (prev.title === title && prev.subtitle === subtitle) return prev;
       return { ...prev, title, subtitle };
     });
   }, []);
 
-  const contextValue = useMemo(() => ({
-    state: navState,
-    setSections,
-    setActiveSection,
-    setTitle,
-  }), [navState, setSections, setActiveSection, setTitle]);
+  const navContextValue = useMemo(
+    () => ({ state: navState, setSections, setActiveSection, setTitle }),
+    [navState, setSections, setActiveSection, setTitle],
+  );
 
   return (
-    <NavigationContext.Provider value={contextValue}>
-      <SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarOpenChange} defaultOpen={false}>
-        <AppSidebar
-          onSidebarPointerEnter={handleSidebarPointerEnter}
-          onSidebarPointerLeave={handleSidebarPointerLeave}
-        />
-        <DialogContainerProvider>
-          <SidebarInset className="bg-transparent">
-            <header className="flex h-[52px] shrink-0 items-center gap-3 border-b border-border/80 bg-card px-4 shadow-sm">
-              <SidebarTrigger
-                className="-ml-0.5 shrink-0"
-                title="Fixar menu aberto ou fechar (Ctrl+B). Passe o mouse na barra esquerda para expandir."
-              />
-              <Separator orientation="vertical" className="h-5" />
+    <NavigationContext.Provider value={navContextValue}>
+      <DialogContainerProvider>
+        <div className="relative flex min-h-screen bg-[#f8f9fa] dark:bg-background">
+          <AppSidebar
+            expanded={desktopSidebarExpanded}
+            onToggleExpanded={handleToggleSidebar}
+            isMobileOpen={isMobileMenuOpen}
+            onCloseMobile={handleCloseMobile}
+          />
+
+          {/* Conteúdo principal — margem se ajusta ao estado do sidebar (desktop) */}
+          <div
+            className={cn(
+              'relative z-20 flex min-h-screen w-full flex-1 flex-col overflow-hidden transition-[margin-left] duration-200 ease-out',
+              desktopSidebarExpanded ? 'lg:ml-56' : 'lg:ml-[64px]',
+            )}
+          >
+            {/* Header fixo — h-16 (64px) alinha com o header do sidebar */}
+            <header
+              className={cn(
+                'fixed top-0 right-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-border/80 bg-card px-4 shadow-sm transition-[left] duration-200 ease-out',
+                'left-0',
+                desktopSidebarExpanded ? 'lg:left-56' : 'lg:left-[64px]',
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+                aria-label="Abrir menu"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+
+              <Separator orientation="vertical" className="h-5 lg:hidden" />
+
               <nav
                 className="flex min-w-0 flex-1 items-center gap-1.5 text-sm text-muted-foreground"
                 aria-label="Migalhas"
@@ -130,6 +122,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   ) : null}
                 </div>
               </nav>
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" onClick={toggleTheme} className="shrink-0">
@@ -142,12 +135,14 @@ export function AppLayout({ children }: AppLayoutProps) {
                 </TooltipContent>
               </Tooltip>
             </header>
-            <main className="flex-1 overflow-auto bg-[#f8f9fa] p-4 md:p-6 dark:bg-background">
+
+            {/* Espaçador para o header fixo (64px) + conteúdo */}
+            <main className="flex-1 overflow-auto bg-[#f8f9fa] p-4 pt-20 md:p-6 md:pt-[84px] dark:bg-background">
               {children}
             </main>
-          </SidebarInset>
-        </DialogContainerProvider>
-      </SidebarProvider>
+          </div>
+        </div>
+      </DialogContainerProvider>
     </NavigationContext.Provider>
   );
 }

@@ -124,7 +124,7 @@ export function FurnitureRequestsPanel() {
         return (
           <Badge
             variant="outline"
-            className="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700"
+            className="bg-slate-50 dark:bg-slate-900/30 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700"
           >
             Em trânsito
           </Badge>
