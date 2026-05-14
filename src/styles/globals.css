@@ -374,3 +374,32 @@ html {
   opacity: 0;
   animation: sidebar-flyout-item-enter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ========== View Transition — onda circular na troca de tema ==========
+ * O novo tema expande em circulo a partir do ponto de clique do usuario.
+ * As variaveis --theme-x / --theme-y sao definidas no <html> antes de
+ * iniciar a transicao (ver ThemeContext.alternar()).
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+  animation: theme-wave-in 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes theme-wave-in {
+  from {
+    clip-path: circle(0% at var(--theme-x, 50%) var(--theme-y, 50%));
+  }
+  to {
+    clip-path: circle(150% at var(--theme-x, 50%) var(--theme-y, 50%));
+  }
+}

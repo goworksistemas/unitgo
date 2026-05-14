@@ -1,4 +1,6 @@
-import type { UserRole } from '@/types';
+/**
+ * Helpers de formatacao (datas, status, badges).
+ */
 
 export function formatDate(date: Date | string): string {
   return new Date(date).toLocaleDateString('pt-BR', {
@@ -16,7 +18,7 @@ export function formatDateShort(date: Date | string): string {
   });
 }
 
-/** Texto curto para “há quanto tempo” (passado), em pt-BR. */
+/** Texto curto para "ha quanto tempo" (passado), em pt-BR. */
 export function formatRelativeTimePast(date: Date | string | undefined): string {
   if (date === undefined || date === null) return '';
   const t = new Date(date).getTime();
@@ -24,103 +26,148 @@ export function formatRelativeTimePast(date: Date | string | undefined): string 
   const diffMs = Date.now() - t;
   const mins = Math.floor(diffMs / 60000);
   if (mins < 1) return 'agora';
-  if (mins < 60) return `há ${mins} min`;
+  if (mins < 60) return `ha ${mins} min`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `há ${hours} h`;
+  if (hours < 24) return `ha ${hours} h`;
   const days = Math.floor(hours / 24);
-  if (days < 7) return `há ${days} ${days === 1 ? 'dia' : 'dias'}`;
+  if (days < 7) return `ha ${days} ${days === 1 ? 'dia' : 'dias'}`;
   return formatDateShort(date);
-}
-
-const ROLE_LABELS: Record<string, string> = {
-  controller: 'Controlador',
-  admin: 'Administrador',
-  warehouse: 'Almoxarifado',
-  designer: 'Designer',
-  developer: 'Desenvolvedor',
-  requester: 'Solicitante',
-  buyer: 'Comprador',
-  financial: 'Financeiro',
-  purchases_admin: 'Admin Compras',
-  executor: 'Executor',
-  driver: 'Motorista',
-};
-
-export function getRoleName(role: string): string {
-  return ROLE_LABELS[role] || role;
-}
-
-const ROLE_BADGE: Record<string, string> = {
-  controller: 'CTR',
-  admin: 'ADM',
-  warehouse: 'ALM',
-  designer: 'DSG',
-  developer: 'DEV',
-  requester: 'REQ',
-  buyer: 'CMP',
-  financial: 'FIN',
-  purchases_admin: 'ACO',
-  executor: 'EXE',
-  driver: 'MOT',
-};
-
-export function getRoleBadge(role: string): string {
-  return ROLE_BADGE[role] || role.substring(0, 3).toUpperCase();
-}
-
-export function getRoleBadgeVariant(role: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-  switch (role) {
-    case 'admin':
-    case 'developer':
-      return 'destructive';
-    case 'controller':
-      return 'default';
-    case 'warehouse':
-      return 'secondary';
-    case 'purchases_admin':
-      return 'default';
-    default:
-      return 'outline';
-  }
 }
 
 export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
 
 export type StatusConfig = { label: string; variant: BadgeVariant };
 
+/**
+ * Mapa de status (banco -> label + variante de badge).
+ * Cobre todos os status validos do schema novo.
+ */
 const STATUS_MAP: Record<string, StatusConfig> = {
+  // Solicitacoes - tipo material
   pending: { label: 'Pendente', variant: 'outline' },
   approved: { label: 'Aprovado', variant: 'default' },
-  processing: { label: 'Processando', variant: 'secondary' },
   awaiting_pickup: { label: 'Aguardando Retirada', variant: 'secondary' },
   out_for_delivery: { label: 'Em Entrega', variant: 'default' },
-  completed: { label: 'Concluído', variant: 'outline' },
+  delivery_confirmed: { label: 'Entrega Confirmada', variant: 'default' },
+  received_confirmed: { label: 'Recebimento Confirmado', variant: 'default' },
+  completed: { label: 'Concluido', variant: 'outline' },
   rejected: { label: 'Rejeitado', variant: 'destructive' },
   cancelled: { label: 'Cancelado', variant: 'destructive' },
-  in_transit: { label: 'Em Trânsito', variant: 'secondary' },
-  delivered: { label: 'Entregue', variant: 'default' },
-  pending_confirmation: { label: 'Aguardando Confirmação', variant: 'outline' },
-  confirmed: { label: 'Confirmado', variant: 'default' },
+
+  // Solicitacoes - tipo furniture
   pending_designer: { label: 'Aguardando Designer', variant: 'outline' },
-  approved_designer: { label: 'Aprovado', variant: 'default' },
+  approved_designer: { label: 'Aprovado pelo Designer', variant: 'default' },
   approved_storage: { label: 'Aprovado Armazenagem', variant: 'default' },
   approved_disposal: { label: 'Aprovado Descarte', variant: 'destructive' },
+  separated: { label: 'Separado', variant: 'secondary' },
+  awaiting_delivery: { label: 'Aguardando Entrega', variant: 'secondary' },
+  in_transit: { label: 'Em Transito', variant: 'secondary' },
+  pending_confirmation: { label: 'Aguardando Confirmacao', variant: 'outline' },
+
+  // Solicitacoes - tipo loan
+  pending_approval: { label: 'Aguardando Aprovacao', variant: 'outline' },
+  active: { label: 'Ativo', variant: 'default' },
+  returned: { label: 'Devolvido', variant: 'outline' },
+  overdue: { label: 'Atrasado', variant: 'destructive' },
+
+  // Lotes de entrega
+  delivered: { label: 'Entregue', variant: 'default' },
+
+  // Solicitacoes de compra
+  pending_manager: { label: 'Aguardando Gestor', variant: 'outline' },
+  approved_manager: { label: 'Aprovado Gestor', variant: 'default' },
+  rejected_manager: { label: 'Rejeitado pelo Gestor', variant: 'destructive' },
+  in_quotation: { label: 'Em Cotacao', variant: 'secondary' },
+  quotation_completed: { label: 'Cotacao Finalizada', variant: 'default' },
+  pending_director: { label: 'Aguardando Diretor', variant: 'outline' },
+  in_purchase: { label: 'Em Compra', variant: 'secondary' },
+
+  // Cotacoes
+  draft: { label: 'Rascunho', variant: 'outline' },
+  sent: { label: 'Enviada', variant: 'secondary' },
+  partially_responded: { label: 'Parcialmente Respondida', variant: 'secondary' },
+  fully_responded: { label: 'Respondida', variant: 'default' },
+  finalized: { label: 'Finalizada', variant: 'default' },
+  responded: { label: 'Respondida', variant: 'default' },
+  declined: { label: 'Recusada', variant: 'destructive' },
+  expired: { label: 'Expirada', variant: 'outline' },
+
+  // Pedidos de compra
+  sent_to_supplier: { label: 'Enviado ao Fornecedor', variant: 'default' },
+  awaiting_nf: { label: 'Aguardando NF', variant: 'outline' },
+  nf_issued: { label: 'NF Emitida', variant: 'default' },
+  partially_received: { label: 'Parcialmente Recebido', variant: 'secondary' },
+  fully_received: { label: 'Totalmente Recebido', variant: 'default' },
+
+  // Status de aprovacao (versionado)
+  pendente: { label: 'Pendente', variant: 'outline' },
+  aprovado: { label: 'Aprovado', variant: 'default' },
+  reprovado: { label: 'Reprovado', variant: 'destructive' },
+  em_revisao: { label: 'Em Revisao', variant: 'secondary' },
+
+  // Notas fiscais
+  received: { label: 'Recebida', variant: 'default' },
+  paid: { label: 'Paga', variant: 'default' },
+
+  // Recebimentos
+  pending_check: { label: 'Aguardando Conferencia', variant: 'outline' },
+  partial: { label: 'Parcial', variant: 'secondary' },
+  complete: { label: 'Completo', variant: 'default' },
+
+  // Contratos
+  concluded: { label: 'Concluido', variant: 'outline' },
+  suspended: { label: 'Suspenso', variant: 'destructive' },
+
+  // Generico
+  active_status: { label: 'Ativo', variant: 'default' },
+  inactive: { label: 'Inativo', variant: 'outline' },
+  blocked: { label: 'Bloqueado', variant: 'destructive' },
 };
 
 export function getStatusConfig(status: string): StatusConfig {
   return STATUS_MAP[status] || { label: status, variant: 'outline' as const };
 }
 
-/** Substitui UUIDs de unidades no texto pelos nomes (ex.: notas de movimentação com destino). */
-export function replaceUnitIdsWithNames(
-  text: string,
-  units: readonly { id: string; name: string }[]
-): string {
-  let result = text;
-  for (const u of units) {
-    if (u.id && result.includes(u.id)) {
-      result = result.split(u.id).join(u.name);
-    }
-  }
-  return result;
+/**
+ * Tipos de movimentacao (banco -> label).
+ */
+const TIPO_MOVIMENTACAO_LABELS: Record<string, string> = {
+  entry: 'Entrada',
+  exit: 'Saida',
+  transfer: 'Transferencia',
+  loan_out: 'Emprestimo (saida)',
+  loan_return: 'Devolucao de Emprestimo',
+  disposal: 'Descarte',
+  adjustment: 'Ajuste',
+};
+
+export function getTipoMovimentacaoLabel(tipo: string): string {
+  return TIPO_MOVIMENTACAO_LABELS[tipo] || tipo;
+}
+
+/**
+ * Tipos de solicitacao (banco -> label).
+ */
+const TIPO_SOLICITACAO_LABELS: Record<string, string> = {
+  material: 'Material',
+  furniture_to_unit: 'Movel para Unidade',
+  furniture_removal: 'Retirada de Movel',
+  loan: 'Emprestimo',
+};
+
+export function getTipoSolicitacaoLabel(tipo: string): string {
+  return TIPO_SOLICITACAO_LABELS[tipo] || tipo;
+}
+
+/**
+ * Urgencia (banco -> label).
+ */
+const URGENCIA_LABELS: Record<string, string> = {
+  low: 'Baixa',
+  medium: 'Media',
+  high: 'Alta',
+};
+
+export function getUrgenciaLabel(urgencia: string): string {
+  return URGENCIA_LABELS[urgencia] || urgencia;
 }

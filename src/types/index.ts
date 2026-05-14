@@ -1,297 +1,779 @@
 /**
- * GOWORK - Type Definitions
- * 
- * Sistema de tipos TypeScript para toda a aplicação
+ * Tipos TypeScript do SupplyGo.
+ *
+ * Convencoes:
+ *  - Nomes em pt-br (sem acento), camelCase no front
+ *  - Status/tipos em ingles (compativel com CHECK constraint do banco)
+ *  - Datas em ISO string (Supabase serializa timestamptz como string)
  */
 
-/**
- * Perfis de usuário:
- * - controller: Controlador com acesso total (Almoxarifado + Admin)
- * - admin: Administrador (gerencia usuários e unidades + gestor de compras 1ª camada)
- * - warehouse: Almoxarife (separa e entrega pedidos)
- * - designer: Designer (aprova/rejeita pedidos de móveis)
- * - developer: Developer (gerencia catálogo de itens e categorias)
- * - requester: Solicitante (faz pedidos de materiais)
- * - buyer: Comprador (cotações, pedidos, fornecedores)
- * - financial: Financeiro (contratos, centros de custo, relatórios)
- * - purchases_admin: Administrador do módulo de compras (solicitações de compra, cotações, pedidos, aprovações e parametrização de alçadas)
- */
-export type UserRole = 'controller' | 'admin' | 'warehouse' | 'designer' | 'developer' | 'requester' | 'executor' | 'driver' | 'buyer' | 'financial' | 'purchases_admin';
+// ============================================================================
+// Identidade & Organizacao
+// ============================================================================
 
-export type MovementType = 'entrada' | 'saida' | 'emprestimo' | 'devolucao' | 'ajuste';
-
-/**
- * Tipos de movimento de estoque:
- * - entry: Entrada (aumenta estoque)
- * - consumption: Consumo/Saída (diminui estoque)
- * - loan: Empréstimo (diminui estoque)
- * - return: Devolução (aumenta estoque)
- */
-export type SimpleMovementType = 'entry' | 'consumption' | 'loan' | 'return' | 'adjustment' | 'devolucao' | 'in' | 'out';
-
-/**
- * Fluxo de status de pedidos:
- * pending → approved → awaiting_pickup → out_for_delivery → completed
- *        ↓
- *     rejected
- */
-export type RequestStatus = 'pending' | 'approved' | 'processing' | 'awaiting_pickup' | 'out_for_delivery' | 'delivery_confirmed' | 'received_confirmed' | 'completed' | 'rejected' | 'cancelled';
-
-export interface Unit {
+export interface Usuario {
   id: string;
-  name: string;
-  address: string;
-  status: 'active' | 'inactive';
-  type?: string; // Tipo da unidade (ex: warehouse, office)
-  floors?: string[]; // Andares disponíveis na unidade (JSONB)
+  authUsuarioId: string | null;
+  nome: string;
+  email: string;
+  cargo: string | null;
+  unidadesIds: string[];
+  departamentoId: string | null;
+  codigoDiario: string | null;
+  codigoDiarioGeradoEm: string | null;
+  exigeTrocaSenha: boolean;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
-export interface Category {
+export interface Unidade {
   id: string;
-  name: string;
-  description?: string;
+  nome: string;
+  endereco: string | null;
+  andares: string[];
+  status: 'active' | 'inactive';
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface Departamento {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  responsavelUsuarioId: string | null;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface EmpresaEmitente {
+  id: string;
+  razaoSocial: string;
+  nomeFantasia: string | null;
+  cnpj: string;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface Moeda {
+  id: string;
+  codigo: string;
+  simbolo: string;
+  nome: string;
+  ativo: boolean;
+  criadoEm: string;
+}
+
+// ============================================================================
+// Listas Cadastraveis
+// ============================================================================
+
+export interface UnidadeMedida {
+  id: string;
+  codigo: string;
+  nome: string;
+  descricao: string | null;
+  ativo: boolean;
+  criadoEm: string;
+}
+
+export interface FormaPagamento {
+  id: string;
+  codigo: string;
+  nome: string;
+  descricao: string | null;
+  ativo: boolean;
+  criadoEm: string;
+}
+
+export type TipoCondicaoPagamento = 'a_vista' | 'parcelado' | 'recorrente';
+
+export type PeriodicidadeCondicaoPagamento =
+  | 'diaria'
+  | 'semanal'
+  | 'quinzenal'
+  | 'mensal'
+  | 'bimestral'
+  | 'trimestral'
+  | 'semestral'
+  | 'anual'
+  | 'customizada';
+
+export interface CondicaoPagamento {
+  id: string;
+  codigo: string;
+  nome: string;
+  descricao: string | null;
+  tipo: TipoCondicaoPagamento;
+  periodicidade: PeriodicidadeCondicaoPagamento | null;
+  intervaloDias: number;
+  qtdParcelas: number | null;
+  primeiroVencDias: number;
+  ehIndefinido: boolean;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+// ============================================================================
+// Catalogo
+// ============================================================================
+
+export interface Categoria {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  ativo: boolean;
+  criadoEm: string;
+}
+
+export interface CategoriaFornecedor {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  ativo: boolean;
+  criadoEm: string;
 }
 
 export interface Item {
   id: string;
-  productId?: number; // ID numérico do produto (ex: Cadeado = 1, Cabo HDMI = 2)
-  name: string;
-  categoryId: string;
-  description: string;
-  unitOfMeasure: string;
-  isConsumable: boolean;
-  requiresResponsibilityTerm: boolean;
-  defaultLoanDays: number;
-  active: boolean;
-  serialNumber?: string;
-  imageUrl?: string;
-  defaultMinimumQuantity?: number;
-  brand?: string;
-  model?: string;
-  isFurniture?: boolean; // Móveis de unidade (não passam pelo almoxarifado)
-  isUniqueProduct?: boolean; // Produto com serial único
-  minQuantity?: number; // Alias para defaultMinimumQuantity
-  createdAt?: Date;
-  updatedAt?: Date;
+  produtoCodigo: number | null;
+  categoriaId: string | null;
+  nome: string;
+  descricao: string | null;
+  marca: string | null;
+  modelo: string | null;
+  unidadeMedidaId: string | null;
+  urlImagem: string | null;
+  ehMovel: boolean;
+  ehConsumivel: boolean;
+  permiteEmprestimo: boolean;
+  exigeTermoResponsabilidade: boolean;
+  diasEmprestimoPadrao: number | null;
+  quantidadeMinimaPadrao: number;
+  precoReferencia: number | null;
+  fornecedorPreferencialId: string | null;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
-export interface UnitStock {
+export interface Fornecedor {
+  id: string;
+  razaoSocial: string;
+  nomeFantasia: string | null;
+  cnpj: string | null;
+  cpf: string | null;
+  inscricaoEstadual: string | null;
+  categoriaId: string | null;
+  contatoNome: string | null;
+  contatoEmail: string | null;
+  contatoTelefone: string | null;
+  contatoWhatsapp: string | null;
+  endereco: Record<string, unknown>;
+  dadosBancarios: Record<string, unknown>;
+  totalPedidos: number;
+  valorTotalComprado: number;
+  ultimaCompraEm: string | null;
+  notaAvaliacao: number | null;
+  status: 'active' | 'inactive' | 'blocked';
+  observacoes: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+// ============================================================================
+// Estoque & Movimentacoes
+// ============================================================================
+
+export interface EstoqueUnidade {
   id: string;
   itemId: string;
-  unitId: string;
-  quantity: number;
-  minimumQuantity: number;
-  location: string;
+  unidadeId: string;
+  quantidade: number;
+  quantidadeMinima: number;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
-export interface Movement {
+export type TipoMovimentacao =
+  | 'entry'
+  | 'exit'
+  | 'transfer'
+  | 'loan_out'
+  | 'loan_return'
+  | 'disposal'
+  | 'adjustment';
+
+export interface Movimentacao {
   id: string;
-  type: MovementType;
+  tipo: TipoMovimentacao;
   itemId: string;
-  unitId: string;
-  quantity: number;
-  executorUserId: string;
-  approverUserId?: string;
-  timestamp: Date;
-  reason: string;
-  observations?: string;
-  documentNumber?: string;
-  serviceOrder?: string; // Ordem de serviço para consumos de executores
+  quantidade: number;
+  usuarioId: string;
+  unidadeId: string | null;
+  unidadeOrigemId: string | null;
+  unidadeDestinoId: string | null;
+  tomadorUsuarioId: string | null;
+  emprestimoDevolucaoPrevista: string | null;
+  movimentacaoOrigemId: string | null;
+  solicitacaoId: string | null;
+  loteEntregaId: string | null;
+  pedidoCompraId: string | null;
+  notaFiscalId: string | null;
+  observacoes: string | null;
+  ordemServico: string | null;
+  motivoDescarte: string | null;
+  metadados: Record<string, unknown>;
+  criadoEm: string;
 }
 
-// Simplified movement tracking for modern UI
-export interface SimpleMovement {
+// ============================================================================
+// Solicitacoes operacionais (material, movel, retirada-movel, emprestimo)
+// ============================================================================
+
+export type TipoSolicitacao =
+  | 'material'
+  | 'furniture_to_unit'
+  | 'furniture_removal'
+  | 'loan';
+
+export type StatusSolicitacao =
+  | 'pending'
+  | 'approved'
+  | 'awaiting_pickup'
+  | 'out_for_delivery'
+  | 'delivery_confirmed'
+  | 'received_confirmed'
+  | 'completed'
+  | 'rejected'
+  | 'cancelled'
+  | 'pending_designer'
+  | 'approved_designer'
+  | 'approved_storage'
+  | 'separated'
+  | 'awaiting_delivery'
+  | 'in_transit'
+  | 'pending_confirmation'
+  | 'pending_approval'
+  | 'active'
+  | 'returned'
+  | 'overdue'
+  | 'approved_disposal';
+
+export type Urgencia = 'low' | 'medium' | 'high';
+
+export interface Solicitacao {
   id: string;
-  type: SimpleMovementType;
+  numero: string | null;
+  tipo: TipoSolicitacao;
+  status: StatusSolicitacao;
   itemId: string;
-  unitId: string;
-  userId: string; // User who performed the action
-  quantity: number;
-  timestamp: Date;
-  createdAt: Date; // For compatibility
-  movementDate?: Date; // Alias/legacy
-  reason?: string; // Legacy/consumption reason
-  workOrder?: string; // For consumptions
-  borrowerUnitId?: string; // For loans
-  notes?: string;
+  quantidade: number;
+  unidadeSolicitanteId: string;
+  solicitadoPorUsuarioId: string;
+  andarDestino: string | null;
+  localizacaoDetalhe: string | null;
+  justificativa: string | null;
+  urgencia: Urgencia;
+  aprovadoPorUsuarioId: string | null;
+  aprovadoEm: string | null;
+  designerUsuarioId: string | null;
+  designerDecidirdoEm: string | null;
+  decisaoDescarte: 'storage' | 'disposal' | null;
+  justificativaDescarte: string | null;
+  emprestimoDevolucaoPrevista: string | null;
+  tomadorUsuarioId: string | null;
+  controladorAprovadorId: string | null;
+  motivoRejeicao: string | null;
+  rejeitadoPorUsuarioId: string | null;
+  rejeitadoEm: string | null;
+  codigoQr: string | null;
+  separadoPorUsuarioId: string | null;
+  separadoEm: string | null;
+  prontoRetiradaEm: string | null;
+  retiradoPorUsuarioId: string | null;
+  retiradoEm: string | null;
+  entregueEm: string | null;
+  concluidoEm: string | null;
+  canceladoEm: string | null;
+  observacoes: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
-export interface Loan {
+// ============================================================================
+// Entregas
+// ============================================================================
+
+export type StatusLoteEntrega =
+  | 'pending'
+  | 'in_transit'
+  | 'delivered'
+  | 'received_confirmed'
+  | 'completed'
+  | 'cancelled';
+
+export interface LoteEntrega {
   id: string;
-  itemId: string;
-  unitId: string;
-  responsibleUserId: string;
-  withdrawalDate: Date;
-  expectedReturnDate: Date;
-  returnDate?: Date;
-  status: 'active' | 'overdue' | 'returned' | 'lost';
-  observations?: string;
-  serialNumber?: string;
-  quantity?: number;
+  numero: string | null;
+  unidadeDestinoId: string;
+  motoristaUsuarioId: string;
+  codigoQr: string;
+  status: StatusLoteEntrega;
+  despachadoEm: string | null;
+  entregueEm: string | null;
+  recebidoEm: string | null;
+  concluidoEm: string | null;
+  observacoes: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
-export interface AccessGroupMember {
-  userId: string;
-  userName?: string;
-  createdAt?: string;
+export interface LoteEntregaItem {
+  id: string;
+  loteId: string;
+  solicitacaoId: string;
+  ordem: number;
+  criadoEm: string;
 }
 
-export interface AccessGroup {
+export type TipoConfirmacaoEntrega =
+  | 'driver_delivery'
+  | 'reception_receipt'
+  | 'requester_confirm';
+
+export interface ConfirmacaoEntrega {
+  id: string;
+  loteId: string | null;
+  solicitacaoId: string | null;
+  tipo: TipoConfirmacaoEntrega;
+  confirmadoPorUsuarioId: string;
+  recebidoPorUsuarioId: string | null;
+  urlFoto: string | null;
+  urlAssinatura: string | null;
+  localizacao: { latitude: number; longitude: number } | null;
+  codigoDiario: string | null;
+  observacoes: string | null;
+  criadoEm: string;
+}
+
+// ============================================================================
+// Permissoes
+// ============================================================================
+
+export interface Perfil {
   id: string;
   codigo: string;
   nome: string;
-  descricao?: string;
-  tabs: string[];
-  members: AccessGroupMember[];
-  createdAt?: string;
+  descricao: string | null;
+  ehProtegido: boolean;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
-export interface User {
+export interface Rota {
   id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  primaryUnitId?: string;
-  additionalUnitIds?: string[];
-  /** Setor/departamento (FK departments) — preenchido no cadastro/edição pelo desenvolvedor */
-  departmentId?: string | null;
-  warehouseType?: 'storage' | 'delivery';
-  jobTitle?: string;
-  adminType?: 'units' | 'warehouse';
-  dailyCode?: string;
-  dailyCodeGeneratedAt?: Date;
-  requirePasswordChange?: boolean;
-  firstLogin?: boolean;
-  resetToken?: string;
-  resetTokenExpiry?: string;
+  caminho: string;
+  codigo: string;
+  nome: string;
+  descricao: string | null;
+  modulo: string | null;
+  icone: string | null;
+  ordem: number;
+  ehPublica: boolean;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
-export interface Request {
+/**
+ * Linha de matriz `perfis_acesso_rotas`.
+ */
+export interface PerfilRota {
+  perfilId: string;
+  rotaId: string;
+  podeLer: boolean;
+  podeEscrever: boolean;
+  podeExcluir: boolean;
+  podeAprovar: boolean;
+  criadoEm: string;
+}
+
+/**
+ * Vinculo N:N usuarios <-> perfis.
+ */
+export interface UsuarioPerfil {
+  usuarioId: string;
+  perfilId: string;
+  criadoEm: string;
+}
+
+/**
+ * Alcada de aprovacao por valor.
+ *
+ * Regra: aprovador com `valorLimite >= valor_pedido` (ou `null` = sem teto)
+ * pode aprovar. Hierarquia natural — quem aprova R$ 500k tambem aprova R$ 5k.
+ */
+export interface AlcadaAprovacao {
   id: string;
-  itemId: string;
-  requestingUnitId: string;
-  requestedByUserId: string;
-  quantity: number;
-  status: RequestStatus;
-  createdAt: Date;
-  approvedByUserId?: string;
-  approvedAt?: Date;
-  pickupReadyByUserId?: string;
-  pickupReadyAt?: Date;
-  pickedUpByUserId?: string;
-  pickedUpAt?: Date;
-  completedByUserId?: string;
-  completedAt?: Date;
-  rejectedReason?: string;
-  rejectionReason?: string; // Alias
-  deliveredAt?: Date; // Quando foi entregue
-  observations?: string;
-  urgency: 'low' | 'medium' | 'high';
+  usuarioId: string;
+  valorLimite: number | null;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
-export interface FurnitureTransfer {
+/**
+ * Rota com flags de permissao consolidadas (retornada por meu_perfil()).
+ */
+export interface RotaPermitida {
   id: string;
-  itemId: string;
-  fromUnitId: string;
-  toUnitId: string;
-  requestedByUserId: string;
-  approvedByUserId?: string;
-  quantity?: number;
-  status: 'pending' | 'approved' | 'completed' | 'rejected';
-  createdAt: Date;
-  approvedAt?: Date;
-  completedAt?: Date;
-  observations?: string;
+  codigo: string;
+  caminho: string;
+  nome: string;
+  modulo: string | null;
+  icone: string | null;
+  ordem: number;
+  podeLer: boolean;
+  podeEscrever: boolean;
+  podeExcluir: boolean;
+  podeAprovar: boolean;
 }
 
-export interface FurnitureRemovalRequest {
+export type FlagPermissao =
+  | 'podeLer'
+  | 'podeEscrever'
+  | 'podeExcluir'
+  | 'podeAprovar';
+
+/**
+ * Resposta da RPC `meu_perfil()`.
+ */
+export interface MeuPerfil {
+  usuario: Usuario | null;
+  perfis: Perfil[];
+  rotasPermitidas: RotaPermitida[];
+}
+
+// ============================================================================
+// Compras
+// ============================================================================
+
+export type StatusSolicitacaoCompra =
+  | 'pending_manager'
+  | 'approved_manager'
+  | 'rejected_manager'
+  | 'in_quotation'
+  | 'quotation_completed'
+  | 'pending_director'
+  | 'in_purchase'
+  | 'completed'
+  | 'cancelled';
+
+export interface SolicitacaoCompra {
   id: string;
-  itemId: string;
-  unitId: string;
-  requestedByUserId: string;
-  quantity: number;
-  reason: string;
-  status: 'pending' | 'approved_storage' | 'approved_disposal' | 'awaiting_pickup' | 'in_transit' | 'completed' | 'rejected';
-  createdAt: Date;
-  reviewedByUserId?: string;
-  reviewedAt?: Date;
-  pickedUpByUserId?: string;
-  pickedUpAt?: Date;
-  receivedByUserId?: string;
-  receivedAt?: Date;
-  completedAt?: Date;
-  observations?: string;
-  disposalJustification?: string; // Justificativa do designer para descarte
+  numero: string | null;
+  solicitanteId: string;
+  unidadeId: string | null;
+  departamentoId: string | null;
+  empresaEmitenteId: string | null;
+  contratoId: string | null;
+  fornecedorSugeridoId: string | null;
+  linkReferencia: string | null;
+  justificativa: string;
+  urgencia: Urgencia;
+  status: StatusSolicitacaoCompra;
+  aprovadorGestorId: string | null;
+  gestorAprovadoEm: string | null;
+  gestorAprovadoPorId: string | null;
+  gestorMotivoRejeicao: string | null;
+  compradorId: string | null;
+  atribuidoEm: string | null;
+  anexos: unknown[];
+  canceladoEm: string | null;
+  motivoCancelamento: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
-// Solicitação de móveis do controlador para o designer
-export interface FurnitureRequestToDesigner {
+export interface SolicitacaoCompraItem {
   id: string;
-  itemId: string; // ID do item de móvel solicitado
-  requestingUnitId: string; // Unidade que está solicitando
-  requestedByUserId: string; // Controlador que fez a solicitação
-  quantity: number;
-  location: string; // Onde será colocado na unidade
-  justification: string; // Por que precisa do móvel
-  status: 'pending_designer' | 'approved_designer' | 'approved_storage' | 'separated' | 'awaiting_delivery' | 'in_transit' | 'pending_confirmation' | 'completed' | 'rejected';
-  qrCode?: string; // Código único para confirmação (gerado quando status vira in_transit)
-  createdAt: Date;
-  reviewedByDesignerId?: string; // Designer que aprovou/rejeitou
-  reviewedAt?: Date;
-  approvedByStorageUserId?: string; // Almoxarifado storage que aprovou
-  approvedByStorageAt?: Date;
-  separatedByUserId?: string; // Quem separou o item
-  separatedAt?: Date;
-  assignedToWarehouseUserId?: string; // Almoxarifado/motorista responsável
-  assignedAt?: Date;
-  deliveredByUserId?: string; // Motorista que entregou
-  deliveredAt?: Date;
-  receivedByUserId?: string; // Quem recebeu no destino
-  completedAt?: Date;
-  rejectionReason?: string;
-  observations?: string;
+  solicitacaoId: string;
+  itemId: string | null;
+  descricao: string;
+  codigo: string | null;
+  quantidade: number;
+  unidadeMedidaId: string | null;
+  contaContabil: string | null;
+  dataNecessidade: string | null;
+  prioridade: 'normal' | 'emergencial';
+  observacao: string | null;
+  ordem: number;
 }
 
-// Lote de entregas (múltiplos itens entregues juntos)
-export interface DeliveryBatch {
+export type StatusCotacao =
+  | 'draft'
+  | 'sent'
+  | 'partially_responded'
+  | 'fully_responded'
+  | 'finalized'
+  | 'cancelled';
+
+export interface Cotacao {
   id: string;
-  requestIds: string[]; // IDs das solicitações agrupadas
-  furnitureRequestIds?: string[]; // IDs das solicitações de móveis agrupadas
-  targetUnitId: string; // Unidade de destino
-  driverUserId: string; // Motorista responsável
-  qrCode: string; // Código único para confirmação
-  status: 'pending' | 'in_transit' | 'delivery_confirmed' | 'received_confirmed' | 'completed' | 'pending_confirmation' | 'confirmed_by_requester' | 'delivered';
-  driverId?: string; // Alias para driverUserId
-  createdAt: Date;
-  dispatchedAt?: Date;
-  deliveryConfirmedAt?: Date;
-  receivedConfirmedAt?: Date;
-  completedAt?: Date;
-  confirmedByRequesterAt?: Date;
-  notes?: string;
+  numero: string | null;
+  compradorId: string;
+  dataLimiteResposta: string | null;
+  observacoesFornecedor: string | null;
+  localEntregaUnidadeId: string | null;
+  linkPreenchimento: string | null;
+  enviarEmailFornecedor: boolean;
+  copiarSolicitanteEmail: boolean;
+  status: StatusCotacao;
+  fornecedorVencedorId: string | null;
+  finalizadaEm: string | null;
+  finalizadaPorId: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
-// Confirmação de entrega com foto
-export interface DeliveryConfirmation {
+export interface CotacaoFornecedor {
   id: string;
-  batchId?: string; // Referência ao lote (opcional se for entrega individual)
-  furnitureRequestId?: string; // Referência à solicitação individual de móvel
-  type: 'delivery' | 'receipt' | 'requester'; // Entrega (motorista), Recebimento (recebedor), ou Confirmação do Solicitante
-  confirmedByUserId: string;
-  userId?: string; // Alias para confirmedByUserId
-  userName?: string; // Nome de quem confirmou
-  receivedByUserId?: string; // Quem recebeu (validado por código diário)
-  photoUrl?: string; // Base64 ou URL da foto (opcional para confirmação por código)
-  timestamp: Date;
-  confirmedAt?: Date; // Alias para timestamp
-  location?: { // Geolocalização opcional
-    latitude: number;
-    longitude: number;
-  };
-  signature?: string; // Assinatura digital opcional (base64)
-  notes?: string;
-  dailyCode?: string; // Código diário usado na confirmação
+  cotacaoId: string;
+  fornecedorId: string;
+  emailEnviadoEm: string | null;
+  linkToken: string | null;
 }
 
-// Re-export purchase types
-export * from './purchases';
+export type StatusCotacaoResposta = 'pending' | 'responded' | 'declined' | 'expired';
+
+export interface CotacaoResposta {
+  id: string;
+  cotacaoId: string;
+  cotacaoFornecedorId: string;
+  fornecedorId: string;
+  moedaId: string | null;
+  formaPagamentoId: string | null;
+  condicoesPagamentoId: string | null;
+  prazoEntregaDias: number | null;
+  dataPrevisaoEntrega: string | null;
+  valorSubtotal: number | null;
+  valorFrete: number;
+  valorDesconto: number;
+  percentualIpi: number;
+  percentualIcms: number;
+  percentualPisCofins: number;
+  valorTotal: number | null;
+  status: StatusCotacaoResposta;
+  respondidoEm: string | null;
+  observacoesFornecedor: string | null;
+  anexos: unknown[];
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface CotacaoRespostaItem {
+  id: string;
+  respostaId: string;
+  solicitacaoCompraItemId: string;
+  precoUnitario: number | null;
+  quantidade: number | null;
+  totalItem: number | null;
+  observacoes: string | null;
+}
+
+export type StatusPedidoCompra =
+  | 'pending_approval'
+  | 'approved'
+  | 'sent_to_supplier'
+  | 'awaiting_nf'
+  | 'nf_issued'
+  | 'partially_received'
+  | 'fully_received'
+  | 'completed'
+  | 'cancelled';
+
+export type StatusAprovacaoPedido = 'pendente' | 'aprovado' | 'reprovado' | 'em_revisao';
+
+export interface PedidoCompra {
+  id: string;
+  numero: string | null;
+  cotacaoId: string | null;
+  fornecedorId: string;
+  empresaEmitenteId: string;
+  compradorId: string;
+  solicitantePrincipalId: string | null;
+  contratoId: string | null;
+  localEntregaUnidadeId: string | null;
+  passaPeloEstoque: boolean;
+  contatoFornecedorNome: string | null;
+  contatoFornecedorEmail: string | null;
+  moedaId: string | null;
+  formaPagamentoId: string | null;
+  condicoesPagamentoId: string | null;
+  valorSubtotal: number | null;
+  valorFrete: number;
+  valorDesconto: number;
+  valorImpostos: number;
+  valorTotal: number;
+  status: StatusPedidoCompra;
+  statusAprovacao: StatusAprovacaoPedido;
+  versaoAprovacao: number;
+  aprovadorAlcadaId: string | null;
+  enviadoFornecedorEm: string | null;
+  dataPrevisaoEntrega: string | null;
+  canceladoEm: string | null;
+  motivoCancelamento: string | null;
+  observacoes: string | null;
+  anexos: unknown[];
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface PedidoCompraItem {
+  id: string;
+  pedidoId: string;
+  solicitacaoCompraItemId: string | null;
+  itemId: string | null;
+  descricao: string;
+  codigo: string | null;
+  quantidade: number;
+  precoUnitario: number;
+  valorTotal: number;
+  unidadeMedidaId: string | null;
+  ordem: number;
+}
+
+export interface PedidoCompraAprovacao {
+  id: string;
+  pedidoId: string;
+  versao: number;
+  aprovadorId: string | null;
+  acao: 'pendente' | 'aprovado' | 'reprovado' | 'reenviado';
+  observacao: string | null;
+  valorReferencia: number | null;
+  criadoEm: string;
+}
+
+export type StatusNotaFiscal =
+  | 'received'
+  | 'paid'
+  | 'cancelled'
+  | 'returned';
+
+export interface NotaFiscal {
+  id: string;
+  numero: string;
+  serie: string | null;
+  chaveAcesso: string | null;
+  tipo: string;
+  fornecedorId: string;
+  cnpjEmissor: string;
+  empresaEmitenteId: string;
+  moedaId: string | null;
+  valorProdutos: number | null;
+  valorFrete: number;
+  valorDesconto: number;
+  valorImpostos: number;
+  valorTotal: number;
+  dataEmissao: string;
+  dataEntrada: string | null;
+  dataVencimento: string | null;
+  status: StatusNotaFiscal;
+  urlXml: string | null;
+  urlPdf: string | null;
+  urlBoleto: string | null;
+  observacoes: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface NotaFiscalPedido {
+  notaFiscalId: string;
+  pedidoCompraId: string;
+}
+
+export type StatusContrato = 'active' | 'concluded' | 'suspended' | 'cancelled';
+
+export interface Contrato {
+  id: string;
+  numero: string;
+  nome: string;
+  fornecedorId: string;
+  empresaEmitenteId: string;
+  departamentoId: string | null;
+  valorTotal: number;
+  valorConsumido: number;
+  saldo: number;
+  dataInicio: string;
+  dataFim: string;
+  status: StatusContrato;
+  urlContratoPdf: string | null;
+  observacoes: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export type StatusRecebimento = 'pending_check' | 'partial' | 'complete' | 'rejected';
+
+export interface RecebimentoCompra {
+  id: string;
+  pedidoId: string;
+  pedidoItemId: string;
+  notaFiscalId: string | null;
+  unidadeRecebimentoId: string;
+  quantidadeEsperada: number;
+  quantidadeRecebida: number;
+  quantidadeAvariada: number;
+  quantidadeDevolvida: number;
+  dataRecebimento: string;
+  recebidoPorUsuarioId: string;
+  conferidoPorUsuarioId: string | null;
+  urlFotoRecebimento: string | null;
+  status: StatusRecebimento;
+  observacoes: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+// ============================================================================
+// Auditoria & Notificacoes
+// ============================================================================
+
+export interface LogAtividade {
+  id: string;
+  tipoEntidade: string;
+  entidadeId: string;
+  acao: string;
+  usuarioId: string | null;
+  statusAnterior: string | null;
+  statusNovo: string | null;
+  dados: Record<string, unknown>;
+  ipOrigem: string | null;
+  userAgent: string | null;
+  criadoEm: string;
+}
+
+export type PrioridadeNotificacao = 'low' | 'normal' | 'high' | 'urgent';
+
+export interface Notificacao {
+  id: string;
+  usuarioId: string;
+  tipo: string;
+  prioridade: PrioridadeNotificacao;
+  titulo: string;
+  mensagem: string | null;
+  linkAcao: string | null;
+  tipoEntidade: string | null;
+  entidadeId: string | null;
+  lidoEm: string | null;
+  arquivadoEm: string | null;
+  enviadoEmail: boolean;
+  enviadoWhatsapp: boolean;
+  enviadoPush: boolean;
+  criadoEm: string;
+}

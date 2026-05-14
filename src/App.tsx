@@ -1,211 +1,193 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider, useApp } from './contexts/AppContext';
-import { PurchaseProvider } from './contexts/PurchaseContext';
-import { AllowedTabsProvider } from './contexts/AllowedTabsProvider';
-import { LoginPage } from './components/auth/LoginPage';
-import { ResetPasswordPage } from './components/auth/ResetPasswordPage';
-import { AppLayout } from './components/layout/AppLayout';
-import { ControllerDashboard } from './components/dashboards/ControllerDashboard';
-import { AdminDashboard } from './components/admin/AdminDashboard';
-import { WarehouseDashboard } from './components/dashboards/WarehouseDashboard';
-import { DriverDashboard } from './components/dashboards/DriverDashboard';
-import { DesignerDashboard } from './components/dashboards/DesignerDashboard';
-import { DeveloperDashboard } from './components/dashboards/DeveloperDashboard';
-import { RequesterDashboard } from './components/dashboards/RequesterDashboard';
-import { BuyerDashboard } from './components/dashboards/BuyerDashboard';
-import { FinancialDashboard } from './components/dashboards/FinancialDashboard';
-import { PurchasesAdminDashboard } from './components/dashboards/PurchasesAdminDashboard';
-import { Toaster } from './components/ui/sonner';
-import { projectId, publicAnonKey, functionSlug } from './utils/supabase/info';
-import { useInactivityLogout } from './hooks/useInactivityLogout';
-import { toast } from 'sonner';
-import type { UserRole } from './types';
+/**
+ * App raiz — providers + roteamento.
+ *
+ * Estrutura:
+ *  ThemeProvider
+ *    BrowserRouter
+ *      AuthProvider
+ *        PerfilProvider
+ *          Routes:
+ *            /login, /signup, /reset-password (publicas)
+ *            /* protegidas com AppLayout:
+ *               / -> Welcome
+ *               <todas as outras> -> EmConstrucao (sera substituido por telas reais nos proximos lotes)
+ */
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { Toaster } from '@/components/ui/sonner';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { PerfilProvider } from '@/contexts/PerfilContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { LoginPage } from '@/components/auth/LoginPage';
+import { SignupPage } from '@/components/auth/SignupPage';
+import { ResetPasswordPage } from '@/components/auth/ResetPasswordPage';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Welcome } from '@/pages/Welcome';
 
-const THEME_STORAGE_KEY = 'gowork_theme';
+// Admin
+import { UsuariosPage } from '@/pages/admin/UsuariosPage';
+import { UnidadesPage } from '@/pages/admin/UnidadesPage';
+import { DepartamentosPage } from '@/pages/admin/DepartamentosPage';
+import { EmpresasEmitentesPage } from '@/pages/admin/EmpresasEmitentesPage';
+import { PerfisAcessoPage } from '@/pages/admin/PerfisAcessoPage';
+import { RotasSistemaPage } from '@/pages/admin/RotasSistemaPage';
+import { AlcadasAprovacaoPage } from '@/pages/admin/AlcadasAprovacaoPage';
 
-export const ThemeContext = React.createContext<{
-  theme: 'light' | 'dark';
-  toggleTheme: () => void;
-}>({
-  theme: 'dark',
-  toggleTheme: () => {},
-});
+// Cadastros
+import { MoedasPage } from '@/pages/cadastros/MoedasPage';
+import { CategoriasPage } from '@/pages/cadastros/CategoriasPage';
+import { ItensPage } from '@/pages/cadastros/ItensPage';
+import { FornecedoresPage } from '@/pages/cadastros/FornecedoresPage';
+import { CategoriasFornecedorPage } from '@/pages/cadastros/CategoriasFornecedorPage';
+import { UnidadesMedidaPage } from '@/pages/cadastros/UnidadesMedidaPage';
+import { FormasPagamentoPage } from '@/pages/cadastros/FormasPagamentoPage';
+import { CondicoesPagamentoPage } from '@/pages/cadastros/CondicoesPagamentoPage';
 
-// Context para o Developer alternar entre views
-export const DeveloperViewContext = React.createContext<{
-  viewAsRole: UserRole | null;
-  setViewAsRole: (role: UserRole | null) => void;
-}>({
-  viewAsRole: null,
-  setViewAsRole: () => {},
-});
+// Estoque
+import { SaldosPage } from '@/pages/estoque/SaldosPage';
+import { MovimentacoesPage } from '@/pages/estoque/MovimentacoesPage';
 
-function AppContent() {
-  const { currentUser, logout, isLoading } = useApp();
-  const [isInitializing, setIsInitializing] = useState(true);
+// Solicitacoes operacionais
+import { MaterialPage } from '@/pages/solicitacoes/MaterialPage';
+import { MovelPage } from '@/pages/solicitacoes/MovelPage';
+import { RetiradaMovelPage } from '@/pages/solicitacoes/RetiradaMovelPage';
+import { EmprestimoPage } from '@/pages/solicitacoes/EmprestimoPage';
+import { AprovacaoGestorPage } from '@/pages/solicitacoes/AprovacaoGestorPage';
 
-  // Auto-logout após 1 hora de inatividade
-  useInactivityLogout(
-    () => {
-      toast.warning('Você foi desconectado por inatividade (1 hora sem uso)', {
-        duration: 5000,
-      });
-      logout();
-    }, 
-    !!currentUser,
-    () => {
-      toast.info('⚠️ Você será desconectado em 5 minutos por inatividade. Interaja com o sistema para continuar logado.', {
-        duration: 8000,
-      });
-    }
-  );
+// Entregas
+import { LotesPage } from '@/pages/entregas/LotesPage';
+import { RecepcaoPage } from '@/pages/entregas/RecepcaoPage';
+import { ConferenciaPage } from '@/pages/entregas/ConferenciaPage';
 
-  // Initialize database on first load - não bloqueia o app
-  useEffect(() => {
-    const hasInitialized = localStorage.getItem('gowork_db_initialized');
-    if (hasInitialized) {
-      setIsInitializing(false);
-      return;
-    }
+// Compras
+import { SolicitacoesCompraPage } from '@/pages/compras/SolicitacoesCompraPage';
+import { CotacoesPage } from '@/pages/compras/CotacoesPage';
+import { PedidosCompraPage } from '@/pages/compras/PedidosCompraPage';
+import { AprovacaoDiretoriaPage } from '@/pages/compras/AprovacaoDiretoriaPage';
+import { NotasFiscaisPage } from '@/pages/compras/NotasFiscaisPage';
+import { ContratosPage } from '@/pages/compras/ContratosPage';
+import { RecebimentosPage } from '@/pages/compras/RecebimentosPage';
 
-    // Rodar seed em background com timeout - não travar a tela
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+// Auditoria
+import { TimelinePage } from '@/pages/auditoria/TimelinePage';
+import { NotificacoesPage } from '@/pages/auditoria/NotificacoesPage';
 
-    fetch(
-      `https://${projectId}.supabase.co/functions/v1/${functionSlug}/seed`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${publicAnonKey}`,
-        },
-        signal: controller.signal,
-      }
-    )
-      .then((response) => {
-        if (response.ok) {
-          localStorage.setItem('gowork_db_initialized', 'true');
-        } else {
-          // 404 ou outro erro - marcar como inicializado para não ficar tentando
-          localStorage.setItem('gowork_db_initialized', 'true');
-        }
-      })
-      .catch(() => {
-        // Timeout ou rede - marcar para não bloquear em próximas cargas
-        localStorage.setItem('gowork_db_initialized', 'true');
-      })
-      .finally(() => {
-        clearTimeout(timeoutId);
-      });
+function ProtectedRoute() {
+  const { sessao, isLoading } = useAuth();
 
-    setIsInitializing(false);
-  }, []);
-
-  // Mostrar loading durante inicialização ou carregamento de dados
-  if (isInitializing || isLoading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#3F76FF]/5 via-[#00C5E9]/5 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#3F76FF]/30 border-t-[#3F76FF] rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400">
-            {isInitializing ? 'Inicializando sistema...' : 'Carregando dados...'}
-          </p>
+          <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">Carregando...</p>
         </div>
       </div>
     );
   }
 
-  if (!currentUser) {
-    return <LoginPage />;
+  if (!sessao) {
+    return <Navigate to="/login" replace />;
   }
 
-  const renderDashboard = () => {
-    // Motorista: perfil dedicado (driver) ou almox com tipo entrega (legado)
-    const isDriverExperience =
-      currentUser.role === 'driver' ||
-      (currentUser.role === 'warehouse' && currentUser.warehouseType === 'delivery');
-    if (isDriverExperience) {
-      return <DriverDashboard />;
-    }
+  return <Outlet />;
+}
 
-    switch (currentUser.role) {
-      case 'controller':
-      case 'executor':
-        return <ControllerDashboard />;
-      case 'admin':
-        return <AdminDashboard />;
-      case 'warehouse':
-        return <WarehouseDashboard />;
-      case 'designer':
-        return <DesignerDashboard />;
-      case 'developer':
-        return <DeveloperDashboard />;
-      case 'requester':
-        return <RequesterDashboard />;
-      case 'buyer':
-        return <BuyerDashboard />;
-      case 'financial':
-        return <FinancialDashboard />;
-      case 'purchases_admin':
-        return <PurchasesAdminDashboard />;
-      default:
-        return <div>Perfil não reconhecido</div>;
-    }
-  };
+function PublicOnlyRoute() {
+  const { sessao, isLoading } = useAuth();
 
-  return (
-    <div className="min-h-screen overflow-x-hidden">
-      <AllowedTabsProvider>
-        <PurchaseProvider>
-          <AppLayout>
-            {renderDashboard()}
-          </AppLayout>
-        </PurchaseProvider>
-      </AllowedTabsProvider>
-      <Toaster />
-    </div>
-  );
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (sessao) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <Outlet />;
 }
 
 export default function App() {
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY) as 'light' | 'dark' | null;
-    return stored === 'light' || stored === 'dark' ? stored : 'dark';
-  });
-
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
-  }, [theme]);
-
-  useEffect(() => {
-    // CRITICAL: Capture hash before React Router processes it
-    // This preserves Supabase auth tokens that come in the URL hash
-    if (window.location.hash && window.location.pathname.includes('reset-password')) {
-      sessionStorage.setItem('supabase_auth_hash', window.location.hash);
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  };
-
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeProvider>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <AppProvider>
-          <Routes>
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="*" element={<AppContent />} />
-          </Routes>
-        </AppProvider>
+        <AuthProvider>
+          <PerfilProvider>
+            <Routes>
+              {/* Rotas publicas (somente para nao logados) */}
+              <Route element={<PublicOnlyRoute />}>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+              </Route>
+
+              {/* Reset de senha — publica mas pode acontecer logado tambem */}
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+              {/* Rotas protegidas */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<AppLayout />}>
+                  <Route path="/" element={<Welcome />} />
+
+                  {/* Admin */}
+                  <Route path="/admin/usuarios" element={<UsuariosPage />} />
+                  <Route path="/admin/unidades" element={<UnidadesPage />} />
+                  <Route path="/admin/departamentos" element={<DepartamentosPage />} />
+                  <Route path="/admin/empresas-emitentes" element={<EmpresasEmitentesPage />} />
+                  <Route path="/admin/perfis-acesso" element={<PerfisAcessoPage />} />
+                  <Route path="/admin/rotas-sistema" element={<RotasSistemaPage />} />
+                  <Route path="/admin/alcadas-aprovacao" element={<AlcadasAprovacaoPage />} />
+
+                  {/* Cadastros */}
+                  <Route path="/cadastros/moedas" element={<MoedasPage />} />
+                  <Route path="/cadastros/categorias" element={<CategoriasPage />} />
+                  <Route path="/cadastros/itens" element={<ItensPage />} />
+                  <Route path="/cadastros/fornecedores" element={<FornecedoresPage />} />
+                  <Route path="/cadastros/categorias-fornecedor" element={<CategoriasFornecedorPage />} />
+                  <Route path="/cadastros/unidades-medida" element={<UnidadesMedidaPage />} />
+                  <Route path="/cadastros/formas-pagamento" element={<FormasPagamentoPage />} />
+                  <Route path="/cadastros/condicoes-pagamento" element={<CondicoesPagamentoPage />} />
+
+                  {/* Estoque */}
+                  <Route path="/estoque/saldos" element={<SaldosPage />} />
+                  <Route path="/estoque/movimentacoes" element={<MovimentacoesPage />} />
+
+                  {/* Solicitacoes */}
+                  <Route path="/solicitacoes/material" element={<MaterialPage />} />
+                  <Route path="/solicitacoes/movel" element={<MovelPage />} />
+                  <Route path="/solicitacoes/retirada-movel" element={<RetiradaMovelPage />} />
+                  <Route path="/solicitacoes/emprestimo" element={<EmprestimoPage />} />
+                  <Route path="/solicitacoes/aprovacao-gestor" element={<AprovacaoGestorPage />} />
+
+                  {/* Entregas */}
+                  <Route path="/entregas/lotes" element={<LotesPage />} />
+                  <Route path="/entregas/recepcao" element={<RecepcaoPage />} />
+                  <Route path="/entregas/conferencia" element={<ConferenciaPage />} />
+
+                  {/* Compras */}
+                  <Route path="/compras/solicitacoes" element={<SolicitacoesCompraPage />} />
+                  <Route path="/compras/cotacoes" element={<CotacoesPage />} />
+                  <Route path="/compras/pedidos" element={<PedidosCompraPage />} />
+                  <Route path="/compras/aprovacao-diretoria" element={<AprovacaoDiretoriaPage />} />
+                  <Route path="/compras/notas-fiscais" element={<NotasFiscaisPage />} />
+                  <Route path="/compras/contratos" element={<ContratosPage />} />
+                  <Route path="/compras/recebimentos" element={<RecebimentosPage />} />
+
+                  {/* Auditoria */}
+                  <Route path="/auditoria/timeline" element={<TimelinePage />} />
+                  <Route path="/auditoria/notificacoes" element={<NotificacoesPage />} />
+
+                  {/* Catch-all */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Route>
+              </Route>
+            </Routes>
+          </PerfilProvider>
+        </AuthProvider>
+        <Toaster />
       </BrowserRouter>
-    </ThemeContext.Provider>
+    </ThemeProvider>
   );
 }
