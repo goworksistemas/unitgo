@@ -1,8 +1,10 @@
 /**
  * AprovacaoDiretoriaPage — fila de pedidos aguardando aprovacao por alcada.
  *
- * Mostra apenas pedidos cujo valor_total esta dentro da alcada do usuario
- * logado (valor_limite >= valor_total OU valor_limite IS NULL).
+ * Mostra apenas pedidos cujo valor_total cai dentro da faixa da alcada do
+ * usuario logado (`valor_limite_min <= valor_total <= valor_limite_max`,
+ * onde `valor_limite_max NULL` = sem teto). Considera apenas alcadas com
+ * escopo = 'pedido'.
  *
  * Aprovador pode aprovar (vira sent_to_supplier) ou reprovar.
  */
@@ -12,7 +14,6 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
@@ -22,28 +23,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { ApiError, crud } from '@/lib/api';
+import { useListaPaginada } from '@/hooks/useListaPaginada';
 import { usePermissao } from '@/hooks/usePermissao';
 import { usePerfil } from '@/contexts/PerfilContext';
+import { DataTable, type ColunaDataTable } from '@/components/crud/DataTable';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SemAcesso } from '@/components/crud/SemAcesso';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { formatDate } from '@/lib/format';
-import type {
-  AlcadaAprovacao,
-  Fornecedor,
-  PedidoCompra,
-  PedidoCompraAprovacao,
-  Usuario,
-} from '@/types';
+import type { AlcadaAprovacao, PedidoCompra, PedidoCompraAprovacao } from '@/types';
+
+interface PedidoListado extends PedidoCompra {
+  fornecedorRazaoSocial: string;
+  compradorNome: string;
+  aprovadorNome: string | null;
+}
 
 const FMT_BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -51,140 +46,165 @@ export function AprovacaoDiretoriaPage() {
   const { podeLer, podeAprovar } = usePermissao('compras.aprovacao-diretoria');
   const perfil = usePerfil();
 
-  const [pedidos, setPedidos] = useState<PedidoCompra[]>([]);
   const [minhaAlcada, setMinhaAlcada] = useState<AlcadaAprovacao | null>(null);
-  const [fornecedoresMap, setFornMap] = useState<Map<string, Fornecedor>>(new Map());
-  const [usuariosMap, setUsuariosMap] = useState<Map<string, Usuario>>(new Map());
-  const [carregando, setCarregando] = useState(true);
+  const [carregandoAlcada, setCarregandoAlcada] = useState(true);
   const [acao, setAcao] = useState<{
-    pedido: PedidoCompra;
+    pedido: PedidoListado;
     tipo: 'aprovar' | 'reprovar';
   } | null>(null);
 
-  async function recarregar() {
-    setCarregando(true);
-    try {
-      const [ps, alcadas, fs, us] = await Promise.all([
-        crud<PedidoCompra>('pedidos_compra').list({}),
-        crud<AlcadaAprovacao>('alcadas_aprovacao').list({ igualdade: { ativo: true } }),
-        crud<Fornecedor>('fornecedores').list({}),
-        crud<Usuario>('usuarios').list({}),
-      ]);
-      setPedidos(ps.filter((p) => p.status === 'pending_approval'));
-      const minhaUid = perfil.usuario?.id;
-      const a = alcadas.find((al) => al.usuarioId === minhaUid) ?? null;
-      setMinhaAlcada(a);
-      setFornMap(new Map(fs.map((f) => [f.id, f])));
-      setUsuariosMap(new Map(us.map((u) => [u.id, u])));
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Erro');
-    } finally {
-      setCarregando(false);
-    }
-  }
+  const lista = useListaPaginada<PedidoListado>({
+    rpc: 'fn_listar_pedidos_compra',
+    filtros: { pStatus: 'pending_approval' },
+    tamanho: 100,
+  });
 
   useEffect(() => {
-    void recarregar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelado = false;
+    setCarregandoAlcada(true);
+    (async () => {
+      const meuId = perfil.usuario?.id;
+      if (!meuId) {
+        setCarregandoAlcada(false);
+        return;
+      }
+      try {
+        const alcadas = await crud<AlcadaAprovacao>('alcadas_aprovacao').list({
+          igualdade: { ativo: true, escopo: 'pedido', usuario_id: meuId },
+        });
+        const a =
+          alcadas.sort((x, y) => {
+            const xv = x.valorLimiteMax ?? Number.POSITIVE_INFINITY;
+            const yv = y.valorLimiteMax ?? Number.POSITIVE_INFINITY;
+            return yv - xv;
+          })[0] ?? null;
+        if (!cancelado) setMinhaAlcada(a);
+      } finally {
+        if (!cancelado) setCarregandoAlcada(false);
+      }
+    })();
+    return () => {
+      cancelado = true;
+    };
   }, [perfil.usuario?.id]);
 
   const visiveis = useMemo(() => {
     if (!minhaAlcada) return [];
-    if (minhaAlcada.valorLimite === null) return pedidos;
-    return pedidos.filter((p) => Number(p.valorTotal) <= Number(minhaAlcada.valorLimite));
-  }, [pedidos, minhaAlcada]);
+    const min = Number(minhaAlcada.valorLimiteMin ?? 0);
+    const max = minhaAlcada.valorLimiteMax;
+    return lista.itens.filter((p) => {
+      const v = Number(p.valorTotal);
+      if (v < min) return false;
+      if (max !== null && v > Number(max)) return false;
+      return true;
+    });
+  }, [lista.itens, minhaAlcada]);
 
   if (!podeLer) return <SemAcesso rotaCodigo="compras.aprovacao-diretoria" />;
 
+  const colunas: ColunaDataTable<PedidoListado>[] = [
+    {
+      chave: 'numero',
+      titulo: 'Numero',
+      render: (p) => <span className="font-mono text-xs">{p.numero ?? p.id.slice(0, 8)}</span>,
+    },
+    {
+      chave: 'criadoEm',
+      titulo: 'Quando',
+      render: (p) => <span className="text-xs">{formatDate(p.criadoEm)}</span>,
+    },
+    {
+      chave: 'fornecedorRazaoSocial',
+      titulo: 'Fornecedor',
+      render: (p) => <span className="text-sm">{p.fornecedorRazaoSocial}</span>,
+    },
+    {
+      chave: 'compradorNome',
+      titulo: 'Comprador',
+      render: (p) => <span className="text-sm">{p.compradorNome}</span>,
+    },
+    {
+      chave: 'valorTotal',
+      titulo: 'Valor total',
+      largura: '160px',
+      alinhar: 'right',
+      render: (p) => <span className="font-mono">{FMT_BRL.format(Number(p.valorTotal))}</span>,
+    },
+    {
+      chave: 'status',
+      titulo: 'Status',
+      render: (p) => <StatusBadge status={p.status} />,
+    },
+    {
+      chave: 'acoes',
+      titulo: 'Acoes',
+      largura: '110px',
+      alinhar: 'right',
+      render: (p) =>
+        podeAprovar && (
+          <div className="flex justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setAcao({ pedido: p, tipo: 'aprovar' })}
+              className="text-green-600"
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setAcao({ pedido: p, tipo: 'reprovar' })}
+              className="text-red-600"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ),
+    },
+  ];
+
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4">
       <PageHeader
         titulo="Aprovacao Diretoria"
         subtitulo="Pedidos aguardando aprovacao por alcada (valor)"
       />
 
-      {minhaAlcada ? (
-        <div className="rounded-md border bg-muted/30 p-3 text-sm">
-          Sua alcada:{' '}
-          <strong>
-            {minhaAlcada.valorLimite === null
-              ? 'sem teto'
-              : FMT_BRL.format(Number(minhaAlcada.valorLimite))}
-          </strong>
-        </div>
-      ) : (
-        <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-sm">
-          Voce nao tem alcada cadastrada. Solicite a um administrador.
-        </div>
-      )}
+      {!carregandoAlcada &&
+        (minhaAlcada ? (
+          <div className="bg-muted/30 rounded-md border p-3 text-sm">
+            Sua alcada:{' '}
+            <strong>
+              {FMT_BRL.format(Number(minhaAlcada.valorLimiteMin ?? 0))}
+              {' a '}
+              {minhaAlcada.valorLimiteMax === null
+                ? 'sem teto'
+                : FMT_BRL.format(Number(minhaAlcada.valorLimiteMax))}
+            </strong>
+          </div>
+        ) : (
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
+            Voce nao tem alcada cadastrada. Solicite a um administrador.
+          </div>
+        ))}
 
-      {carregando ? (
-        <Skeleton className="h-32 w-full" />
-      ) : visiveis.length === 0 ? (
-        <div className="rounded-md border border-dashed p-12 text-center text-muted-foreground">
-          Nenhum pedido pendente dentro da sua alcada.
-        </div>
-      ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Numero</TableHead>
-                <TableHead>Quando</TableHead>
-                <TableHead>Fornecedor</TableHead>
-                <TableHead>Comprador</TableHead>
-                <TableHead className="text-right">Valor total</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right w-32">Acoes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visiveis.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell className="font-mono text-xs">
-                    {p.numero ?? p.id.slice(0, 8)}
-                  </TableCell>
-                  <TableCell className="text-xs">{formatDate(p.criadoEm)}</TableCell>
-                  <TableCell className="text-sm">
-                    {fornecedoresMap.get(p.fornecedorId)?.razaoSocial ?? '?'}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {usuariosMap.get(p.compradorId)?.nome ?? '?'}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {FMT_BRL.format(Number(p.valorTotal))}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={p.status} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {podeAprovar && (
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setAcao({ pedido: p, tipo: 'aprovar' })}
-                          className="text-green-600"
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setAcao({ pedido: p, tipo: 'reprovar' })}
-                          className="text-red-600"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      <DataTable<PedidoListado>
+        itens={visiveis}
+        colunas={colunas}
+        isLoading={lista.isLoading}
+        mensagemVazia="Nenhum pedido pendente dentro da sua alcada."
+        paginacao={{
+          total: lista.total,
+          pagina: lista.paginacao.pagina,
+          tamanho: lista.paginacao.tamanho,
+          busca: lista.paginacao.busca,
+          placeholderBusca: 'Buscar por numero ou fornecedor...',
+          aoMudarPagina: lista.paginacao.setPagina,
+          aoMudarTamanho: lista.paginacao.setTamanho,
+          aoMudarBusca: lista.paginacao.setBusca,
+        }}
+      />
 
       {acao && perfil.usuario && (
         <DialogAcao
@@ -194,7 +214,7 @@ export function AprovacaoDiretoriaPage() {
           aoFechar={() => setAcao(null)}
           aoSalvar={async () => {
             setAcao(null);
-            await recarregar();
+            await lista.recarregar();
           }}
         />
       )}
@@ -209,7 +229,7 @@ function DialogAcao({
   aoFechar,
   aoSalvar,
 }: {
-  pedido: PedidoCompra;
+  pedido: PedidoListado;
   tipo: 'aprovar' | 'reprovar';
   meuUsuarioId: string;
   aoFechar: () => void;
@@ -240,13 +260,17 @@ function DialogAcao({
         status: tipo === 'aprovar' ? 'sent_to_supplier' : 'cancelled',
         statusAprovacao: tipo === 'aprovar' ? 'aprovado' : 'reprovado',
         aprovadorAlcadaId: meuUsuarioId,
-        ...(tipo === 'aprovar' ? { enviadoFornecedorEm: new Date().toISOString() } : {
-          canceladoEm: new Date().toISOString(),
-          motivoCancelamento: observacao.trim(),
-        }),
+        ...(tipo === 'aprovar'
+          ? { enviadoFornecedorEm: new Date().toISOString() }
+          : {
+              canceladoEm: new Date().toISOString(),
+              motivoCancelamento: observacao.trim(),
+            }),
       });
 
-      toast.success(tipo === 'aprovar' ? 'Pedido aprovado e enviado ao fornecedor' : 'Pedido reprovado');
+      toast.success(
+        tipo === 'aprovar' ? 'Pedido aprovado e enviado ao fornecedor' : 'Pedido reprovado',
+      );
       await aoSalvar();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : 'Erro');
@@ -270,11 +294,7 @@ function DialogAcao({
 
         <div className="space-y-2 py-2">
           <Label>Observacao{tipo === 'reprovar' ? ' (obrigatoria)' : ''}</Label>
-          <Textarea
-            rows={3}
-            value={observacao}
-            onChange={(e) => setObservacao(e.target.value)}
-          />
+          <Textarea rows={3} value={observacao} onChange={(e) => setObservacao(e.target.value)} />
         </div>
 
         <DialogFooter>

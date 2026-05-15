@@ -2,17 +2,23 @@
  * RecepcaoPage — recepcionista registra recebimento fisico do lote.
  *
  * Fluxo:
- *  1. Lista lotes com status 'in_transit' ou 'pending'
+ *  1. Lista lotes com status 'in_transit' ou 'pending' via RPC paginada.
  *  2. Recepcionista clica em "Registrar recebimento"
  *  3. Cria linha em confirmacoes_entrega com tipo='reception_receipt'
  *  4. Atualiza status do lote para 'received_confirmed'
  */
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Inbox } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
@@ -22,116 +28,120 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { ApiError, crud } from '@/lib/api';
+import { useListaPaginada } from '@/hooks/useListaPaginada';
 import { usePermissao } from '@/hooks/usePermissao';
 import { usePerfil } from '@/contexts/PerfilContext';
+import { DataTable, type ColunaDataTable } from '@/components/crud/DataTable';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SemAcesso } from '@/components/crud/SemAcesso';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { formatDate } from '@/lib/format';
-import type { ConfirmacaoEntrega, LoteEntrega, Unidade, Usuario } from '@/types';
+import type { ConfirmacaoEntrega, LoteEntrega } from '@/types';
 
-const STATUS_AGUARDANDO = ['pending', 'in_transit'];
+interface LoteListado extends LoteEntrega {
+  unidadeDestinoNome: string;
+  motoristaNome: string;
+  totalSolicitacoes: number;
+}
 
 export function RecepcaoPage() {
   const { podeLer, podeEscrever } = usePermissao('entregas.recepcao');
   const perfil = usePerfil();
 
-  const [lotes, setLotes] = useState<LoteEntrega[]>([]);
-  const [unidadesMap, setUnidadesMap] = useState<Map<string, Unidade>>(new Map());
-  const [usuariosMap, setUsuariosMap] = useState<Map<string, Usuario>>(new Map());
-  const [carregando, setCarregando] = useState(true);
-  const [registrando, setRegistrando] = useState<LoteEntrega | null>(null);
+  const [filtroStatus, setFiltroStatus] = useState<'in_transit' | 'pending'>('in_transit');
+  const [registrando, setRegistrando] = useState<LoteListado | null>(null);
 
-  async function recarregar() {
-    setCarregando(true);
-    try {
-      const [ls, unis, usrs] = await Promise.all([
-        crud<LoteEntrega>('lotes_entrega').list({ ordenarPor: 'criadoEm', ascendente: false }),
-        crud<Unidade>('unidades').list({}),
-        crud<Usuario>('usuarios').list({}),
-      ]);
-      setLotes(ls.filter((l) => STATUS_AGUARDANDO.includes(l.status)));
-      setUnidadesMap(new Map(unis.map((u) => [u.id, u])));
-      setUsuariosMap(new Map(usrs.map((u) => [u.id, u])));
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Erro');
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  useEffect(() => {
-    void recarregar();
-  }, []);
+  const filtros = useMemo(() => ({ pStatus: filtroStatus }), [filtroStatus]);
+  const lista = useListaPaginada<LoteListado>({
+    rpc: 'fn_listar_lotes_entrega',
+    filtros,
+  });
 
   if (!podeLer) return <SemAcesso rotaCodigo="entregas.recepcao" />;
 
+  const colunas: ColunaDataTable<LoteListado>[] = [
+    {
+      chave: 'numero',
+      titulo: 'Numero',
+      render: (l) => <span className="font-mono text-xs">{l.numero ?? l.id.slice(0, 8)}</span>,
+    },
+    {
+      chave: 'criadoEm',
+      titulo: 'Quando',
+      render: (l) => <span className="text-xs">{formatDate(l.criadoEm)}</span>,
+    },
+    {
+      chave: 'unidadeDestinoNome',
+      titulo: 'Destino',
+      render: (l) => <span className="text-sm">{l.unidadeDestinoNome}</span>,
+    },
+    {
+      chave: 'motoristaNome',
+      titulo: 'Motorista',
+      render: (l) => <span className="text-sm">{l.motoristaNome}</span>,
+    },
+    {
+      chave: 'status',
+      titulo: 'Status',
+      render: (l) => <StatusBadge status={l.status} />,
+    },
+    {
+      chave: 'acoes',
+      titulo: 'Acoes',
+      alinhar: 'right',
+      render: (l) =>
+        podeEscrever && (
+          <Button size="sm" onClick={() => setRegistrando(l)}>
+            Registrar recebimento
+          </Button>
+        ),
+    },
+  ];
+
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4">
       <PageHeader
         titulo="Recepcao de Entregas"
         subtitulo="Confirmacao do recebimento fisico (sem responsabilidade pelo conteudo)"
       />
 
-      {carregando ? (
-        <div className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ) : lotes.length === 0 ? (
-        <div className="rounded-md border border-dashed p-12 text-center text-muted-foreground">
-          <Inbox className="h-10 w-10 mx-auto mb-2 opacity-40" />
+      <div className="flex flex-wrap gap-3">
+        <Select
+          value={filtroStatus}
+          onValueChange={(v) => setFiltroStatus(v as 'in_transit' | 'pending')}
+        >
+          <SelectTrigger className="w-56">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="in_transit">Em transito</SelectItem>
+            <SelectItem value="pending">Pendente</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <DataTable<LoteListado>
+        itens={lista.itens}
+        colunas={colunas}
+        isLoading={lista.isLoading}
+        mensagemVazia="Nenhum lote aguardando recepcao."
+        paginacao={{
+          total: lista.total,
+          pagina: lista.paginacao.pagina,
+          tamanho: lista.paginacao.tamanho,
+          busca: lista.paginacao.busca,
+          placeholderBusca: 'Buscar por numero ou motorista...',
+          aoMudarPagina: lista.paginacao.setPagina,
+          aoMudarTamanho: lista.paginacao.setTamanho,
+          aoMudarBusca: lista.paginacao.setBusca,
+        }}
+      />
+
+      {lista.itens.length === 0 && !lista.isLoading && (
+        <div className="text-muted-foreground rounded-md border border-dashed p-12 text-center">
+          <Inbox className="mx-auto mb-2 h-10 w-10 opacity-40" />
           Nenhum lote aguardando recepcao.
-        </div>
-      ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Numero</TableHead>
-                <TableHead>Quando</TableHead>
-                <TableHead>Destino</TableHead>
-                <TableHead>Motorista</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Acoes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lotes.map((l) => (
-                <TableRow key={l.id}>
-                  <TableCell className="font-mono text-xs">
-                    {l.numero ?? l.id.slice(0, 8)}
-                  </TableCell>
-                  <TableCell className="text-xs">{formatDate(l.criadoEm)}</TableCell>
-                  <TableCell className="text-sm">
-                    {unidadesMap.get(l.unidadeDestinoId)?.nome ?? '?'}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {usuariosMap.get(l.motoristaUsuarioId)?.nome ?? '?'}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={l.status} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {podeEscrever && (
-                      <Button size="sm" onClick={() => setRegistrando(l)}>
-                        Registrar recebimento
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
         </div>
       )}
 
@@ -142,7 +152,7 @@ export function RecepcaoPage() {
           aoFechar={() => setRegistrando(null)}
           aoSalvar={async () => {
             setRegistrando(null);
-            await recarregar();
+            await lista.recarregar();
           }}
         />
       )}
@@ -156,7 +166,7 @@ function DialogConfirmar({
   aoFechar,
   aoSalvar,
 }: {
-  lote: LoteEntrega;
+  lote: LoteListado;
   meuUsuarioId: string;
   aoFechar: () => void;
   aoSalvar: () => Promise<void>;
@@ -167,7 +177,6 @@ function DialogConfirmar({
   async function handleSalvar() {
     setSalvando(true);
     try {
-      // 1. Cria confirmacao
       await crud<ConfirmacaoEntrega>('confirmacoes_entrega').create({
         loteId: lote.id,
         tipo: 'reception_receipt',
@@ -175,7 +184,6 @@ function DialogConfirmar({
         observacoes: observacoes.trim() || null,
       });
 
-      // 2. Atualiza status do lote
       await crud<LoteEntrega>('lotes_entrega').update(lote.id, {
         status: 'received_confirmed',
         recebidoEm: new Date().toISOString(),

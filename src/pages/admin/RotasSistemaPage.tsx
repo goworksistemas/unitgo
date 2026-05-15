@@ -11,17 +11,17 @@ export function RotasSistemaPage() {
       subtitulo="Catalogo de telas que podem ser permissionadas"
       ordenarPor="ordem"
       textoBotaoNovo="Nova rota"
-      // Rotas publicas/protegidas nao podem ser excluidas
+      colunasBuscaServidor={['codigo', 'nome', 'caminho', 'modulo']}
+      placeholderBusca="Buscar por codigo, nome, caminho ou modulo..."
       permiteExcluir={(r) => !r.ehPublica}
       colunas={[
         {
           chave: 'codigo',
           titulo: 'Codigo',
-          pesquisavel: true,
           largura: '220px',
           render: (r) => <span className="font-mono text-sm">{r.codigo}</span>,
         },
-        { chave: 'nome', titulo: 'Nome', pesquisavel: true },
+        { chave: 'nome', titulo: 'Nome' },
         {
           chave: 'modulo',
           titulo: 'Modulo',
@@ -36,7 +36,6 @@ export function RotasSistemaPage() {
         {
           chave: 'caminho',
           titulo: 'Caminho',
-          pesquisavel: true,
           render: (r) => <span className="font-mono text-xs">{r.caminho}</span>,
         },
         {
@@ -51,9 +50,7 @@ export function RotasSistemaPage() {
           largura: '100px',
           alinhar: 'center',
           render: (r) => (
-            <Badge variant={r.ativo ? 'default' : 'outline'}>
-              {r.ativo ? 'Ativa' : 'Inativa'}
-            </Badge>
+            <Badge variant={r.ativo ? 'default' : 'outline'}>{r.ativo ? 'Ativa' : 'Inativa'}</Badge>
           ),
         },
       ]}

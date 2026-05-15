@@ -71,18 +71,18 @@ export function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 flex items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <img src={logoSupplyGo} alt="SupplyGo" className="h-12 mx-auto mb-4" />
+        <div className="mb-8 text-center">
+          <img src={logoSupplyGo} alt="SupplyGo" className="mx-auto mb-4 h-12" />
           <h1 className="text-2xl font-semibold text-white">Redefinir senha</h1>
-          <p className="text-slate-400 text-sm mt-1">Defina uma nova senha para sua conta</p>
+          <p className="mt-1 text-sm text-slate-400">Defina uma nova senha para sua conta</p>
         </div>
 
         {tokenValido === false ? (
           <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-center text-red-200">
-            <p className="font-semibold mb-2">Link invalido ou expirado</p>
-            <p className="text-sm mb-4">Solicite um novo email de recuperacao na tela de login.</p>
+            <p className="mb-2 font-semibold">Link invalido ou expirado</p>
+            <p className="mb-4 text-sm">Solicite um novo email de recuperacao na tela de login.</p>
             <Button variant="outline" onClick={() => navigate('/login')}>
               Voltar para login
             </Button>
@@ -93,7 +93,10 @@ export function ResetPasswordPage() {
             className="space-y-4 rounded-xl border border-slate-700/50 bg-slate-900/40 p-6 backdrop-blur"
           >
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" aria-hidden />
+              <Lock
+                className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400"
+                aria-hidden
+              />
               <Input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Nova senha"
@@ -105,7 +108,7 @@ export function ResetPasswordPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword((p) => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-200"
                 tabIndex={-1}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -113,7 +116,10 @@ export function ResetPasswordPage() {
             </div>
 
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" aria-hidden />
+              <Lock
+                className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400"
+                aria-hidden
+              />
               <Input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Confirme a senha"
@@ -125,7 +131,7 @@ export function ResetPasswordPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading || tokenValido === null}>
-              <KeyRound className="h-4 w-4 mr-2" />
+              <KeyRound className="mr-2 h-4 w-4" />
               {isLoading ? 'Salvando...' : 'Redefinir senha'}
             </Button>
           </form>

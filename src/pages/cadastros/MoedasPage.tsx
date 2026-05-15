@@ -11,11 +11,12 @@ export function MoedasPage() {
       subtitulo="Moedas suportadas pelo sistema"
       ordenarPor="codigo"
       textoBotaoNovo="Nova moeda"
+      colunasBuscaServidor={['codigo', 'nome']}
+      placeholderBusca="Buscar por codigo ou nome..."
       colunas={[
         {
           chave: 'codigo',
           titulo: 'Codigo',
-          pesquisavel: true,
           largura: '120px',
           render: (m) => <span className="font-mono">{m.codigo}</span>,
         },
@@ -25,16 +26,14 @@ export function MoedasPage() {
           largura: '90px',
           render: (m) => <span className="text-lg">{m.simbolo}</span>,
         },
-        { chave: 'nome', titulo: 'Nome', pesquisavel: true },
+        { chave: 'nome', titulo: 'Nome' },
         {
           chave: 'ativo',
           titulo: 'Ativo',
           largura: '100px',
           alinhar: 'center',
           render: (m) => (
-            <Badge variant={m.ativo ? 'default' : 'outline'}>
-              {m.ativo ? 'Ativa' : 'Inativa'}
-            </Badge>
+            <Badge variant={m.ativo ? 'default' : 'outline'}>{m.ativo ? 'Ativa' : 'Inativa'}</Badge>
           ),
         },
       ]}
@@ -48,7 +47,13 @@ export function MoedasPage() {
           validar: (v) =>
             !v || typeof v !== 'string' || !/^[A-Z]{3}$/.test(v) ? '3 letras maiusculas' : null,
         },
-        { nome: 'simbolo', label: 'Simbolo', tipo: 'text', obrigatorio: true, placeholder: 'R$, $, €' },
+        {
+          nome: 'simbolo',
+          label: 'Simbolo',
+          tipo: 'text',
+          obrigatorio: true,
+          placeholder: 'R$, $, €',
+        },
         { nome: 'nome', label: 'Nome', tipo: 'text', obrigatorio: true, span: 2 },
         { nome: 'ativo', label: 'Ativa', tipo: 'boolean' },
       ]}

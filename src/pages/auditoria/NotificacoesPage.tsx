@@ -57,10 +57,7 @@ export function NotificacoesPage() {
     () => notificacoes.filter((n) => n.lidoEm && !n.arquivadoEm),
     [notificacoes],
   );
-  const arquivadas = useMemo(
-    () => notificacoes.filter((n) => !!n.arquivadoEm),
-    [notificacoes],
-  );
+  const arquivadas = useMemo(() => notificacoes.filter((n) => !!n.arquivadoEm), [notificacoes]);
 
   async function marcarLida(n: Notificacao) {
     try {
@@ -87,16 +84,14 @@ export function NotificacoesPage() {
   if (!podeLer) return <SemAcesso rotaCodigo="auditoria.notificacoes" />;
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
-      <PageHeader
-        titulo="Notificacoes"
-        subtitulo="Suas notificacoes do sistema"
-      />
+    <div className="mx-auto max-w-4xl space-y-4">
+      <PageHeader titulo="Notificacoes" subtitulo="Suas notificacoes do sistema" />
 
       <Tabs defaultValue="naoLidas">
         <TabsList>
           <TabsTrigger value="naoLidas">
-            Nao lidas {naoLidas.length > 0 && (
+            Nao lidas{' '}
+            {naoLidas.length > 0 && (
               <Badge variant="destructive" className="ml-2">
                 {naoLidas.length}
               </Badge>
@@ -106,7 +101,7 @@ export function NotificacoesPage() {
           <TabsTrigger value="arquivadas">Arquivadas ({arquivadas.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="naoLidas" className="space-y-2 mt-4">
+        <TabsContent value="naoLidas" className="mt-4 space-y-2">
           {carregando ? (
             <Skeleton className="h-32 w-full" />
           ) : naoLidas.length === 0 ? (
@@ -123,17 +118,15 @@ export function NotificacoesPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="lidas" className="space-y-2 mt-4">
+        <TabsContent value="lidas" className="mt-4 space-y-2">
           {lidas.length === 0 ? (
             <Vazio mensagem="Nada por aqui." />
           ) : (
-            lidas.map((n) => (
-              <NotificacaoCard key={n.id} n={n} onArquivar={() => arquivar(n)} />
-            ))
+            lidas.map((n) => <NotificacaoCard key={n.id} n={n} onArquivar={() => arquivar(n)} />)
           )}
         </TabsContent>
 
-        <TabsContent value="arquivadas" className="space-y-2 mt-4">
+        <TabsContent value="arquivadas" className="mt-4 space-y-2">
           {arquivadas.length === 0 ? (
             <Vazio mensagem="Nenhuma arquivada." />
           ) : (
@@ -147,8 +140,8 @@ export function NotificacoesPage() {
 
 function Vazio({ mensagem }: { mensagem: string }) {
   return (
-    <div className="rounded-md border border-dashed p-12 text-center text-muted-foreground">
-      <Bell className="h-10 w-10 mx-auto mb-2 opacity-40" />
+    <div className="text-muted-foreground rounded-md border border-dashed p-12 text-center">
+      <Bell className="mx-auto mb-2 h-10 w-10 opacity-40" />
       {mensagem}
     </div>
   );
@@ -176,32 +169,23 @@ function NotificacaoCard({
 }) {
   const naoLida = !n.lidoEm && !n.arquivadoEm;
   return (
-    <div
-      className={`rounded-md border p-4 ${naoLida ? 'border-primary/30 bg-primary/5' : ''}`}
-    >
+    <div className={`rounded-md border p-4 ${naoLida ? 'border-primary/30 bg-primary/5' : ''}`}>
       <div className="flex items-start gap-3">
-        <Bell className={`h-4 w-4 mt-0.5 ${naoLida ? 'text-primary' : 'text-muted-foreground'}`} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <h4 className="font-medium text-sm">{n.titulo}</h4>
+        <Bell className={`mt-0.5 h-4 w-4 ${naoLida ? 'text-primary' : 'text-muted-foreground'}`} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-2">
+            <h4 className="text-sm font-medium">{n.titulo}</h4>
             <Badge variant={prioridadeVariant(n.prioridade)} className="text-xs">
               {n.prioridade}
             </Badge>
-            {n.tipo && (
-              <span className="text-xs font-mono text-muted-foreground">{n.tipo}</span>
-            )}
+            {n.tipo && <span className="text-muted-foreground font-mono text-xs">{n.tipo}</span>}
           </div>
-          {n.mensagem && (
-            <p className="text-sm text-muted-foreground mt-1">{n.mensagem}</p>
-          )}
-          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+          {n.mensagem && <p className="text-muted-foreground mt-1 text-sm">{n.mensagem}</p>}
+          <div className="text-muted-foreground mt-2 flex items-center gap-3 text-xs">
             <span>{formatDate(n.criadoEm)}</span>
             <span>({formatRelativeTimePast(n.criadoEm)})</span>
             {n.linkAcao && (
-              <a
-                href={n.linkAcao}
-                className="text-primary hover:underline flex items-center gap-1"
-              >
+              <a href={n.linkAcao} className="text-primary flex items-center gap-1 hover:underline">
                 <ExternalLink className="h-3 w-3" />
                 Abrir
               </a>

@@ -2,34 +2,34 @@
 
 :root {
   /* ========== Cores da Marca Gowork (Brandbook Oficial) ========== */
-  --brand-primary: #3F76FF;      /* Festival da Ópera */
-  --brand-secondary: #00C5E9;    /* Pelourinho */
-  --brand-neutral: #606060;      /* Cinza Profundo */
-  
+  --brand-primary: #3f76ff; /* Festival da Ópera */
+  --brand-secondary: #00c5e9; /* Pelourinho */
+  --brand-neutral: #606060; /* Cinza Profundo */
+
   /* ========== Utility Colors (Light Mode) ========== */
   --bg-primary: #f8f9fa;
   --bg-secondary: #ffffff;
   --text-primary: #14181b;
   --text-secondary: #495057;
-  
+
   /* ========== Surfaces & Strokes (Light Mode) ========== */
   --surface: #ffffff;
   --card: #ffffff;
   --stroke: #d8dee4;
   --shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-  
+
   /* ========== Semantic Colors (Light Mode) ========== */
   --success: #249689;
-  --error: #DC3545;
-  --warning: #FF8C00;
-  --info: #17A2B8;
-  
+  --error: #dc3545;
+  --warning: #ff8c00;
+  --info: #17a2b8;
+
   /* ========== Accent Colors (UI Support) ========== */
-  --accent-1: #FF6B35;           /* Laranja Vibrante */
-  --accent-2: #9B59B6;           /* Roxo Intenso */
-  --accent-3: #2ECC71;           /* Verde Forte */
-  --accent-4: #E74C3C;           /* Vermelho Vivo */
-  
+  --accent-1: #ff6b35; /* Laranja Vibrante */
+  --accent-2: #9b59b6; /* Roxo Intenso */
+  --accent-3: #2ecc71; /* Verde Forte */
+  --accent-4: #e74c3c; /* Vermelho Vivo */
+
   /* ========== Design System Tokens (Light Mode) ========== */
   --background: #f8f9fa;
   --foreground: #14181b;
@@ -37,32 +37,32 @@
   --card-foreground: #14181b;
   --popover: #ffffff;
   --popover-foreground: #14181b;
-  --primary: #3F76FF;
+  --primary: #3f76ff;
   --primary-foreground: #ffffff;
-  --secondary: #00C5E9;
+  --secondary: #00c5e9;
   --secondary-foreground: #ffffff;
   --muted: #f8f9fa;
   --muted-foreground: #606060;
   --accent: #f8f9fa;
   --accent-foreground: #14181b;
-  --destructive: #DC3545;
+  --destructive: #dc3545;
   --destructive-foreground: #ffffff;
   --border: #d8dee4;
   --input: #d8dee4;
   --input-background: #ffffff;
-  --ring: #3F76FF;
+  --ring: #3f76ff;
   --radius: 0.875rem;
-  
+
   /* Sidebar (Light Mode) */
   --sidebar: #ffffff;
   --sidebar-foreground: #14181b;
-  --sidebar-primary: #3F76FF;
+  --sidebar-primary: #3f76ff;
   --sidebar-primary-foreground: #ffffff;
   /* Hover itens menu (referência tipo Gestio: leve tom azulado) */
   --sidebar-accent: #eef3ff;
   --sidebar-accent-foreground: #14181b;
   --sidebar-border: #d8dee4;
-  --sidebar-ring: #3F76FF;
+  --sidebar-ring: #3f76ff;
 }
 
 .dark {
@@ -71,25 +71,25 @@
   --bg-secondary: #0f1214;
   --text-primary: #f8f9fa;
   --text-secondary: #a8adb3;
-  
+
   /* ========== Surfaces & Strokes (Dark Mode) ========== */
   --surface: #151819;
   --card: #1a1d21;
   --stroke: #2a2f35;
   --shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
-  
+
   /* ========== Semantic Colors (Dark Mode) ========== */
   --success: #34d399;
   --error: #f87171;
   --warning: #fbbf24;
   --info: #38bdf8;
-  
+
   /* ========== Accent Colors (UI Support - Same in Dark) ========== */
-  --accent-1: #FF6B35;
-  --accent-2: #9B59B6;
-  --accent-3: #2ECC71;
-  --accent-4: #E74C3C;
-  
+  --accent-1: #ff6b35;
+  --accent-2: #9b59b6;
+  --accent-3: #2ecc71;
+  --accent-4: #e74c3c;
+
   /* ========== Design System Tokens (Dark Mode) ========== */
   --background: #0a0d0f;
   --foreground: #f8f9fa;
@@ -111,7 +111,7 @@
   --input: #2a2f35;
   --input-background: #151819;
   --ring: #5b8cff;
-  
+
   /* Sidebar (Dark Mode) */
   --sidebar: #151819;
   --sidebar-foreground: #e5e7eb;
@@ -167,7 +167,7 @@
     @apply bg-background text-foreground;
     overflow-x: hidden;
   }
-  
+
   html {
     overflow-x: hidden;
   }
@@ -177,7 +177,7 @@
  * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
  */
 @layer base {
-  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+  :where(:not(:has([class*=' text-']), :not(:has([class^='text-'])))) {
     h1 {
       font-size: 1.875rem;
       font-weight: 600;
@@ -234,12 +234,12 @@ html {
 
 /* Utility class to hide scrollbar while maintaining scroll functionality */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
+  display: none; /* Chrome, Safari and Opera */
 }
 
 /* ========== Sidebar Utility Classes ========== */
@@ -287,19 +287,20 @@ html {
   color: var(--sidebar-accent-foreground);
 }
 
-.data-\[active\=true\]\:bg-sidebar-accent[data-active="true"] {
+.data-\[active\=true\]\:bg-sidebar-accent[data-active='true'] {
   background-color: var(--sidebar-accent);
 }
 
-.data-\[active\=true\]\:text-sidebar-accent-foreground[data-active="true"] {
+.data-\[active\=true\]\:text-sidebar-accent-foreground[data-active='true'] {
   color: var(--sidebar-accent-foreground);
 }
 
-.group-data-\[variant\=floating\]\:border-sidebar-border:is([data-variant="floating"] *) {
+.group-data-\[variant\=floating\]\:border-sidebar-border:is([data-variant='floating'] *) {
   border-color: var(--sidebar-border);
 }
 
-.\[data-sidebar\=menu-sub-button\]\:text-sidebar-accent-foreground [data-sidebar="menu-sub-button"] {
+.\[data-sidebar\=menu-sub-button\]\:text-sidebar-accent-foreground
+  [data-sidebar='menu-sub-button'] {
   color: var(--sidebar-accent-foreground);
 }
 
@@ -311,7 +312,9 @@ html {
   color: var(--sidebar-accent-foreground);
 }
 
-.peer-data-\[active\=true\]\/menu-button\:text-sidebar-accent-foreground:is(.peer\/menu-button[data-active="true"] ~ *) {
+.peer-data-\[active\=true\]\/menu-button\:text-sidebar-accent-foreground:is(
+  .peer\/menu-button[data-active='true'] ~ *
+) {
   color: var(--sidebar-accent-foreground);
 }
 
@@ -336,7 +339,7 @@ html {
   animation: rotate-gradient 20s linear infinite;
 }
 
-.has-\[\[data-variant\=inset\]\]\:bg-sidebar:has([data-variant="inset"]) {
+.has-\[\[data-variant\=inset\]\]\:bg-sidebar:has([data-variant='inset']) {
   background-color: var(--sidebar);
 }
 

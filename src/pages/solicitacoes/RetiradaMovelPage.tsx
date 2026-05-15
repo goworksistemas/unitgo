@@ -8,7 +8,7 @@ export function RetiradaMovelPage() {
       titulo="Retirada de Movel"
       subtitulo="Movel sai da unidade. Designer decide armazenar ou descartar"
       statusInicial="pending_designer"
-      filtroItens={(it) => it.ehMovel}
+      filtroItensParamsRpc={{ pEhMovel: true }}
     />
   );
 }

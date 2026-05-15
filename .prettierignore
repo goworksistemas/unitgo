@@ -1,0 +1,9 @@
+dist
+node_modules
+public
+supabase
+temp
+coverage
+*.md
+package-lock.json
+*.tsbuildinfo

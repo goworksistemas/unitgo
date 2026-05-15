@@ -10,7 +10,6 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -27,126 +26,120 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { ApiError, crud } from '@/lib/api';
+import { useListaPaginada } from '@/hooks/useListaPaginada';
 import { usePermissao } from '@/hooks/usePermissao';
 import { usePerfil } from '@/contexts/PerfilContext';
+import { DataTable, type ColunaDataTable } from '@/components/crud/DataTable';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SemAcesso } from '@/components/crud/SemAcesso';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { formatDate } from '@/lib/format';
-import type {
-  PedidoCompra,
-  PedidoCompraItem,
-  RecebimentoCompra,
-  Unidade,
-} from '@/types';
+import type { PedidoCompra, PedidoCompraItem, RecebimentoCompra, Unidade } from '@/types';
+
+interface RecebimentoListado extends RecebimentoCompra {
+  pedidoNumero: string | null;
+  itemDescricao: string;
+  itemNome: string | null;
+  unidadeRecebimentoNome: string;
+  recebidoPorNome: string;
+  conferidoPorNome: string | null;
+  notaFiscalNumero: string | null;
+}
 
 export function RecebimentosPage() {
   const { podeLer, podeEscrever } = usePermissao('compras.recebimentos');
   const perfil = usePerfil();
 
-  const [recebimentos, setRecebimentos] = useState<RecebimentoCompra[]>([]);
-  const [pedidosMap, setPedidosMap] = useState<Map<string, PedidoCompra>>(new Map());
-  const [unidadesMap, setUnidadesMap] = useState<Map<string, Unidade>>(new Map());
-  const [carregando, setCarregando] = useState(true);
   const [novoAberto, setNovoAberto] = useState(false);
 
-  async function recarregar() {
-    setCarregando(true);
-    try {
-      const [recs, peds, unis] = await Promise.all([
-        crud<RecebimentoCompra>('recebimentos_compra').list({
-          ordenarPor: 'dataRecebimento',
-          ascendente: false,
-        }),
-        crud<PedidoCompra>('pedidos_compra').list({}),
-        crud<Unidade>('unidades').list({}),
-      ]);
-      setRecebimentos(recs);
-      setPedidosMap(new Map(peds.map((p) => [p.id, p])));
-      setUnidadesMap(new Map(unis.map((u) => [u.id, u])));
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Erro');
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  useEffect(() => {
-    void recarregar();
-  }, []);
+  const lista = useListaPaginada<RecebimentoListado>({ rpc: 'fn_listar_recebimentos' });
 
   if (!podeLer) return <SemAcesso rotaCodigo="compras.recebimentos" />;
 
+  const colunas: ColunaDataTable<RecebimentoListado>[] = [
+    {
+      chave: 'dataRecebimento',
+      titulo: 'Quando',
+      largura: '140px',
+      render: (r) => <span className="text-xs">{formatDate(r.dataRecebimento)}</span>,
+    },
+    {
+      chave: 'pedidoNumero',
+      titulo: 'Pedido',
+      render: (r) => (
+        <span className="font-mono text-xs">{r.pedidoNumero ?? r.pedidoId.slice(0, 8)}</span>
+      ),
+    },
+    {
+      chave: 'item',
+      titulo: 'Item',
+      render: (r) => <span className="text-sm">{r.itemNome ?? r.itemDescricao}</span>,
+    },
+    {
+      chave: 'unidadeRecebimentoNome',
+      titulo: 'Unidade',
+      render: (r) => <span className="text-sm">{r.unidadeRecebimentoNome}</span>,
+    },
+    {
+      chave: 'quantidadeEsperada',
+      titulo: 'Esperada',
+      largura: '100px',
+      alinhar: 'right',
+      render: (r) => <span className="font-mono">{r.quantidadeEsperada}</span>,
+    },
+    {
+      chave: 'quantidadeRecebida',
+      titulo: 'Recebida',
+      largura: '100px',
+      alinhar: 'right',
+      render: (r) => <span className="font-mono">{r.quantidadeRecebida}</span>,
+    },
+    {
+      chave: 'quantidadeAvariada',
+      titulo: 'Avariada',
+      largura: '100px',
+      alinhar: 'right',
+      render: (r) => <span className="font-mono text-amber-600">{r.quantidadeAvariada}</span>,
+    },
+    {
+      chave: 'status',
+      titulo: 'Status',
+      render: (r) => <StatusBadge status={r.status} />,
+    },
+  ];
+
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4">
       <PageHeader
         titulo="Recebimentos"
         subtitulo="Registro de recebimento de itens dos pedidos de compra"
         acoes={
           podeEscrever && (
             <Button onClick={() => setNovoAberto(true)}>
-              <Plus className="h-4 w-4 mr-1.5" />
+              <Plus className="mr-1.5 h-4 w-4" />
               Novo recebimento
             </Button>
           )
         }
       />
 
-      {carregando ? (
-        <Skeleton className="h-32 w-full" />
-      ) : recebimentos.length === 0 ? (
-        <div className="rounded-md border border-dashed p-12 text-center text-muted-foreground">
-          Nenhum recebimento registrado.
-        </div>
-      ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Quando</TableHead>
-                <TableHead>Pedido</TableHead>
-                <TableHead>Unidade</TableHead>
-                <TableHead className="text-right">Esperada</TableHead>
-                <TableHead className="text-right">Recebida</TableHead>
-                <TableHead className="text-right">Avariada</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recebimentos.map((r) => {
-                const ped = pedidosMap.get(r.pedidoId);
-                const uni = unidadesMap.get(r.unidadeRecebimentoId);
-                return (
-                  <TableRow key={r.id}>
-                    <TableCell className="text-xs">{formatDate(r.dataRecebimento)}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {ped?.numero ?? r.pedidoId.slice(0, 8)}
-                    </TableCell>
-                    <TableCell className="text-sm">{uni?.nome ?? '?'}</TableCell>
-                    <TableCell className="text-right font-mono">{r.quantidadeEsperada}</TableCell>
-                    <TableCell className="text-right font-mono">{r.quantidadeRecebida}</TableCell>
-                    <TableCell className="text-right font-mono text-amber-600">
-                      {r.quantidadeAvariada}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={r.status} />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      <DataTable<RecebimentoListado>
+        itens={lista.itens}
+        colunas={colunas}
+        isLoading={lista.isLoading}
+        mensagemVazia="Nenhum recebimento registrado."
+        paginacao={{
+          total: lista.total,
+          pagina: lista.paginacao.pagina,
+          tamanho: lista.paginacao.tamanho,
+          busca: lista.paginacao.busca,
+          placeholderBusca: 'Buscar por pedido ou item...',
+          aoMudarPagina: lista.paginacao.setPagina,
+          aoMudarTamanho: lista.paginacao.setTamanho,
+          aoMudarBusca: lista.paginacao.setBusca,
+        }}
+      />
 
       {novoAberto && perfil.usuario && (
         <DialogNovoRecebimento
@@ -154,7 +147,7 @@ export function RecebimentosPage() {
           aoFechar={() => setNovoAberto(false)}
           aoSalvar={async () => {
             setNovoAberto(false);
-            await recarregar();
+            await lista.recarregar();
           }}
         />
       )}
@@ -188,7 +181,11 @@ function DialogNovoRecebimento({
       crud<PedidoCompra>('pedidos_compra').list({}),
       crud<Unidade>('unidades').list({}),
     ]).then(([ps, us]) => {
-      setPedidos(ps.filter((p) => ['sent_to_supplier', 'awaiting_nf', 'partially_received'].includes(p.status)));
+      setPedidos(
+        ps.filter((p) =>
+          ['sent_to_supplier', 'awaiting_nf', 'partially_received'].includes(p.status),
+        ),
+      );
       setUnidades(us);
     });
   }, []);

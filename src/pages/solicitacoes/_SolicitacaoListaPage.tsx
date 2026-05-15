@@ -8,15 +8,17 @@
  *  - solicitacoes/emprestimo
  *
  * Cada pagina e' uma instancia com props: tipoSolicitacao, rotaCodigo, etc.
+ *
+ * Listagem via RPC `fn_listar_solicitacoes` (paginada server-side, JOIN
+ * com item/unidade/solicitante ja resolvido pelo banco).
  */
-import { useEffect, useMemo, useState } from 'react';
-import { Eye, Plus, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Eye, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -33,31 +35,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { ApiError, crud } from '@/lib/api';
+import { useListaPaginada } from '@/hooks/useListaPaginada';
+import { useOpcoesFK } from '@/hooks/useOpcoesFK';
 import { usePermissao } from '@/hooks/usePermissao';
 import { usePerfil } from '@/contexts/PerfilContext';
+import { ComboboxFK } from '@/components/crud/ComboboxFK';
+import { DataTable, type ColunaDataTable } from '@/components/crud/DataTable';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SemAcesso } from '@/components/crud/SemAcesso';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Timeline } from '@/components/shared/Timeline';
 import { formatDate, getUrgenciaLabel } from '@/lib/format';
-import type {
-  Item,
-  Solicitacao,
-  StatusSolicitacao,
-  TipoSolicitacao,
-  Unidade,
-  Urgencia,
-  Usuario,
-} from '@/types';
+import type { Solicitacao, StatusSolicitacao, TipoSolicitacao, Unidade, Urgencia } from '@/types';
+
+interface SolicitacaoListada extends Solicitacao {
+  itemNome: string;
+  unidadeNome: string;
+  solicitanteNome: string;
+  tomadorNome: string | null;
+}
 
 interface Props {
   tipoSolicitacao: TipoSolicitacao;
@@ -69,8 +66,8 @@ interface Props {
   mostrarTomador?: boolean;
   /** Mostra campo "previsao de devolucao" (so emprestimo). */
   mostrarDevolucaoPrevista?: boolean;
-  /** Filtra itens por flag. ex: ehMovel para furniture. */
-  filtroItens?: (item: Item) => boolean;
+  /** Filtra itens por flag (no Combobox). ex: ehMovel para furniture. */
+  filtroItensParamsRpc?: Record<string, unknown>;
 }
 
 export function SolicitacaoListaPage({
@@ -81,86 +78,106 @@ export function SolicitacaoListaPage({
   statusInicial,
   mostrarTomador = false,
   mostrarDevolucaoPrevista = false,
-  filtroItens,
+  filtroItensParamsRpc,
 }: Props) {
   const { podeLer, podeEscrever } = usePermissao(rotaCodigo);
   const perfil = usePerfil();
 
-  const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
-  const [itens, setItens] = useState<Item[]>([]);
-  const [unidades, setUnidades] = useState<Unidade[]>([]);
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<string>('todos');
   const [dialogNovo, setDialogNovo] = useState(false);
-  const [verSolicitacao, setVerSolicitacao] = useState<Solicitacao | null>(null);
+  const [verSolicitacao, setVerSolicitacao] = useState<SolicitacaoListada | null>(null);
 
-  async function recarregar() {
-    setCarregando(true);
-    try {
-      const [sols, its, unis, usrs] = await Promise.all([
-        crud<Solicitacao>('solicitacoes').list({
-          igualdade: { tipo: tipoSolicitacao },
-          ordenarPor: 'criadoEm',
-          ascendente: false,
-        }),
-        crud<Item>('itens').list({}),
-        crud<Unidade>('unidades').list({}),
-        crud<Usuario>('usuarios').list({}),
-      ]);
-      setSolicitacoes(sols);
-      setItens(filtroItens ? its.filter(filtroItens) : its);
-      setUnidades(unis);
-      setUsuarios(usrs);
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Erro ao carregar');
-    } finally {
-      setCarregando(false);
-    }
-  }
+  const filtrosRpc = useMemo<Record<string, unknown>>(() => {
+    const f: Record<string, unknown> = { pTipo: tipoSolicitacao };
+    if (filtroStatus !== 'todos') f.pStatus = filtroStatus;
+    return f;
+  }, [tipoSolicitacao, filtroStatus]);
 
-  useEffect(() => {
-    void recarregar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tipoSolicitacao]);
-
-  const itensMap = useMemo(() => new Map(itens.map((i) => [i.id, i])), [itens]);
-  const unidadesMap = useMemo(() => new Map(unidades.map((u) => [u.id, u])), [unidades]);
-  const usuariosMap = useMemo(() => new Map(usuarios.map((u) => [u.id, u])), [usuarios]);
-
-  const filtradas = useMemo(() => {
-    let r = solicitacoes;
-    if (filtroStatus !== 'todos') r = r.filter((s) => s.status === filtroStatus);
-    if (busca.trim()) {
-      const t = busca.toLowerCase();
-      r = r.filter((s) => {
-        const item = itensMap.get(s.itemId);
-        return (
-          item?.nome.toLowerCase().includes(t) ||
-          (s.numero ?? '').toLowerCase().includes(t)
-        );
-      });
-    }
-    return r;
-  }, [solicitacoes, filtroStatus, busca, itensMap]);
-
-  const statusUnicos = useMemo(
-    () => Array.from(new Set(solicitacoes.map((s) => s.status))),
-    [solicitacoes],
-  );
+  const lista = useListaPaginada<SolicitacaoListada>({
+    rpc: 'fn_listar_solicitacoes',
+    filtros: filtrosRpc,
+  });
 
   if (!podeLer) return <SemAcesso rotaCodigo={rotaCodigo} />;
 
+  const statusUnicos = Array.from(new Set(lista.itens.map((s) => s.status)));
+
+  const colunas: ColunaDataTable<SolicitacaoListada>[] = [
+    {
+      chave: 'numero',
+      titulo: 'Numero',
+      largura: '120px',
+      render: (s) => <span className="font-mono text-xs">{s.numero ?? s.id.slice(0, 8)}</span>,
+    },
+    {
+      chave: 'criadoEm',
+      titulo: 'Quando',
+      largura: '130px',
+      render: (s) => <span className="text-xs">{formatDate(s.criadoEm)}</span>,
+    },
+    {
+      chave: 'itemNome',
+      titulo: 'Item',
+      render: (s) => <span className="text-sm">{s.itemNome}</span>,
+    },
+    {
+      chave: 'quantidade',
+      titulo: 'Qtd',
+      largura: '80px',
+      alinhar: 'right',
+      render: (s) => <span className="font-mono">{s.quantidade}</span>,
+    },
+    {
+      chave: 'unidadeNome',
+      titulo: 'Unidade',
+      render: (s) => <span className="text-sm">{s.unidadeNome}</span>,
+    },
+    {
+      chave: 'solicitanteNome',
+      titulo: 'Solicitante',
+      render: (s) => <span className="text-sm">{s.solicitanteNome}</span>,
+    },
+    {
+      chave: 'urgencia',
+      titulo: 'Urgencia',
+      largura: '110px',
+      render: (s) => (
+        <Badge variant={urgenciaVariant(s.urgencia)}>{getUrgenciaLabel(s.urgencia)}</Badge>
+      ),
+    },
+    {
+      chave: 'status',
+      titulo: 'Status',
+      render: (s) => <StatusBadge status={s.status} />,
+    },
+    {
+      chave: 'acao',
+      titulo: '',
+      largura: '60px',
+      render: (s) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setVerSolicitacao(s);
+          }}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4">
       <PageHeader
         titulo={titulo}
         subtitulo={subtitulo}
         acoes={
           podeEscrever && (
             <Button onClick={() => setDialogNovo(true)}>
-              <Plus className="h-4 w-4 mr-1.5" />
+              <Plus className="mr-1.5 h-4 w-4" />
               Nova solicitacao
             </Button>
           )
@@ -168,15 +185,6 @@ export function SolicitacaoListaPage({
       />
 
       <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por item ou numero..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="pl-9"
-          />
-        </div>
         <Select value={filtroStatus} onValueChange={setFiltroStatus}>
           <SelectTrigger className="w-56">
             <SelectValue />
@@ -192,109 +200,42 @@ export function SolicitacaoListaPage({
         </Select>
       </div>
 
-      {carregando ? (
-        <div className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-32">Numero</TableHead>
-                <TableHead className="w-32">Quando</TableHead>
-                <TableHead>Item</TableHead>
-                <TableHead className="text-right w-20">Qtd</TableHead>
-                <TableHead>Unidade</TableHead>
-                <TableHead>Solicitante</TableHead>
-                <TableHead className="w-24">Urgencia</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-16"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtradas.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
-                    Nenhuma solicitacao encontrada.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtradas.map((s) => {
-                  const item = itensMap.get(s.itemId);
-                  const unidade = unidadesMap.get(s.unidadeSolicitanteId);
-                  const solicitante = usuariosMap.get(s.solicitadoPorUsuarioId);
-                  return (
-                    <TableRow
-                      key={s.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => setVerSolicitacao(s)}
-                    >
-                      <TableCell className="font-mono text-xs">
-                        {s.numero ?? s.id.slice(0, 8)}
-                      </TableCell>
-                      <TableCell className="text-xs">{formatDate(s.criadoEm)}</TableCell>
-                      <TableCell className="text-sm">{item?.nome ?? '?'}</TableCell>
-                      <TableCell className="text-right font-mono">{s.quantidade}</TableCell>
-                      <TableCell className="text-sm">{unidade?.nome ?? '?'}</TableCell>
-                      <TableCell className="text-sm">{solicitante?.nome ?? '?'}</TableCell>
-                      <TableCell>
-                        <Badge variant={urgenciaVariant(s.urgencia)}>
-                          {getUrgenciaLabel(s.urgencia)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={s.status} />
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" onClick={(e) => {
-                          e.stopPropagation();
-                          setVerSolicitacao(s);
-                        }}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      <div className="text-xs text-muted-foreground">
-        {filtradas.length} de {solicitacoes.length} registro(s)
-      </div>
+      <DataTable<SolicitacaoListada>
+        itens={lista.itens}
+        colunas={colunas}
+        isLoading={lista.isLoading}
+        mensagemVazia="Nenhuma solicitacao encontrada."
+        paginacao={{
+          total: lista.total,
+          pagina: lista.paginacao.pagina,
+          tamanho: lista.paginacao.tamanho,
+          busca: lista.paginacao.busca,
+          placeholderBusca: 'Buscar por numero, item ou justificativa...',
+          aoMudarPagina: lista.paginacao.setPagina,
+          aoMudarTamanho: lista.paginacao.setTamanho,
+          aoMudarBusca: lista.paginacao.setBusca,
+        }}
+      />
 
       {dialogNovo && (
         <DialogNova
           tipoSolicitacao={tipoSolicitacao}
           statusInicial={statusInicial}
-          itens={itens}
-          unidades={unidades}
-          usuarios={usuarios}
           meuUsuarioId={perfil.usuario?.id ?? null}
           unidadePadraoId={perfil.usuario?.unidadesIds?.[0] ?? null}
           mostrarTomador={mostrarTomador}
           mostrarDevolucaoPrevista={mostrarDevolucaoPrevista}
+          filtroItensParamsRpc={filtroItensParamsRpc}
           aoFechar={() => setDialogNovo(false)}
           aoSalvar={async () => {
             setDialogNovo(false);
-            await recarregar();
+            await lista.recarregar();
           }}
         />
       )}
 
       {verSolicitacao && (
-        <DialogDetalhe
-          solicitacao={verSolicitacao}
-          item={itensMap.get(verSolicitacao.itemId)}
-          unidade={unidadesMap.get(verSolicitacao.unidadeSolicitanteId)}
-          solicitante={usuariosMap.get(verSolicitacao.solicitadoPorUsuarioId)}
-          aoFechar={() => setVerSolicitacao(null)}
-        />
+        <DialogDetalhe solicitacao={verSolicitacao} aoFechar={() => setVerSolicitacao(null)} />
       )}
     </div>
   );
@@ -318,43 +259,57 @@ function urgenciaVariant(u: Urgencia) {
 function DialogNova({
   tipoSolicitacao,
   statusInicial,
-  itens,
-  unidades,
-  usuarios,
   meuUsuarioId,
   unidadePadraoId,
   mostrarTomador,
   mostrarDevolucaoPrevista,
+  filtroItensParamsRpc,
   aoFechar,
   aoSalvar,
 }: {
   tipoSolicitacao: TipoSolicitacao;
   statusInicial: StatusSolicitacao;
-  itens: Item[];
-  unidades: Unidade[];
-  usuarios: Usuario[];
   meuUsuarioId: string | null;
   unidadePadraoId: string | null;
   mostrarTomador: boolean;
   mostrarDevolucaoPrevista: boolean;
+  filtroItensParamsRpc?: Record<string, unknown>;
   aoFechar: () => void;
   aoSalvar: () => Promise<void>;
 }) {
-  const [itemId, setItemId] = useState('');
+  // Unidades e usuarios sao universos pequenos -> carregamos pre.
+  const { opcoes: unidadesOpcoes } = useOpcoesFK('unidades', 'nome', {
+    filtros: { status: 'active' },
+  });
+  const [unidadesAndares, setUnidadesAndares] = useState<Map<string, string[]>>(new Map());
+
+  const [itemId, setItemId] = useState<string | null>(null);
   const [quantidade, setQuantidade] = useState(1);
   const [unidadeId, setUnidadeId] = useState(unidadePadraoId ?? '');
   const [andarDestino, setAndarDestino] = useState('');
   const [localizacaoDetalhe, setLocalizacaoDetalhe] = useState('');
   const [justificativa, setJustificativa] = useState('');
   const [urgencia, setUrgencia] = useState<Urgencia>('medium');
-  const [tomadorId, setTomadorId] = useState('');
+  const [tomadorId, setTomadorId] = useState<string | null>(null);
   const [devolucaoPrevista, setDevolucaoPrevista] = useState('');
   const [salvando, setSalvando] = useState(false);
 
-  const unidadeSelecionada = useMemo(
-    () => unidades.find((u) => u.id === unidadeId),
-    [unidades, unidadeId],
-  );
+  const andaresDisponiveis = unidadesAndares.get(unidadeId) ?? [];
+
+  // Carrega lazy os andares da unidade selecionada.
+  async function carregarAndaresSeNecessario(id: string) {
+    if (!id || unidadesAndares.has(id)) return;
+    try {
+      const u = await crud<Unidade>('unidades').get(id);
+      setUnidadesAndares((prev) => {
+        const nv = new Map(prev);
+        nv.set(id, u?.andares ?? []);
+        return nv;
+      });
+    } catch {
+      // silencioso
+    }
+  }
 
   async function handleSalvar() {
     if (!meuUsuarioId) return toast.error('Usuario nao identificado');
@@ -379,9 +334,8 @@ function DialogNova({
         justificativa: justificativa || null,
         urgencia,
       };
-      if (mostrarTomador) payload.tomadorUsuarioId = tomadorId;
-      if (mostrarDevolucaoPrevista)
-        payload.emprestimoDevolucaoPrevista = devolucaoPrevista;
+      if (mostrarTomador && tomadorId) payload.tomadorUsuarioId = tomadorId;
+      if (mostrarDevolucaoPrevista) payload.emprestimoDevolucaoPrevista = devolucaoPrevista;
 
       await crud<Solicitacao>('solicitacoes').create(payload);
       toast.success('Solicitacao criada');
@@ -392,6 +346,11 @@ function DialogNova({
       setSalvando(false);
     }
   }
+
+  // Carrega andares da unidade padrao na abertura.
+  useState(() => {
+    if (unidadePadraoId) void carregarAndaresSeNecessario(unidadePadraoId);
+  });
 
   return (
     <Dialog open onOpenChange={(o) => !o && aoFechar()}>
@@ -404,18 +363,15 @@ function DialogNova({
         <div className="grid grid-cols-2 gap-3 py-2">
           <div className="col-span-2 space-y-1.5">
             <Label>Item</Label>
-            <Select value={itemId} onValueChange={setItemId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione..." />
-              </SelectTrigger>
-              <SelectContent>
-                {itens.map((i) => (
-                  <SelectItem key={i.id} value={i.id}>
-                    {i.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ComboboxFK
+              valor={itemId}
+              aoMudar={setItemId}
+              rpc="fn_listar_itens"
+              campoLabel="nome"
+              paramsRpc={{ pAtivo: true, ...(filtroItensParamsRpc ?? {}) }}
+              placeholder="Buscar item..."
+              permiteVazio={false}
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -444,21 +400,28 @@ function DialogNova({
 
           <div className="col-span-2 space-y-1.5">
             <Label>Unidade solicitante</Label>
-            <Select value={unidadeId} onValueChange={setUnidadeId}>
+            <Select
+              value={unidadeId}
+              onValueChange={(v) => {
+                setUnidadeId(v);
+                setAndarDestino('');
+                void carregarAndaresSeNecessario(v);
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
               <SelectContent>
-                {unidades.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.nome}
+                {unidadesOpcoes.map((u) => (
+                  <SelectItem key={u.valor} value={u.valor}>
+                    {u.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {unidadeSelecionada && unidadeSelecionada.andares.length > 0 && (
+          {andaresDisponiveis.length > 0 && (
             <div className="space-y-1.5">
               <Label>Andar destino</Label>
               <Select
@@ -470,7 +433,7 @@ function DialogNova({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">— nenhum —</SelectItem>
-                  {unidadeSelecionada.andares.map((a) => (
+                  {andaresDisponiveis.map((a) => (
                     <SelectItem key={a} value={a}>
                       {a}
                     </SelectItem>
@@ -492,18 +455,15 @@ function DialogNova({
           {mostrarTomador && (
             <div className="col-span-2 space-y-1.5">
               <Label>Tomador (quem vai usar)</Label>
-              <Select value={tomadorId} onValueChange={setTomadorId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {usuarios.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ComboboxFK
+                valor={tomadorId}
+                aoMudar={setTomadorId}
+                rpc="fn_listar_usuarios"
+                campoLabel="nome"
+                paramsRpc={{ pAtivo: true }}
+                placeholder="Buscar usuario..."
+                permiteVazio={false}
+              />
             </div>
           )}
 
@@ -548,48 +508,41 @@ function DialogNova({
 
 function DialogDetalhe({
   solicitacao,
-  item,
-  unidade,
-  solicitante,
   aoFechar,
 }: {
-  solicitacao: Solicitacao;
-  item?: Item;
-  unidade?: Unidade;
-  solicitante?: Usuario;
+  solicitacao: SolicitacaoListada;
   aoFechar: () => void;
 }) {
   return (
     <Dialog open onOpenChange={(o) => !o && aoFechar()}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <span>Solicitacao {solicitacao.numero ?? solicitacao.id.slice(0, 8)}</span>
             <StatusBadge status={solicitacao.status} />
           </DialogTitle>
-          <DialogDescription>
-            Criada em {formatDate(solicitacao.criadoEm)}
-          </DialogDescription>
+          <DialogDescription>Criada em {formatDate(solicitacao.criadoEm)}</DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 py-2 text-sm">
-          <Linha label="Item" valor={item?.nome ?? '?'} />
+          <Linha label="Item" valor={solicitacao.itemNome} />
           <Linha label="Quantidade" valor={String(solicitacao.quantidade)} />
-          <Linha label="Unidade" valor={unidade?.nome ?? '?'} />
+          <Linha label="Unidade" valor={solicitacao.unidadeNome} />
           <Linha label="Andar" valor={solicitacao.andarDestino ?? '—'} />
           <Linha label="Localizacao" valor={solicitacao.localizacaoDetalhe ?? '—'} />
-          <Linha label="Solicitante" valor={solicitante?.nome ?? '?'} />
+          <Linha label="Solicitante" valor={solicitacao.solicitanteNome} />
           <Linha label="Urgencia" valor={getUrgenciaLabel(solicitacao.urgencia)} />
+          {solicitacao.tomadorNome && <Linha label="Tomador" valor={solicitacao.tomadorNome} />}
           {solicitacao.justificativa && (
             <div className="col-span-2">
-              <span className="text-xs text-muted-foreground">Justificativa</span>
+              <span className="text-muted-foreground text-xs">Justificativa</span>
               <p className="mt-1 text-sm">{solicitacao.justificativa}</p>
             </div>
           )}
         </div>
 
         <div className="border-t pt-4">
-          <h3 className="font-semibold mb-3">Linha do tempo</h3>
+          <h3 className="mb-3 font-semibold">Linha do tempo</h3>
           <Timeline tipoEntidade="solicitacao" entidadeId={solicitacao.id} />
         </div>
 
@@ -606,7 +559,7 @@ function DialogDetalhe({
 function Linha({ label, valor }: { label: string; valor: string }) {
   return (
     <div>
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-muted-foreground text-xs">{label}</span>
       <p className="text-sm">{valor}</p>
     </div>
   );

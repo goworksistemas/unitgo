@@ -5,7 +5,7 @@
  * Apos aprovado, vira disponivel para cotacao.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { Eye, Plus, Search, Trash2 } from 'lucide-react';
+import { Eye, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,8 +37,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ApiError, crud, supabase } from '@/lib/api';
+import { useListaPaginada } from '@/hooks/useListaPaginada';
 import { usePermissao } from '@/hooks/usePermissao';
 import { usePerfil } from '@/contexts/PerfilContext';
+import { ComboboxFK } from '@/components/crud/ComboboxFK';
+import { DataTable, type ColunaDataTable } from '@/components/crud/DataTable';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SemAcesso } from '@/components/crud/SemAcesso';
 import { StatusBadge } from '@/components/shared/StatusBadge';
@@ -46,13 +49,19 @@ import { Timeline } from '@/components/shared/Timeline';
 import { formatDate, getUrgenciaLabel } from '@/lib/format';
 import type {
   EmpresaEmitente,
-  Item,
   SolicitacaoCompra,
   SolicitacaoCompraItem,
   UnidadeMedida,
   Urgencia,
-  Usuario,
 } from '@/types';
+
+interface SolicitacaoCompraListada extends SolicitacaoCompra {
+  solicitanteNome: string;
+  compradorNome: string | null;
+  unidadeNome: string | null;
+  departamentoNome: string | null;
+  totalItens: number;
+}
 
 interface ItemForm {
   descricao: string;
@@ -66,64 +75,103 @@ export function SolicitacoesCompraPage() {
   const { podeLer, podeEscrever } = usePermissao('compras.solicitacoes');
   const perfil = usePerfil();
 
-  const [solicitacoes, setSolicitacoes] = useState<SolicitacaoCompra[]>([]);
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [novoAberto, setNovoAberto] = useState(false);
-  const [verSolicitacao, setVerSolicitacao] = useState<SolicitacaoCompra | null>(null);
+  const [verSolicitacao, setVerSolicitacao] = useState<SolicitacaoCompraListada | null>(null);
 
-  async function recarregar() {
-    setCarregando(true);
-    try {
-      const [sols, usrs] = await Promise.all([
-        crud<SolicitacaoCompra>('solicitacoes_compra').list({
-          ordenarPor: 'criadoEm',
-          ascendente: false,
-        }),
-        crud<Usuario>('usuarios').list({}),
-      ]);
-      setSolicitacoes(sols);
-      setUsuarios(usrs);
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Erro');
-    } finally {
-      setCarregando(false);
-    }
-  }
+  const filtros = useMemo(
+    () => (filtroStatus !== 'todos' ? { pStatus: filtroStatus } : {}),
+    [filtroStatus],
+  );
 
-  useEffect(() => {
-    void recarregar();
-  }, []);
-
-  const usuariosMap = useMemo(() => new Map(usuarios.map((u) => [u.id, u])), [usuarios]);
-
-  const filtradas = useMemo(() => {
-    let r = solicitacoes;
-    if (filtroStatus !== 'todos') r = r.filter((s) => s.status === filtroStatus);
-    if (busca.trim()) {
-      const t = busca.toLowerCase();
-      r = r.filter(
-        (s) =>
-          (s.numero ?? '').toLowerCase().includes(t) ||
-          s.justificativa.toLowerCase().includes(t),
-      );
-    }
-    return r;
-  }, [solicitacoes, filtroStatus, busca]);
+  const lista = useListaPaginada<SolicitacaoCompraListada>({
+    rpc: 'fn_listar_solicitacoes_compra',
+    filtros,
+  });
 
   if (!podeLer) return <SemAcesso rotaCodigo="compras.solicitacoes" />;
 
+  const colunas: ColunaDataTable<SolicitacaoCompraListada>[] = [
+    {
+      chave: 'numero',
+      titulo: 'Numero',
+      largura: '130px',
+      render: (s) => <span className="font-mono text-xs">{s.numero ?? s.id.slice(0, 8)}</span>,
+    },
+    {
+      chave: 'criadoEm',
+      titulo: 'Quando',
+      largura: '130px',
+      render: (s) => <span className="text-xs">{formatDate(s.criadoEm)}</span>,
+    },
+    {
+      chave: 'solicitanteNome',
+      titulo: 'Solicitante',
+      render: (s) => <span className="text-sm">{s.solicitanteNome}</span>,
+    },
+    {
+      chave: 'justificativa',
+      titulo: 'Justificativa',
+      render: (s) => <span className="line-clamp-1 text-sm">{s.justificativa}</span>,
+    },
+    {
+      chave: 'totalItens',
+      titulo: 'Itens',
+      largura: '80px',
+      alinhar: 'right',
+      render: (s) => <span className="font-mono">{s.totalItens}</span>,
+    },
+    {
+      chave: 'urgencia',
+      titulo: 'Urgencia',
+      largura: '110px',
+      render: (s) => (
+        <Badge
+          variant={
+            s.urgencia === 'high'
+              ? 'destructive'
+              : s.urgencia === 'medium'
+                ? 'secondary'
+                : 'outline'
+          }
+        >
+          {getUrgenciaLabel(s.urgencia)}
+        </Badge>
+      ),
+    },
+    {
+      chave: 'status',
+      titulo: 'Status',
+      render: (s) => <StatusBadge status={s.status} />,
+    },
+    {
+      chave: 'acao',
+      titulo: '',
+      largura: '60px',
+      render: (s) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setVerSolicitacao(s);
+          }}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4">
       <PageHeader
         titulo="Solicitacoes de Compra"
         subtitulo="Solicitacoes que ainda nao viraram pedido. Aguardam aprovacao do gestor."
         acoes={
           podeEscrever && (
             <Button onClick={() => setNovoAberto(true)}>
-              <Plus className="h-4 w-4 mr-1.5" />
+              <Plus className="mr-1.5 h-4 w-4" />
               Nova solicitacao
             </Button>
           )
@@ -131,15 +179,6 @@ export function SolicitacoesCompraPage() {
       />
 
       <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por numero ou justificativa..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="pl-9"
-          />
-        </div>
         <Select value={filtroStatus} onValueChange={setFiltroStatus}>
           <SelectTrigger className="w-56">
             <SelectValue />
@@ -158,68 +197,22 @@ export function SolicitacoesCompraPage() {
         </Select>
       </div>
 
-      {carregando ? (
-        <div className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Numero</TableHead>
-                <TableHead>Quando</TableHead>
-                <TableHead>Solicitante</TableHead>
-                <TableHead>Justificativa</TableHead>
-                <TableHead>Urgencia</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-16"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtradas.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                    Nenhuma solicitacao encontrada.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtradas.map((s) => (
-                  <TableRow
-                    key={s.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => setVerSolicitacao(s)}
-                  >
-                    <TableCell className="font-mono text-xs">
-                      {s.numero ?? s.id.slice(0, 8)}
-                    </TableCell>
-                    <TableCell className="text-xs">{formatDate(s.criadoEm)}</TableCell>
-                    <TableCell className="text-sm">
-                      {usuariosMap.get(s.solicitanteId)?.nome ?? '?'}
-                    </TableCell>
-                    <TableCell className="text-sm max-w-md truncate">
-                      {s.justificativa}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={s.urgencia === 'high' ? 'destructive' : s.urgencia === 'medium' ? 'secondary' : 'outline'}>
-                        {getUrgenciaLabel(s.urgencia)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={s.status} />
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setVerSolicitacao(s); }}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      <DataTable<SolicitacaoCompraListada>
+        itens={lista.itens}
+        colunas={colunas}
+        isLoading={lista.isLoading}
+        mensagemVazia="Nenhuma solicitacao encontrada."
+        paginacao={{
+          total: lista.total,
+          pagina: lista.paginacao.pagina,
+          tamanho: lista.paginacao.tamanho,
+          busca: lista.paginacao.busca,
+          placeholderBusca: 'Buscar por numero, solicitante ou justificativa...',
+          aoMudarPagina: lista.paginacao.setPagina,
+          aoMudarTamanho: lista.paginacao.setTamanho,
+          aoMudarBusca: lista.paginacao.setBusca,
+        }}
+      />
 
       {novoAberto && perfil.usuario && (
         <DialogNovaSolCompra
@@ -228,7 +221,7 @@ export function SolicitacoesCompraPage() {
           aoFechar={() => setNovoAberto(false)}
           aoSalvar={async () => {
             setNovoAberto(false);
-            await recarregar();
+            await lista.recarregar();
           }}
         />
       )}
@@ -236,7 +229,7 @@ export function SolicitacoesCompraPage() {
       {verSolicitacao && (
         <DialogVerSolCompra
           solicitacao={verSolicitacao}
-          solicitanteNome={usuariosMap.get(verSolicitacao.solicitanteId)?.nome}
+          solicitanteNome={verSolicitacao.solicitanteNome}
           podeEscrever={podeEscrever}
           aoFechar={() => setVerSolicitacao(null)}
           aoAcaoGestor={async (acao, motivo) => {
@@ -251,7 +244,7 @@ export function SolicitacoesCompraPage() {
               });
               toast.success(acao === 'aprovar' ? 'Aprovada' : 'Rejeitada');
               setVerSolicitacao(null);
-              await recarregar();
+              await lista.recarregar();
             } catch (e) {
               toast.error(e instanceof ApiError ? e.message : 'Erro');
             }
@@ -285,18 +278,15 @@ function DialogNovaSolCompra({
     { descricao: '', itemId: null, quantidade: 1, unidadeMedidaId: null, observacao: '' },
   ]);
   const [empresas, setEmpresas] = useState<EmpresaEmitente[]>([]);
-  const [itensCatalogo, setItensCatalogo] = useState<Item[]>([]);
   const [unidadesMedida, setUnidadesMedida] = useState<UnidadeMedida[]>([]);
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
     Promise.all([
       crud<EmpresaEmitente>('empresas_emitentes').list({ igualdade: { ativo: true } }),
-      crud<Item>('itens').list({ igualdade: { ativo: true } }),
       crud<UnidadeMedida>('unidades_medida').list({ igualdade: { ativo: true } }),
-    ]).then(([emps, its, ums]) => {
+    ]).then(([emps, ums]) => {
       setEmpresas(emps);
-      setItensCatalogo(its);
       setUnidadesMedida(ums);
     });
   }, []);
@@ -358,7 +348,7 @@ function DialogNovaSolCompra({
 
   return (
     <Dialog open onOpenChange={(o) => !o && aoFechar()}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nova solicitacao de compra</DialogTitle>
           <DialogDescription>
@@ -425,15 +415,15 @@ function DialogNovaSolCompra({
             <div className="flex items-center justify-between">
               <Label>Itens</Label>
               <Button variant="outline" size="sm" onClick={addItem}>
-                <Plus className="h-3 w-3 mr-1" />
+                <Plus className="mr-1 h-3 w-3" />
                 Adicionar
               </Button>
             </div>
             <div className="space-y-2">
               {itens.map((it, idx) => (
-                <div key={idx} className="rounded-md border p-3 space-y-2">
+                <div key={idx} className="space-y-2 rounded-md border p-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Item #{idx + 1}</span>
+                    <span className="text-muted-foreground text-xs">Item #{idx + 1}</span>
                     {itens.length > 1 && (
                       <Button
                         variant="ghost"
@@ -456,22 +446,14 @@ function DialogNovaSolCompra({
                     </div>
                     <div className="col-span-5 space-y-1">
                       <Label className="text-xs">Item do catalogo (opc)</Label>
-                      <Select
-                        value={it.itemId ?? ''}
-                        onValueChange={(v) => setItem(idx, { itemId: v === '__none__' ? null : v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="ad-hoc" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none__">— ad-hoc —</SelectItem>
-                          {itensCatalogo.map((i) => (
-                            <SelectItem key={i.id} value={i.id}>
-                              {i.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <ComboboxFK
+                        valor={it.itemId}
+                        aoMudar={(v) => setItem(idx, { itemId: v })}
+                        rpc="fn_listar_itens"
+                        campoLabel="nome"
+                        paramsRpc={{ pAtivo: true }}
+                        placeholder="ad-hoc"
+                      />
                     </div>
                     <div className="col-span-3 space-y-1">
                       <Label className="text-xs">Quantidade</Label>
@@ -555,7 +537,7 @@ function DialogVerSolCompra({
 
   return (
     <Dialog open onOpenChange={(o) => !o && aoFechar()}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <span>SC {solicitacao.numero ?? solicitacao.id.slice(0, 8)}</span>
@@ -573,28 +555,28 @@ function DialogVerSolCompra({
             )}
             {solicitacao.gestorMotivoRejeicao && (
               <div className="col-span-2">
-                <span className="text-xs text-muted-foreground">Motivo da rejeicao</span>
+                <span className="text-muted-foreground text-xs">Motivo da rejeicao</span>
                 <p className="mt-1 text-sm text-red-600">{solicitacao.gestorMotivoRejeicao}</p>
               </div>
             )}
             <div className="col-span-2">
-              <span className="text-xs text-muted-foreground">Justificativa</span>
+              <span className="text-muted-foreground text-xs">Justificativa</span>
               <p className="mt-1 text-sm">{solicitacao.justificativa}</p>
             </div>
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm mb-2">Itens</h3>
+            <h3 className="mb-2 text-sm font-semibold">Itens</h3>
             {carregandoItens ? (
               <Skeleton className="h-32 w-full" />
             ) : (
-              <div className="rounded-md border overflow-hidden">
+              <div className="overflow-hidden rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
                       <TableHead>Descricao</TableHead>
-                      <TableHead className="text-right w-24">Qtd</TableHead>
+                      <TableHead className="w-24 text-right">Qtd</TableHead>
                       <TableHead>Observacao</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -604,7 +586,7 @@ function DialogVerSolCompra({
                         <TableCell className="text-center font-mono text-xs">{idx + 1}</TableCell>
                         <TableCell className="text-sm">{it.descricao}</TableCell>
                         <TableCell className="text-right font-mono">{it.quantidade}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-muted-foreground text-xs">
                           {it.observacao ?? ''}
                         </TableCell>
                       </TableRow>
@@ -616,20 +598,20 @@ function DialogVerSolCompra({
           </div>
 
           <div className="border-t pt-4">
-            <h3 className="font-semibold text-sm mb-2">Linha do tempo</h3>
+            <h3 className="mb-2 text-sm font-semibold">Linha do tempo</h3>
             <Timeline tipoEntidade="solicitacao_compra" entidadeId={solicitacao.id} />
           </div>
 
           {podeAprovar && (
-            <div className="border-t pt-4 space-y-3">
-              <h3 className="font-semibold text-sm">Acao do gestor</h3>
+            <div className="space-y-3 border-t pt-4">
+              <h3 className="text-sm font-semibold">Acao do gestor</h3>
               <Textarea
                 rows={2}
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Motivo (obrigatorio se rejeitar)"
               />
-              <div className="flex gap-2 justify-end">
+              <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -659,7 +641,7 @@ function DialogVerSolCompra({
 function Linha({ label, valor }: { label: string; valor: string }) {
   return (
     <div>
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-muted-foreground text-xs">{label}</span>
       <p className="text-sm">{valor}</p>
     </div>
   );

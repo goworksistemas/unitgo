@@ -28,7 +28,11 @@ interface AuthContextValue {
   sessao: Session | null;
   authUsuarioId: string | null;
   isLoading: boolean;
-  signUp: (params: { email: string; password: string; nome: string }) => Promise<{ ehPrimeiraConta?: boolean }>;
+  signUp: (params: {
+    email: string;
+    password: string;
+    nome: string;
+  }) => Promise<{ ehPrimeiraConta?: boolean }>;
   signIn: (params: { email: string; password: string }) => Promise<void>;
   signOut: () => Promise<void>;
   recuperarSenha: (email: string) => Promise<void>;

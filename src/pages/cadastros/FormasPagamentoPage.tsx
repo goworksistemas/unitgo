@@ -11,19 +11,19 @@ export function FormasPagamentoPage() {
       subtitulo="PIX, cartao, boleto, transferencia..."
       ordenarPor="codigo"
       textoBotaoNovo="Nova forma"
+      colunasBuscaServidor={['codigo', 'nome', 'descricao']}
+      placeholderBusca="Buscar por codigo, nome ou descricao..."
       colunas={[
         {
           chave: 'codigo',
           titulo: 'Codigo',
-          pesquisavel: true,
           largura: '180px',
           render: (f) => <span className="font-mono text-sm">{f.codigo}</span>,
         },
-        { chave: 'nome', titulo: 'Nome', pesquisavel: true },
+        { chave: 'nome', titulo: 'Nome' },
         {
           chave: 'descricao',
           titulo: 'Descricao',
-          pesquisavel: true,
           render: (f) => <span className="text-muted-foreground">{f.descricao ?? '—'}</span>,
         },
         {

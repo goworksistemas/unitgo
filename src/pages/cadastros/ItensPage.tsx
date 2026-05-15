@@ -3,7 +3,19 @@ import { CrudPage } from '@/components/crud/CrudPage';
 import { useOpcoesFK } from '@/hooks/useOpcoesFK';
 import type { Item } from '@/types';
 
+/**
+ * Linha enriquecida pela RPC `fn_listar_itens` — alem dos campos do Item,
+ * traz nomes resolvidos para evitar lookups no client.
+ */
+interface ItemListado extends Item {
+  categoriaNome: string | null;
+  unidadeMedidaNome: string | null;
+  unidadeMedidaCodigo: string | null;
+  fornecedorPreferencialNome: string | null;
+}
+
 export function ItensPage() {
+  // Selects do formulario continuam pre-carregados (universos pequenos).
   const { opcoes: categorias } = useOpcoesFK('categorias', 'nome', { filtros: { ativo: true } });
   const { opcoes: unidadesMedida } = useOpcoesFK('unidades_medida', 'nome', {
     filtros: { ativo: true },
@@ -12,19 +24,15 @@ export function ItensPage() {
     filtros: { status: 'active' },
   });
 
-  const nomeCategoria = (id: string | null) =>
-    categorias.find((c) => c.valor === id)?.label ?? '—';
-  const nomeUnidade = (id: string | null) =>
-    unidadesMedida.find((u) => u.valor === id)?.label ?? '—';
-
   return (
-    <CrudPage<Item>
+    <CrudPage<ItemListado>
       rotaCodigo="cadastros.itens"
       tabela="itens"
       titulo="Catalogo de Itens"
       subtitulo="Produtos consumiveis e moveis cadastrados no grupo"
-      ordenarPor="nome"
       textoBotaoNovo="Novo item"
+      rpcLista="fn_listar_itens"
+      placeholderBusca="Buscar por nome, codigo, marca, modelo..."
       colunas={[
         {
           chave: 'produtoCodigo',
@@ -37,17 +45,25 @@ export function ItensPage() {
               <span className="text-muted-foreground">—</span>
             ),
         },
-        { chave: 'nome', titulo: 'Nome', pesquisavel: true },
+        { chave: 'nome', titulo: 'Nome' },
         {
-          chave: 'categoriaId',
+          chave: 'categoriaNome',
           titulo: 'Categoria',
-          render: (i) => <span className="text-sm">{nomeCategoria(i.categoriaId)}</span>,
+          render: (i) => (
+            <span className="text-sm">
+              {i.categoriaNome ?? <span className="text-muted-foreground">—</span>}
+            </span>
+          ),
         },
         {
-          chave: 'unidadeMedidaId',
+          chave: 'unidadeMedidaNome',
           titulo: 'Unid. Medida',
           largura: '120px',
-          render: (i) => <span className="text-sm">{nomeUnidade(i.unidadeMedidaId)}</span>,
+          render: (i) => (
+            <span className="text-sm">
+              {i.unidadeMedidaNome ?? <span className="text-muted-foreground">—</span>}
+            </span>
+          ),
         },
         {
           chave: 'flags',

@@ -48,11 +48,11 @@ export function SupplyGoLogo({
         decoding="async"
       />
       <div className="flex min-w-0 flex-col leading-none">
-        <span className="truncate text-base font-bold tracking-tight text-foreground">
+        <span className="text-foreground truncate text-base font-bold tracking-tight">
           Supply<span className="text-[#3F76FF]">Go</span>
         </span>
         {!hideTagline && (
-          <span className="truncate text-[11px] text-muted-foreground">Controle de Estoque</span>
+          <span className="text-muted-foreground truncate text-[11px]">Controle de Estoque</span>
         )}
       </div>
     </div>

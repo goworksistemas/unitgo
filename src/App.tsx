@@ -9,8 +9,9 @@
  *          Routes:
  *            /login, /signup, /reset-password (publicas)
  *            /* protegidas com AppLayout:
- *               / -> Welcome
- *               <todas as outras> -> EmConstrucao (sera substituido por telas reais nos proximos lotes)
+ *               /            -> redireciona para /dashboards
+ *               /dashboards  -> Visao Geral (KPIs + atalhos por modulo)
+ *               <demais>     -> telas reais por modulo
  */
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
@@ -21,7 +22,14 @@ import { LoginPage } from '@/components/auth/LoginPage';
 import { SignupPage } from '@/components/auth/SignupPage';
 import { ResetPasswordPage } from '@/components/auth/ResetPasswordPage';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Welcome } from '@/pages/Welcome';
+
+// Dashboards
+import { VisaoGeralPage } from '@/pages/dashboards/VisaoGeralPage';
+import { EstoquesAbaixoMinimoPage } from '@/pages/dashboards/EstoquesAbaixoMinimoPage';
+import { EmprestimosAtrasadosPage } from '@/pages/dashboards/EmprestimosAtrasadosPage';
+import { ContratosVencendoPage } from '@/pages/dashboards/ContratosVencendoPage';
+import { PedidosAguardandoPage } from '@/pages/dashboards/PedidosAguardandoPage';
+import { TempoEtapasPage } from '@/pages/dashboards/TempoEtapasPage';
 
 // Admin
 import { UsuariosPage } from '@/pages/admin/UsuariosPage';
@@ -76,10 +84,10 @@ function ProtectedRoute() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Carregando...</p>
+          <div className="border-primary/30 border-t-primary mx-auto mb-3 h-12 w-12 animate-spin rounded-full border-4" />
+          <p className="text-muted-foreground text-sm">Carregando...</p>
         </div>
       </div>
     );
@@ -97,8 +105,8 @@ function PublicOnlyRoute() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="border-primary/30 border-t-primary h-12 w-12 animate-spin rounded-full border-4" />
       </div>
     );
   }
@@ -129,7 +137,28 @@ export default function App() {
               {/* Rotas protegidas */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<AppLayout />}>
-                  <Route path="/" element={<Welcome />} />
+                  {/* Raiz vai para a Visao Geral */}
+                  <Route path="/" element={<Navigate to="/dashboards" replace />} />
+
+                  {/* Dashboards */}
+                  <Route path="/dashboards" element={<VisaoGeralPage />} />
+                  <Route
+                    path="/dashboards/estoques-abaixo-minimo"
+                    element={<EstoquesAbaixoMinimoPage />}
+                  />
+                  <Route
+                    path="/dashboards/emprestimos-atrasados"
+                    element={<EmprestimosAtrasadosPage />}
+                  />
+                  <Route
+                    path="/dashboards/contratos-vencendo"
+                    element={<ContratosVencendoPage />}
+                  />
+                  <Route
+                    path="/dashboards/pedidos-aguardando"
+                    element={<PedidosAguardandoPage />}
+                  />
+                  <Route path="/dashboards/tempo-etapas" element={<TempoEtapasPage />} />
 
                   {/* Admin */}
                   <Route path="/admin/usuarios" element={<UsuariosPage />} />
@@ -145,10 +174,16 @@ export default function App() {
                   <Route path="/cadastros/categorias" element={<CategoriasPage />} />
                   <Route path="/cadastros/itens" element={<ItensPage />} />
                   <Route path="/cadastros/fornecedores" element={<FornecedoresPage />} />
-                  <Route path="/cadastros/categorias-fornecedor" element={<CategoriasFornecedorPage />} />
+                  <Route
+                    path="/cadastros/categorias-fornecedor"
+                    element={<CategoriasFornecedorPage />}
+                  />
                   <Route path="/cadastros/unidades-medida" element={<UnidadesMedidaPage />} />
                   <Route path="/cadastros/formas-pagamento" element={<FormasPagamentoPage />} />
-                  <Route path="/cadastros/condicoes-pagamento" element={<CondicoesPagamentoPage />} />
+                  <Route
+                    path="/cadastros/condicoes-pagamento"
+                    element={<CondicoesPagamentoPage />}
+                  />
 
                   {/* Estoque */}
                   <Route path="/estoque/saldos" element={<SaldosPage />} />

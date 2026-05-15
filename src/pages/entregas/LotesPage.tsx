@@ -1,7 +1,10 @@
 /**
  * LotesPage — almoxarife monta lotes de entrega.
  *
- * Lista lotes existentes + botao para criar novo. Para criar:
+ * Lista lotes via RPC `fn_listar_lotes_entrega` (paginada, JOIN com unidade
+ * destino, motorista e total_solicitacoes ja resolvidos).
+ *
+ * Para criar:
  *  - selecionar unidade destino
  *  - selecionar motorista
  *  - selecionar solicitacoes elegiveis (status approved/separated/awaiting_pickup)
@@ -10,21 +13,13 @@
  * Apos criar, cada solicitacao vinculada tem status atualizado para
  * 'awaiting_delivery'.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Eye, Plus, QrCode } from 'lucide-react';
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -33,29 +28,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { ApiError, crud, supabase } from '@/lib/api';
+import { ApiError, crud, rpcPaginado, supabase } from '@/lib/api';
+import { useListaPaginada } from '@/hooks/useListaPaginada';
+import { useOpcoesFK } from '@/hooks/useOpcoesFK';
 import { usePermissao } from '@/hooks/usePermissao';
+import { ComboboxFK } from '@/components/crud/ComboboxFK';
+import { DataTable, type ColunaDataTable } from '@/components/crud/DataTable';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SemAcesso } from '@/components/crud/SemAcesso';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { formatDate } from '@/lib/format';
-import type {
-  Item,
-  LoteEntrega,
-  LoteEntregaItem,
-  Solicitacao,
-  StatusSolicitacao,
-  Unidade,
-  Usuario,
-} from '@/types';
+import type { LoteEntrega, LoteEntregaItem, StatusSolicitacao } from '@/types';
+
+interface LoteListado extends LoteEntrega {
+  unidadeDestinoNome: string;
+  motoristaNome: string;
+  totalSolicitacoes: number;
+}
 
 const STATUS_ELEGIVEIS: StatusSolicitacao[] = [
   'approved',
@@ -67,131 +56,112 @@ const STATUS_ELEGIVEIS: StatusSolicitacao[] = [
 export function LotesPage() {
   const { podeLer, podeEscrever } = usePermissao('entregas.lotes');
 
-  const [lotes, setLotes] = useState<LoteEntrega[]>([]);
-  const [unidades, setUnidades] = useState<Unidade[]>([]);
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [carregando, setCarregando] = useState(true);
   const [novoAberto, setNovoAberto] = useState(false);
-  const [verLote, setVerLote] = useState<LoteEntrega | null>(null);
+  const [verLote, setVerLote] = useState<LoteListado | null>(null);
 
-  async function recarregar() {
-    setCarregando(true);
-    try {
-      const [ls, unis, usrs] = await Promise.all([
-        crud<LoteEntrega>('lotes_entrega').list({
-          ordenarPor: 'criadoEm',
-          ascendente: false,
-        }),
-        crud<Unidade>('unidades').list({}),
-        crud<Usuario>('usuarios').list({ igualdade: { ativo: true } }),
-      ]);
-      setLotes(ls);
-      setUnidades(unis);
-      setUsuarios(usrs);
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Erro ao carregar');
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  useEffect(() => {
-    void recarregar();
-  }, []);
-
-  const unidadesMap = useMemo(() => new Map(unidades.map((u) => [u.id, u])), [unidades]);
-  const usuariosMap = useMemo(() => new Map(usuarios.map((u) => [u.id, u])), [usuarios]);
+  const lista = useListaPaginada<LoteListado>({
+    rpc: 'fn_listar_lotes_entrega',
+  });
 
   if (!podeLer) return <SemAcesso rotaCodigo="entregas.lotes" />;
 
+  const colunas: ColunaDataTable<LoteListado>[] = [
+    {
+      chave: 'numero',
+      titulo: 'Numero',
+      largura: '130px',
+      render: (l) => <span className="font-mono text-xs">{l.numero ?? l.id.slice(0, 8)}</span>,
+    },
+    {
+      chave: 'criadoEm',
+      titulo: 'Quando',
+      largura: '130px',
+      render: (l) => <span className="text-xs">{formatDate(l.criadoEm)}</span>,
+    },
+    {
+      chave: 'unidadeDestinoNome',
+      titulo: 'Destino',
+      render: (l) => <span className="text-sm">{l.unidadeDestinoNome}</span>,
+    },
+    {
+      chave: 'motoristaNome',
+      titulo: 'Motorista',
+      render: (l) => <span className="text-sm">{l.motoristaNome}</span>,
+    },
+    {
+      chave: 'totalSolicitacoes',
+      titulo: 'Solicitacoes',
+      largura: '120px',
+      alinhar: 'right',
+      render: (l) => <span className="font-mono">{l.totalSolicitacoes}</span>,
+    },
+    {
+      chave: 'status',
+      titulo: 'Status',
+      render: (l) => <StatusBadge status={l.status} />,
+    },
+    {
+      chave: 'acoes',
+      titulo: '',
+      largura: '60px',
+      render: (l) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setVerLote(l);
+          }}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4">
       <PageHeader
         titulo="Lotes de Entrega"
         subtitulo="Almoxarife agrupa solicitacoes aprovadas em um lote para o motorista"
         acoes={
           podeEscrever && (
             <Button onClick={() => setNovoAberto(true)}>
-              <Plus className="h-4 w-4 mr-1.5" />
+              <Plus className="mr-1.5 h-4 w-4" />
               Novo lote
             </Button>
           )
         }
       />
 
-      {carregando ? (
-        <div className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ) : lotes.length === 0 ? (
-        <div className="rounded-md border border-dashed p-12 text-center text-muted-foreground">
-          Nenhum lote criado ainda.
-        </div>
-      ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-32">Numero</TableHead>
-                <TableHead className="w-32">Quando</TableHead>
-                <TableHead>Destino</TableHead>
-                <TableHead>Motorista</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-16"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lotes.map((l) => (
-                <TableRow key={l.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setVerLote(l)}>
-                  <TableCell className="font-mono text-xs">
-                    {l.numero ?? l.id.slice(0, 8)}
-                  </TableCell>
-                  <TableCell className="text-xs">{formatDate(l.criadoEm)}</TableCell>
-                  <TableCell className="text-sm">
-                    {unidadesMap.get(l.unidadeDestinoId)?.nome ?? '?'}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {usuariosMap.get(l.motoristaUsuarioId)?.nome ?? '?'}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={l.status} />
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon" onClick={(e) => {
-                      e.stopPropagation();
-                      setVerLote(l);
-                    }}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      <DataTable<LoteListado>
+        itens={lista.itens}
+        colunas={colunas}
+        isLoading={lista.isLoading}
+        mensagemVazia="Nenhum lote criado ainda."
+        paginacao={{
+          total: lista.total,
+          pagina: lista.paginacao.pagina,
+          tamanho: lista.paginacao.tamanho,
+          busca: lista.paginacao.busca,
+          placeholderBusca: 'Buscar por numero, motorista ou QR...',
+          aoMudarPagina: lista.paginacao.setPagina,
+          aoMudarTamanho: lista.paginacao.setTamanho,
+          aoMudarBusca: lista.paginacao.setBusca,
+        }}
+      />
 
       {novoAberto && (
         <DialogNovoLote
-          unidades={unidades}
-          motoristas={usuarios}
           aoFechar={() => setNovoAberto(false)}
           aoSalvar={async () => {
             setNovoAberto(false);
-            await recarregar();
+            await lista.recarregar();
           }}
         />
       )}
 
-      {verLote && (
-        <DialogVerLote
-          lote={verLote}
-          destinoNome={unidadesMap.get(verLote.unidadeDestinoId)?.nome}
-          motoristaNome={usuariosMap.get(verLote.motoristaUsuarioId)?.nome}
-          aoFechar={() => setVerLote(null)}
-        />
-      )}
+      {verLote && <DialogVerLote lote={verLote} aoFechar={() => setVerLote(null)} />}
     </div>
   );
 }
@@ -201,44 +171,55 @@ export function LotesPage() {
 // ============================================================================
 
 function DialogNovoLote({
-  unidades,
-  motoristas,
   aoFechar,
   aoSalvar,
 }: {
-  unidades: Unidade[];
-  motoristas: Usuario[];
   aoFechar: () => void;
   aoSalvar: () => Promise<void>;
 }) {
-  const [unidadeDestinoId, setUnidadeDestinoId] = useState('');
-  const [motoristaId, setMotoristaId] = useState('');
+  const [unidadeDestinoId, setUnidadeDestinoId] = useState<string | null>(null);
+  const [motoristaId, setMotoristaId] = useState<string | null>(null);
   const [observacoes, setObservacoes] = useState('');
-  const [solicitacoesElegiveis, setSolicitacoesElegiveis] = useState<Solicitacao[]>([]);
-  const [itensMap, setItensMap] = useState<Map<string, Item>>(new Map());
+  const [solicitacoesElegiveis, setSolicitacoesElegiveis] = useState<
+    Array<{
+      id: string;
+      numero: string | null;
+      status: StatusSolicitacao;
+      itemNome: string;
+      quantidade: number;
+    }>
+  >([]);
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
   const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
-  // Carrega elegiveis quando destino e' selecionado
+  // Carrega elegiveis quando destino e' selecionado via RPC paginada.
   useEffect(() => {
     if (!unidadeDestinoId) {
       setSolicitacoesElegiveis([]);
       return;
     }
     setCarregando(true);
-    Promise.all([
-      crud<Solicitacao>('solicitacoes').list({
-        igualdade: { unidadeSolicitanteId: unidadeDestinoId },
-      }),
-      crud<Item>('itens').list({}),
-    ])
-      .then(([sols, its]) => {
-        setSolicitacoesElegiveis(sols.filter((s) => STATUS_ELEGIVEIS.includes(s.status)));
-        setItensMap(new Map(its.map((i) => [i.id, i])));
-      })
-      .catch((e) => toast.error(e instanceof ApiError ? e.message : 'Erro'))
-      .finally(() => setCarregando(false));
+    (async () => {
+      try {
+        const res = await rpcPaginado<{
+          id: string;
+          numero: string | null;
+          status: StatusSolicitacao;
+          itemNome: string;
+          quantidade: number;
+        }>('fn_listar_solicitacoes', {
+          pUnidadeId: unidadeDestinoId,
+          pPagina: 1,
+          pTamanho: 200,
+        });
+        setSolicitacoesElegiveis(res.registros.filter((s) => STATUS_ELEGIVEIS.includes(s.status)));
+      } catch (e) {
+        toast.error(e instanceof ApiError ? e.message : 'Erro ao buscar elegiveis');
+      } finally {
+        setCarregando(false);
+      }
+    })();
   }, [unidadeDestinoId]);
 
   function toggle(id: string) {
@@ -259,7 +240,6 @@ function DialogNovoLote({
     try {
       const codigoQr = crypto.randomUUID();
 
-      // 1. Cria o lote
       const lote = await crud<LoteEntrega>('lotes_entrega').create({
         unidadeDestinoId,
         motoristaUsuarioId: motoristaId,
@@ -268,7 +248,6 @@ function DialogNovoLote({
         observacoes: observacoes.trim() || null,
       });
 
-      // 2. Vincula as solicitacoes
       const ids = Array.from(selecionadas);
       const { error: errVinc } = await supabase.from('lotes_entrega_itens').insert(
         ids.map((solicitacao_id, idx) => ({
@@ -279,7 +258,6 @@ function DialogNovoLote({
       );
       if (errVinc) throw new ApiError(errVinc);
 
-      // 3. Atualiza status das solicitacoes para awaiting_delivery
       const { error: errUpd } = await supabase
         .from('solicitacoes')
         .update({ status: 'awaiting_delivery', lote_entrega_id: lote.id })
@@ -297,7 +275,7 @@ function DialogNovoLote({
 
   return (
     <Dialog open onOpenChange={(o) => !o && aoFechar()}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo lote de entrega</DialogTitle>
           <DialogDescription>
@@ -308,76 +286,57 @@ function DialogNovoLote({
         <div className="grid grid-cols-2 gap-3 py-2">
           <div className="space-y-1.5">
             <Label>Unidade destino</Label>
-            <Select value={unidadeDestinoId} onValueChange={setUnidadeDestinoId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione..." />
-              </SelectTrigger>
-              <SelectContent>
-                {unidades.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SeletorUnidade valor={unidadeDestinoId} aoMudar={setUnidadeDestinoId} />
           </div>
 
           <div className="space-y-1.5">
             <Label>Motorista</Label>
-            <Select value={motoristaId} onValueChange={setMotoristaId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione..." />
-              </SelectTrigger>
-              <SelectContent>
-                {motoristas.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ComboboxFK
+              valor={motoristaId}
+              aoMudar={setMotoristaId}
+              rpc="fn_listar_usuarios"
+              campoLabel="nome"
+              paramsRpc={{ pAtivo: true }}
+              placeholder="Buscar motorista..."
+              permiteVazio={false}
+            />
           </div>
 
           <div className="col-span-2 space-y-1.5">
             <Label>Solicitacoes elegiveis</Label>
-            <div className="rounded-md border border-input p-2 max-h-72 overflow-y-auto">
+            <div className="border-input max-h-72 overflow-y-auto rounded-md border p-2">
               {!unidadeDestinoId ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">
+                <p className="text-muted-foreground py-4 text-center text-sm">
                   Selecione um destino para ver as solicitacoes elegiveis.
                 </p>
               ) : carregando ? (
                 <Skeleton className="h-32 w-full" />
               ) : solicitacoesElegiveis.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">
+                <p className="text-muted-foreground py-4 text-center text-sm">
                   Nenhuma solicitacao elegivel para esse destino.
                 </p>
               ) : (
                 <div className="space-y-1">
-                  {solicitacoesElegiveis.map((s) => {
-                    const item = itensMap.get(s.itemId);
-                    return (
-                      <label
-                        key={s.id}
-                        className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer text-sm"
-                      >
-                        <Checkbox
-                          checked={selecionadas.has(s.id)}
-                          onCheckedChange={() => toggle(s.id)}
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs">
-                              {s.numero ?? s.id.slice(0, 8)}
-                            </span>
-                            <StatusBadge status={s.status} />
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {item?.nome ?? '?'} × {s.quantidade}
-                          </div>
+                  {solicitacoesElegiveis.map((s) => (
+                    <label
+                      key={s.id}
+                      className="hover:bg-muted/50 flex cursor-pointer items-center gap-3 rounded p-2 text-sm"
+                    >
+                      <Checkbox
+                        checked={selecionadas.has(s.id)}
+                        onCheckedChange={() => toggle(s.id)}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs">{s.numero ?? s.id.slice(0, 8)}</span>
+                          <StatusBadge status={s.status} />
                         </div>
-                      </label>
-                    );
-                  })}
+                        <div className="text-muted-foreground text-xs">
+                          {s.itemNome} × {s.quantidade}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
                 </div>
               )}
             </div>
@@ -386,7 +345,7 @@ function DialogNovoLote({
           <div className="col-span-2 space-y-1.5">
             <Label>Observacoes</Label>
             <textarea
-              className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+              className="border-input w-full rounded-md border bg-transparent px-3 py-2 text-sm"
               rows={2}
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
@@ -407,21 +366,36 @@ function DialogNovoLote({
   );
 }
 
+// Seletor de unidade (universo pequeno -> Select normal pre-carregado).
+function SeletorUnidade({
+  valor,
+  aoMudar,
+}: {
+  valor: string | null;
+  aoMudar: (v: string) => void;
+}) {
+  const { opcoes } = useOpcoesFK('unidades', 'nome', { filtros: { status: 'active' } });
+  return (
+    <select
+      className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+      value={valor ?? ''}
+      onChange={(e) => aoMudar(e.target.value)}
+    >
+      <option value="">Selecione...</option>
+      {opcoes.map((o) => (
+        <option key={o.valor} value={o.valor}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 // ============================================================================
 // Dialog: ver lote (mostra QR code e itens)
 // ============================================================================
 
-function DialogVerLote({
-  lote,
-  destinoNome,
-  motoristaNome,
-  aoFechar,
-}: {
-  lote: LoteEntrega;
-  destinoNome?: string;
-  motoristaNome?: string;
-  aoFechar: () => void;
-}) {
+function DialogVerLote({ lote, aoFechar }: { lote: LoteListado; aoFechar: () => void }) {
   const [itens, setItens] = useState<LoteEntregaItem[]>([]);
   const [carregando, setCarregando] = useState(true);
 
@@ -434,7 +408,7 @@ function DialogVerLote({
 
   return (
     <Dialog open onOpenChange={(o) => !o && aoFechar()}>
-      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <span>Lote {lote.numero ?? lote.id.slice(0, 8)}</span>
@@ -446,33 +420,35 @@ function DialogVerLote({
         <div className="space-y-4 py-2">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-xs text-muted-foreground">Destino</span>
-              <p>{destinoNome ?? '?'}</p>
+              <span className="text-muted-foreground text-xs">Destino</span>
+              <p>{lote.unidadeDestinoNome}</p>
             </div>
             <div>
-              <span className="text-xs text-muted-foreground">Motorista</span>
-              <p>{motoristaNome ?? '?'}</p>
+              <span className="text-muted-foreground text-xs">Motorista</span>
+              <p>{lote.motoristaNome}</p>
             </div>
           </div>
 
-          <div className="rounded-md border border-border p-4 bg-muted/30">
+          <div className="border-border bg-muted/30 rounded-md border p-4">
             <div className="flex items-center gap-3">
-              <QrCode className="h-8 w-8 text-primary" />
+              <QrCode className="text-primary h-8 w-8" />
               <div className="flex-1">
-                <p className="text-xs text-muted-foreground">Codigo QR (compartilhe com motorista)</p>
-                <p className="font-mono text-xs break-all mt-1">{lote.codigoQr}</p>
+                <p className="text-muted-foreground text-xs">
+                  Codigo QR (compartilhe com motorista)
+                </p>
+                <p className="mt-1 font-mono text-xs break-all">{lote.codigoQr}</p>
               </div>
             </div>
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm mb-2">Solicitacoes incluidas ({itens.length})</h3>
+            <h3 className="mb-2 text-sm font-semibold">Solicitacoes incluidas ({itens.length})</h3>
             {carregando ? (
               <Skeleton className="h-24 w-full" />
             ) : (
               <ul className="space-y-1">
                 {itens.map((it) => (
-                  <li key={it.id} className="text-sm font-mono text-muted-foreground">
+                  <li key={it.id} className="text-muted-foreground font-mono text-sm">
                     #{it.ordem + 1} — {it.solicitacaoId.slice(0, 8)}
                   </li>
                 ))}
@@ -482,8 +458,8 @@ function DialogVerLote({
 
           {lote.observacoes && (
             <div>
-              <span className="text-xs text-muted-foreground">Observacoes</span>
-              <p className="text-sm mt-1">{lote.observacoes}</p>
+              <span className="text-muted-foreground text-xs">Observacoes</span>
+              <p className="mt-1 text-sm">{lote.observacoes}</p>
             </div>
           )}
         </div>

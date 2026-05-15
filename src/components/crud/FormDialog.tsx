@@ -76,7 +76,7 @@ interface FormDialogProps<T> {
   filhos?: ReactNode;
 }
 
-export function FormDialog<T extends Record<string, unknown>>({
+export function FormDialog<T extends object>({
   aberto,
   titulo,
   descricao,
@@ -125,10 +125,7 @@ export function FormDialog<T extends Record<string, unknown>>({
       const v = valores[campo.nome];
       if (campo.obrigatorio) {
         const vazio =
-          v === null ||
-          v === undefined ||
-          v === '' ||
-          (Array.isArray(v) && v.length === 0);
+          v === null || v === undefined || v === '' || (Array.isArray(v) && v.length === 0);
         if (vazio) {
           novosErros[campo.nome] = 'Obrigatorio';
           continue;
@@ -175,13 +172,13 @@ export function FormDialog<T extends Record<string, unknown>>({
 
   return (
     <Dialog open={aberto} onOpenChange={(o) => !o && aoFechar()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{titulo}</DialogTitle>
           {descricao && <DialogDescription>{descricao}</DialogDescription>}
         </DialogHeader>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
+        <div className="grid grid-cols-1 gap-4 py-4 sm:grid-cols-2">
           {campos.map((campo) => (
             <div
               key={campo.nome}
@@ -189,15 +186,13 @@ export function FormDialog<T extends Record<string, unknown>>({
             >
               <Label>
                 {campo.label}
-                {campo.obrigatorio && <span className="text-red-500 ml-0.5">*</span>}
+                {campo.obrigatorio && <span className="ml-0.5 text-red-500">*</span>}
               </Label>
 
               {renderCampo(campo, valores[campo.nome], (v) => setValor(campo.nome, v))}
 
-              {campo.ajuda && <p className="text-xs text-muted-foreground">{campo.ajuda}</p>}
-              {erros[campo.nome] && (
-                <p className="text-xs text-red-500">{erros[campo.nome]}</p>
-              )}
+              {campo.ajuda && <p className="text-muted-foreground text-xs">{campo.ajuda}</p>}
+              {erros[campo.nome] && <p className="text-xs text-red-500">{erros[campo.nome]}</p>}
             </div>
           ))}
         </div>
@@ -221,14 +216,10 @@ export function FormDialog<T extends Record<string, unknown>>({
 // Renderizadores por tipo
 // ============================================================================
 
-function renderCampo(
-  campo: CampoForm,
-  valor: unknown,
-  aoMudar: (v: unknown) => void,
-): ReactNode {
+function renderCampo(campo: CampoForm, valor: unknown, aoMudar: (v: unknown) => void): ReactNode {
   if (campo.readonly) {
     return (
-      <div className="rounded-md border border-input bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+      <div className="border-input bg-muted/40 text-muted-foreground rounded-md border px-3 py-2 text-sm">
         {campo.formatar ? campo.formatar(valor) : String(valor ?? '')}
       </div>
     );
@@ -291,16 +282,16 @@ function renderCampo(
     case 'multi-select': {
       const selecionados = Array.isArray(valor) ? (valor as string[]) : [];
       return (
-        <div className="space-y-1.5 rounded-md border border-input p-3 max-h-48 overflow-y-auto">
+        <div className="border-input max-h-48 space-y-1.5 overflow-y-auto rounded-md border p-3">
           {campo.opcoes?.length === 0 && (
-            <p className="text-xs text-muted-foreground">Sem opcoes disponiveis</p>
+            <p className="text-muted-foreground text-xs">Sem opcoes disponiveis</p>
           )}
           {campo.opcoes?.map((op) => {
             const checked = selecionados.includes(op.valor);
             return (
               <label
                 key={op.valor}
-                className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 px-2 py-1 rounded"
+                className="hover:bg-muted/50 flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm"
               >
                 <Checkbox
                   checked={checked}
@@ -387,11 +378,7 @@ function ChipInput({
           {valores.map((v, i) => (
             <Badge key={`${v}-${i}`} variant="secondary" className="gap-1">
               {v}
-              <button
-                type="button"
-                onClick={() => remover(i)}
-                className="hover:text-destructive"
-              >
+              <button type="button" onClick={() => remover(i)} className="hover:text-destructive">
                 <X className="h-3 w-3" />
               </button>
             </Badge>

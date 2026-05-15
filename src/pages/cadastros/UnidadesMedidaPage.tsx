@@ -11,19 +11,19 @@ export function UnidadesMedidaPage() {
       subtitulo="un, kg, m, l, cx... usadas em itens e pedidos"
       ordenarPor="codigo"
       textoBotaoNovo="Nova unidade"
+      colunasBuscaServidor={['codigo', 'nome', 'descricao']}
+      placeholderBusca="Buscar por codigo, nome ou descricao..."
       colunas={[
         {
           chave: 'codigo',
           titulo: 'Codigo',
-          pesquisavel: true,
           largura: '120px',
           render: (u) => <span className="font-mono">{u.codigo}</span>,
         },
-        { chave: 'nome', titulo: 'Nome', pesquisavel: true },
+        { chave: 'nome', titulo: 'Nome' },
         {
           chave: 'descricao',
           titulo: 'Descricao',
-          pesquisavel: true,
           render: (u) => <span className="text-muted-foreground">{u.descricao ?? '—'}</span>,
         },
         {

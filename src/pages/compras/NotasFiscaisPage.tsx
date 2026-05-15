@@ -1,5 +1,8 @@
 /**
  * NotasFiscaisPage — CRUD de notas fiscais com vinculo a pedidos.
+ *
+ * Lista via RPC `fn_listar_notas_fiscais` (paginada, JOIN com fornecedor e
+ * empresa emitente ja resolvidos).
  */
 import { Badge } from '@/components/ui/badge';
 import { CrudPage } from '@/components/crud/CrudPage';
@@ -9,6 +12,11 @@ import type { NotaFiscal } from '@/types';
 
 const FMT_BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
+interface NotaFiscalListada extends NotaFiscal {
+  fornecedorRazaoSocial: string;
+  empresaEmitenteRazaoSocial: string;
+}
+
 export function NotasFiscaisPage() {
   const { opcoes: fornecedores } = useOpcoesFK('fornecedores', 'razao_social');
   const { opcoes: empresas } = useOpcoesFK('empresas_emitentes', 'razao_social', {
@@ -17,31 +25,67 @@ export function NotasFiscaisPage() {
   const { opcoes: moedas } = useOpcoesFK('moedas', 'codigo', { filtros: { ativo: true } });
 
   return (
-    <CrudPage<NotaFiscal>
+    <CrudPage<NotaFiscalListada>
       rotaCodigo="compras.notas-fiscais"
       tabela="notas_fiscais"
       titulo="Notas Fiscais"
       subtitulo="Lancamento e gestao de NFs de entrada"
-      ordenarPor="dataEmissao"
-      ascendente={false}
       textoBotaoNovo="Nova NF"
+      rpcLista="fn_listar_notas_fiscais"
+      placeholderBusca="Buscar por numero, chave, fornecedor ou CNPJ..."
       colunas={[
-        { chave: 'numero', titulo: 'Numero', pesquisavel: true, largura: '120px',
-          render: (n) => <span className="font-mono text-sm">{n.numero}{n.serie ? `-${n.serie}` : ''}</span> },
-        { chave: 'dataEmissao', titulo: 'Emissao', largura: '140px',
-          render: (n) => <span className="text-xs">{formatDate(n.dataEmissao)}</span> },
-        { chave: 'fornecedorId', titulo: 'Fornecedor',
-          render: (n) => fornecedores.find((f) => f.valor === n.fornecedorId)?.label ?? '?' },
-        { chave: 'empresaEmitenteId', titulo: 'Empresa',
-          render: (n) => empresas.find((e) => e.valor === n.empresaEmitenteId)?.label ?? '?' },
-        { chave: 'valorTotal', titulo: 'Valor', alinhar: 'right',
-          render: (n) => <span className="font-mono">{FMT_BRL.format(Number(n.valorTotal))}</span> },
-        { chave: 'status', titulo: 'Status', alinhar: 'center', largura: '100px',
+        {
+          chave: 'numero',
+          titulo: 'Numero',
+          largura: '120px',
           render: (n) => (
-            <Badge variant={n.status === 'paid' ? 'default' : n.status === 'cancelled' ? 'destructive' : 'secondary'}>
+            <span className="font-mono text-sm">
+              {n.numero}
+              {n.serie ? `-${n.serie}` : ''}
+            </span>
+          ),
+        },
+        {
+          chave: 'dataEmissao',
+          titulo: 'Emissao',
+          largura: '140px',
+          render: (n) => <span className="text-xs">{formatDate(n.dataEmissao)}</span>,
+        },
+        {
+          chave: 'fornecedorRazaoSocial',
+          titulo: 'Fornecedor',
+          render: (n) => <span className="text-sm">{n.fornecedorRazaoSocial}</span>,
+        },
+        {
+          chave: 'empresaEmitenteRazaoSocial',
+          titulo: 'Empresa',
+          render: (n) => <span className="text-sm">{n.empresaEmitenteRazaoSocial}</span>,
+        },
+        {
+          chave: 'valorTotal',
+          titulo: 'Valor',
+          alinhar: 'right',
+          render: (n) => <span className="font-mono">{FMT_BRL.format(Number(n.valorTotal))}</span>,
+        },
+        {
+          chave: 'status',
+          titulo: 'Status',
+          alinhar: 'center',
+          largura: '100px',
+          render: (n) => (
+            <Badge
+              variant={
+                n.status === 'paid'
+                  ? 'default'
+                  : n.status === 'cancelled'
+                    ? 'destructive'
+                    : 'secondary'
+              }
+            >
               {n.status}
             </Badge>
-          ) },
+          ),
+        },
       ]}
       campos={[
         { nome: 'numero', label: 'Numero NF', tipo: 'text', obrigatorio: true },
@@ -85,8 +129,13 @@ export function NotasFiscaisPage() {
         { nome: 'valorDesconto', label: 'Desconto', tipo: 'number' },
         { nome: 'valorImpostos', label: 'Impostos', tipo: 'number' },
         { nome: 'valorTotal', label: 'Valor total', tipo: 'number', obrigatorio: true },
-        { nome: 'dataEmissao', label: 'Data emissao', tipo: 'text', obrigatorio: true,
-          ajuda: 'YYYY-MM-DD ou ISO completo' },
+        {
+          nome: 'dataEmissao',
+          label: 'Data emissao',
+          tipo: 'text',
+          obrigatorio: true,
+          ajuda: 'YYYY-MM-DD ou ISO completo',
+        },
         { nome: 'dataVencimento', label: 'Data vencimento', tipo: 'text' },
         {
           nome: 'status',

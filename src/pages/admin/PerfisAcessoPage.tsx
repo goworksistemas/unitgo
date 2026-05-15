@@ -53,10 +53,13 @@ import type { Perfil, PerfilRota, Rota } from '@/types';
 export function PerfisAcessoPage() {
   const { podeLer, podeEscrever, podeExcluir } = usePermissao('admin.perfis-acesso');
 
-  const { itens: perfis, isLoading, criar, atualizar, excluir } = useCrud<Perfil>(
-    'perfis_acesso',
-    { ordenarPor: 'nome' },
-  );
+  const {
+    itens: perfis,
+    isLoading,
+    criar,
+    atualizar,
+    excluir,
+  } = useCrud<Perfil>('perfis_acesso', { ordenarPor: 'nome' });
 
   const [editando, setEditando] = useState<Perfil | null>(null);
   const [criandoNovo, setCriandoNovo] = useState(false);
@@ -66,17 +69,17 @@ export function PerfisAcessoPage() {
   if (!podeLer) return <SemAcesso rotaCodigo="admin.perfis-acesso" />;
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Perfis de Acesso</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-sm">
             Defina perfis e quais rotas cada um pode acessar
           </p>
         </div>
         {podeEscrever && (
           <Button onClick={() => setCriandoNovo(true)}>
-            <Plus className="h-4 w-4 mr-1.5" />
+            <Plus className="mr-1.5 h-4 w-4" />
             Novo perfil
           </Button>
         )}
@@ -89,21 +92,21 @@ export function PerfisAcessoPage() {
           <Skeleton className="h-12 w-full" />
         </div>
       ) : (
-        <div className="rounded-md border border-border overflow-hidden">
+        <div className="border-border overflow-hidden rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-40">Codigo</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Descricao</TableHead>
-                <TableHead className="text-center w-24">Status</TableHead>
-                <TableHead className="text-right w-44">Acoes</TableHead>
+                <TableHead className="w-24 text-center">Status</TableHead>
+                <TableHead className="w-44 text-right">Acoes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {perfis.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="text-muted-foreground h-24 text-center">
                     Nenhum perfil cadastrado.
                   </TableCell>
                 </TableRow>
@@ -123,7 +126,7 @@ export function PerfisAcessoPage() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="text-muted-foreground text-sm">
                       {p.descricao ?? '—'}
                     </TableCell>
                     <TableCell className="text-center">
@@ -195,8 +198,13 @@ export function PerfisAcessoPage() {
         aoSalvar={async (valores) => {
           let ok: Perfil | null = null;
           if (editando) {
-            const { id: _id, criadoEm: _c, atualizadoEm: _a, ehProtegido: _p, ...rest } =
-              valores as Record<string, unknown>;
+            const {
+              id: _id,
+              criadoEm: _c,
+              atualizadoEm: _a,
+              ehProtegido: _p,
+              ...rest
+            } = valores as Record<string, unknown>;
             ok = await atualizar(editando.id, rest as Partial<Perfil>);
           } else {
             ok = await criar(valores as Partial<Perfil>);
@@ -238,10 +246,7 @@ export function PerfisAcessoPage() {
       </AlertDialog>
 
       {matrizPerfil && (
-        <DialogMatrizPermissoes
-          perfil={matrizPerfil}
-          aoFechar={() => setMatrizPerfil(null)}
-        />
+        <DialogMatrizPermissoes perfil={matrizPerfil} aoFechar={() => setMatrizPerfil(null)} />
       )}
     </div>
   );
@@ -259,13 +264,7 @@ interface LinhaMatriz {
   podeAprovar: boolean;
 }
 
-function DialogMatrizPermissoes({
-  perfil,
-  aoFechar,
-}: {
-  perfil: Perfil;
-  aoFechar: () => void;
-}) {
+function DialogMatrizPermissoes({ perfil, aoFechar }: { perfil: Perfil; aoFechar: () => void }) {
   const [rotas, setRotas] = useState<Rota[]>([]);
   const [linhas, setLinhas] = useState<Record<string, LinhaMatriz>>({});
   const [carregando, setCarregando] = useState(true);
@@ -366,15 +365,16 @@ function DialogMatrizPermissoes({
 
   return (
     <Dialog open onOpenChange={(o) => !o && aoFechar()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col">
         <DialogHeader>
           <DialogTitle>Permissoes — {perfil.nome}</DialogTitle>
           <DialogDescription>
-            Marque as flags por rota. Se nenhuma flag estiver marcada, a rota sera removida do perfil.
+            Marque as flags por rota. Se nenhuma flag estiver marcada, a rota sera removida do
+            perfil.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto -mx-6 px-6">
+        <div className="-mx-6 flex-1 overflow-y-auto px-6">
           {carregando ? (
             <div className="space-y-2 py-2">
               <Skeleton className="h-10 w-full" />
@@ -382,24 +382,24 @@ function DialogMatrizPermissoes({
               <Skeleton className="h-10 w-full" />
             </div>
           ) : rotas.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
+            <p className="text-muted-foreground py-8 text-center text-sm">
               Nenhuma rota cadastrada.
             </p>
           ) : (
             Object.entries(rotasPorModulo).map(([modulo, rotasModulo]) => (
               <div key={modulo} className="mb-6">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
                   {modulo}
                 </h3>
-                <div className="rounded-md border border-border overflow-hidden">
+                <div className="border-border overflow-hidden rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Rota</TableHead>
-                        <TableHead className="text-center w-20">Ler</TableHead>
-                        <TableHead className="text-center w-24">Escrever</TableHead>
-                        <TableHead className="text-center w-24">Excluir</TableHead>
-                        <TableHead className="text-center w-24">Aprovar</TableHead>
+                        <TableHead className="w-20 text-center">Ler</TableHead>
+                        <TableHead className="w-24 text-center">Escrever</TableHead>
+                        <TableHead className="w-24 text-center">Excluir</TableHead>
+                        <TableHead className="w-24 text-center">Aprovar</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -409,8 +409,8 @@ function DialogMatrizPermissoes({
                         return (
                           <TableRow key={r.id}>
                             <TableCell>
-                              <div className="font-medium text-sm">{r.nome}</div>
-                              <div className="text-xs font-mono text-muted-foreground">
+                              <div className="text-sm font-medium">{r.nome}</div>
+                              <div className="text-muted-foreground font-mono text-xs">
                                 {r.codigo}
                               </div>
                             </TableCell>

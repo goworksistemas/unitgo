@@ -16,18 +16,18 @@ export function EmpresasEmitentesPage() {
       subtitulo="CNPJs do grupo Gowork (emite NFs e contratos)"
       ordenarPor="razaoSocial"
       textoBotaoNovo="Nova empresa"
+      colunasBuscaServidor={['razaoSocial', 'nomeFantasia', 'cnpj']}
+      placeholderBusca="Buscar por razao social, fantasia ou CNPJ..."
       colunas={[
-        { chave: 'razaoSocial', titulo: 'Razao Social', pesquisavel: true },
+        { chave: 'razaoSocial', titulo: 'Razao Social' },
         {
           chave: 'nomeFantasia',
           titulo: 'Nome Fantasia',
-          pesquisavel: true,
           render: (e) => e.nomeFantasia ?? '—',
         },
         {
           chave: 'cnpj',
           titulo: 'CNPJ',
-          pesquisavel: true,
           largura: '200px',
           render: (e) => <span className="font-mono text-sm">{formatarCnpj(e.cnpj)}</span>,
         },
@@ -37,9 +37,7 @@ export function EmpresasEmitentesPage() {
           largura: '100px',
           alinhar: 'center',
           render: (e) => (
-            <Badge variant={e.ativo ? 'default' : 'outline'}>
-              {e.ativo ? 'Ativa' : 'Inativa'}
-            </Badge>
+            <Badge variant={e.ativo ? 'default' : 'outline'}>{e.ativo ? 'Ativa' : 'Inativa'}</Badge>
           ),
         },
       ]}

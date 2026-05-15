@@ -11,12 +11,13 @@ export function CategoriasFornecedorPage() {
       subtitulo="E-commerce, Distribuidor, Fabricante, Prestador de Servico..."
       ordenarPor="nome"
       textoBotaoNovo="Nova categoria"
+      colunasBuscaServidor={['nome', 'descricao']}
+      placeholderBusca="Buscar por nome ou descricao..."
       colunas={[
-        { chave: 'nome', titulo: 'Nome', pesquisavel: true },
+        { chave: 'nome', titulo: 'Nome' },
         {
           chave: 'descricao',
           titulo: 'Descricao',
-          pesquisavel: true,
           render: (c) => <span className="text-muted-foreground">{c.descricao ?? '—'}</span>,
         },
         {

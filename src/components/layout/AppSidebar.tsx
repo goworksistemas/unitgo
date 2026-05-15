@@ -13,23 +13,11 @@
  * NAO traz dados do NetworkGo: estrutura de modulos vem do PerfilContext do
  * SupplyGo (rotasPermitidas + flag `modulo`).
  */
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { flushSync } from 'react-dom';
 import * as Icons from 'lucide-react';
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Home,
-} from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePerfil } from '@/contexts/PerfilContext';
 import type { RotaPermitida } from '@/types';
@@ -140,13 +128,14 @@ interface ModuloConfig {
 }
 
 const ORDEM_MODULOS: ModuloConfig[] = [
-  { codigo: 'admin',        nome: 'Administracao', icone: 'Settings2',    accent: 'slate' },
-  { codigo: 'cadastros',    nome: 'Cadastros',     icone: 'List',          accent: 'indigo' },
-  { codigo: 'estoque',      nome: 'Estoque',       icone: 'Warehouse',     accent: 'teal' },
-  { codigo: 'solicitacoes', nome: 'Solicitacoes',  icone: 'ClipboardList', accent: 'amber' },
-  { codigo: 'entregas',     nome: 'Entregas',      icone: 'Truck',         accent: 'sky' },
-  { codigo: 'compras',      nome: 'Compras',       icone: 'ShoppingCart',  accent: 'emerald' },
-  { codigo: 'auditoria',    nome: 'Auditoria',     icone: 'History',       accent: 'violet' },
+  { codigo: 'dashboards', nome: 'Dashboards', icone: 'LayoutDashboard', accent: 'blue' },
+  { codigo: 'admin', nome: 'Administracao', icone: 'Settings2', accent: 'slate' },
+  { codigo: 'cadastros', nome: 'Cadastros', icone: 'List', accent: 'indigo' },
+  { codigo: 'estoque', nome: 'Estoque', icone: 'Warehouse', accent: 'teal' },
+  { codigo: 'solicitacoes', nome: 'Solicitacoes', icone: 'ClipboardList', accent: 'amber' },
+  { codigo: 'entregas', nome: 'Entregas', icone: 'Truck', accent: 'sky' },
+  { codigo: 'compras', nome: 'Compras', icone: 'ShoppingCart', accent: 'emerald' },
+  { codigo: 'auditoria', nome: 'Auditoria', icone: 'History', accent: 'violet' },
 ];
 
 const SIDEBAR_EXPANDED_KEY = 'supplygo-sidebar-expanded';
@@ -158,7 +147,9 @@ function getIcone(nome: string | null): React.ComponentType<{ className?: string
     .split(/[-_]/)
     .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
     .join('');
-  const Comp = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[pascal];
+  const Comp = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[
+    pascal
+  ];
   return Comp ?? Icons.Circle;
 }
 
@@ -313,7 +304,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
   /* ── render ─────────────────────────────────────────────────────────── */
 
   const grupoHovered = hoveredGroup
-    ? modulosVisiveis.find((m) => m.codigo === hoveredGroup.codigo) ?? null
+    ? (modulosVisiveis.find((m) => m.codigo === hoveredGroup.codigo) ?? null)
     : null;
 
   return (
@@ -330,7 +321,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
       {/* Aside */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col overflow-x-hidden border-r border-border bg-card shadow-lg transition-[width,transform] duration-200 ease-out',
+          'border-border bg-card fixed inset-y-0 left-0 z-50 flex w-64 flex-col overflow-x-hidden border-r shadow-lg transition-[width,transform] duration-200 ease-out',
           'dark:bg-gradient-to-b dark:from-[#0f1214] dark:to-[#151819]',
           'lg:static lg:z-auto lg:translate-x-0 lg:shadow-none',
           abertaMobile ? 'translate-x-0' : '-translate-x-full',
@@ -340,12 +331,12 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
       >
         <div className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-x-hidden">
           {/* ─── Cabecalho com logo ─────────────────────────────────── */}
-          <div className="flex h-16 shrink-0 items-center justify-center border-b border-border bg-gradient-to-r from-blue-50 to-indigo-50 px-2 dark:from-blue-900/30 dark:to-indigo-900/30">
+          <div className="border-border flex h-16 shrink-0 items-center justify-center border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-2 dark:from-blue-900/30 dark:to-indigo-900/30">
             <Link
-              to="/"
+              to="/dashboards"
               onClick={onFecharMobile}
-              className="flex min-w-0 items-center justify-center rounded-lg outline-none ring-offset-2 ring-offset-blue-50 focus-visible:ring-2 focus-visible:ring-primary dark:ring-offset-[#0f1214]"
-              title="Ir para inicio"
+              className="focus-visible:ring-primary flex min-w-0 items-center justify-center rounded-lg ring-offset-2 ring-offset-blue-50 outline-none focus-visible:ring-2 dark:ring-offset-[#0f1214]"
+              title="Ir para a Visao Geral"
             >
               {expandido ? (
                 <SupplyGoLogo size="medium" />
@@ -360,49 +351,11 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
             /* ───── Modo expandido ───── */
             <nav
               id="sidebar-main-nav"
-              className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden px-2 py-3"
+              className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto px-2 py-3"
               style={{ scrollBehavior: 'smooth' }}
             >
-              {/* Inicio */}
-              <NavLink
-                to="/"
-                end
-                onClick={onFecharMobile}
-                className={({ isActive }) =>
-                  cn(
-                    'group/direct relative flex min-h-11 items-center rounded-lg px-2.5 py-2 text-sm font-semibold transition-all hover:translate-x-0.5',
-                    isActive
-                      ? `${ACCENT_TOKENS.blue.activeBg} ${ACCENT_TOKENS.blue.activeText}`
-                      : 'text-foreground hover:bg-muted',
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive && (
-                      <span
-                        className={cn(
-                          'pointer-events-none absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full',
-                          ACCENT_TOKENS.blue.activeBar,
-                        )}
-                        aria-hidden
-                      />
-                    )}
-                    <span
-                      className={cn(
-                        'mr-2.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-transform group-hover/direct:scale-105',
-                        ACCENT_TOKENS.blue.chip,
-                      )}
-                    >
-                      <Home className={cn('h-3.5 w-3.5', ACCENT_TOKENS.blue.icon)} aria-hidden />
-                    </span>
-                    <span className="truncate">Inicio</span>
-                  </>
-                )}
-              </NavLink>
-
               {isLoading && (
-                <div className="px-3 text-xs text-muted-foreground">Carregando menu...</div>
+                <div className="text-muted-foreground px-3 text-xs">Carregando menu...</div>
               )}
 
               {!isLoading &&
@@ -443,7 +396,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
                         </div>
                         <ChevronDown
                           className={cn(
-                            'h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200',
+                            'text-muted-foreground h-3.5 w-3.5 shrink-0 transition-transform duration-200',
                             aberto && 'rotate-180',
                           )}
                           aria-hidden
@@ -464,7 +417,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
                                 style={{ animationDelay: enterDelay }}
                                 className={({ isActive }) =>
                                   cn(
-                                    'group/item relative flex min-h-10 animate-flyout-item-enter items-center rounded-lg pl-3 pr-2 py-2 text-sm font-medium transition-all hover:translate-x-0.5',
+                                    'group/item animate-flyout-item-enter relative flex min-h-10 items-center rounded-lg py-2 pr-2 pl-3 text-sm font-medium transition-all hover:translate-x-0.5',
                                     isActive
                                       ? `${accent.activeBg} ${accent.activeText}`
                                       : 'text-foreground/85 hover:bg-muted',
@@ -476,7 +429,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
                                     {isActive && (
                                       <span
                                         className={cn(
-                                          'pointer-events-none absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full',
+                                          'pointer-events-none absolute top-1.5 bottom-1.5 left-0 w-[3px] rounded-r-full',
                                           accent.activeBar,
                                         )}
                                         aria-hidden
@@ -496,7 +449,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
                 })}
 
               {!isLoading && modulosVisiveis.length === 0 && (
-                <div className="mx-1 rounded-md border border-dashed border-border px-3 py-4 text-xs text-muted-foreground">
+                <div className="border-border text-muted-foreground mx-1 rounded-md border border-dashed px-3 py-4 text-xs">
                   Voce ainda nao tem permissoes atribuidas. Aguarde um administrador.
                 </div>
               )}
@@ -505,40 +458,9 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
             /* ───── Modo colapsado (somente icones) ───── */
             <nav
               id="sidebar-main-nav"
-              className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 overflow-y-auto overflow-x-hidden px-2 py-2"
+              className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 overflow-x-hidden overflow-y-auto px-2 py-2"
               style={{ scrollBehavior: 'smooth' }}
             >
-              {/* Inicio */}
-              <NavLink
-                to="/"
-                end
-                onClick={onFecharMobile}
-                className={({ isActive }) =>
-                  cn(
-                    'relative flex h-12 w-full min-w-0 items-center justify-center rounded-lg transition-colors duration-150',
-                    isActive
-                      ? `${ACCENT_TOKENS.blue.activeBg} ${ACCENT_TOKENS.blue.activeText}`
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                  )
-                }
-                title="Inicio"
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive && (
-                      <span
-                        className={cn(
-                          'pointer-events-none absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full',
-                          ACCENT_TOKENS.blue.activeBar,
-                        )}
-                        aria-hidden
-                      />
-                    )}
-                    <Home className="h-5 w-5" />
-                  </>
-                )}
-              </NavLink>
-
               {!isLoading &&
                 modulosVisiveis.map((m) => {
                   const accent = ACCENT_TOKENS[m.accent];
@@ -556,7 +478,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
                       {(m.ativo || isHovered) && (
                         <span
                           className={cn(
-                            'pointer-events-none absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-full transition-opacity',
+                            'pointer-events-none absolute top-1/2 left-0 h-6 w-[3px] -translate-y-1/2 rounded-r-full transition-opacity',
                             accent.activeBar,
                             isHovered ? 'opacity-100' : 'opacity-80',
                           )}
@@ -590,7 +512,6 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
             </nav>
           )}
         </div>
-
       </aside>
 
       {/* Botao toggle (apenas desktop) — fica na borda do sidebar, ancorado a posicao fixa */}
@@ -601,7 +522,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
           setExpandido((v) => !v);
         }}
         className={cn(
-          'fixed top-16 z-[60] hidden h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-md transition-[left,colors,opacity] duration-200 hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:flex',
+          'border-border bg-card text-foreground hover:bg-muted hover:text-primary focus-visible:ring-primary fixed top-16 z-[60] hidden h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border shadow-md transition-[left,colors,opacity] duration-200 focus-visible:ring-2 focus-visible:outline-none lg:flex',
           expandido ? 'left-64' : 'left-[72px]',
           hoveredGroup ? 'pointer-events-none opacity-0' : 'opacity-100',
         )}
@@ -622,7 +543,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
         <div
           ref={flyoutRef}
           className={cn(
-            'pointer-events-auto fixed left-[78px] z-[55] hidden w-64 animate-slide-in-from-left rounded-2xl bg-card/95 ring-1 shadow-2xl shadow-black/10 backdrop-blur-xl dark:shadow-black/40 lg:block',
+            'animate-slide-in-from-left bg-card/95 pointer-events-auto fixed left-[78px] z-[55] hidden w-64 rounded-2xl shadow-2xl ring-1 shadow-black/10 backdrop-blur-xl lg:block dark:shadow-black/40',
             ACCENT_TOKENS[grupoHovered.accent].ring,
           )}
           onMouseEnter={onMouseEnterFlyout}
@@ -630,7 +551,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
         >
           <div className="flex max-h-[calc(100vh-4.5rem)] flex-col overflow-hidden rounded-2xl">
             {/* Cabecalho do flyout */}
-            <div className="flex items-center gap-2.5 border-b border-border/70 px-3 py-2.5">
+            <div className="border-border/70 flex items-center gap-2.5 border-b px-3 py-2.5">
               <span
                 className={cn(
                   'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
@@ -646,7 +567,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
                   );
                 })()}
               </span>
-              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+              <span className="text-foreground min-w-0 flex-1 truncate text-sm font-semibold">
                 {grupoHovered.nome}
               </span>
             </div>
@@ -668,7 +589,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
                     style={{ animationDelay: enterDelay }}
                     className={({ isActive }) =>
                       cn(
-                        'group/item relative flex min-h-10 animate-flyout-item-enter items-center rounded-lg pl-3 pr-2 py-2 text-sm font-medium transition-all hover:translate-x-0.5',
+                        'group/item animate-flyout-item-enter relative flex min-h-10 items-center rounded-lg py-2 pr-2 pl-3 text-sm font-medium transition-all hover:translate-x-0.5',
                         isActive
                           ? `${accent.activeBg} ${accent.activeText}`
                           : 'text-foreground/85 hover:bg-muted',
@@ -680,7 +601,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
                         {isActive && (
                           <span
                             className={cn(
-                              'pointer-events-none absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full',
+                              'pointer-events-none absolute top-1.5 bottom-1.5 left-0 w-[3px] rounded-r-full',
                               accent.activeBar,
                             )}
                             aria-hidden
@@ -699,7 +620,7 @@ export function AppSidebar({ abertaMobile, onFecharMobile }: AppSidebarProps) {
           {/* Ponteiro lateral */}
           <div
             ref={flyoutPointerRef}
-            className="pointer-events-none absolute -left-[5px] h-2.5 w-2.5 -translate-y-1/2 rotate-45 rounded-[3px] border-l border-t border-black/5 bg-card/95 backdrop-blur-xl dark:border-white/10"
+            className="bg-card/95 pointer-events-none absolute -left-[5px] h-2.5 w-2.5 -translate-y-1/2 rotate-45 rounded-[3px] border-t border-l border-black/5 backdrop-blur-xl dark:border-white/10"
             aria-hidden
           />
         </div>

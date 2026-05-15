@@ -11,12 +11,13 @@ export function UnidadesPage() {
       subtitulo="Coworkings, escritorios e CDs do grupo"
       ordenarPor="nome"
       textoBotaoNovo="Nova unidade"
+      colunasBuscaServidor={['nome', 'endereco']}
+      placeholderBusca="Buscar por nome ou endereco..."
       colunas={[
-        { chave: 'nome', titulo: 'Nome', pesquisavel: true },
+        { chave: 'nome', titulo: 'Nome' },
         {
           chave: 'endereco',
           titulo: 'Endereco',
-          pesquisavel: true,
           render: (u) => <span className="text-muted-foreground">{u.endereco ?? '—'}</span>,
         },
         {

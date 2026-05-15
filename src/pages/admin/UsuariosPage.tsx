@@ -6,21 +6,14 @@
  *  - Editar dados (nome, cargo, departamento, unidades, ativo)
  *  - Atribuir perfis (multi-select de perfis_acesso)
  *  - Inativar/reativar
+ *
+ * Lista carregada via RPC `fn_listar_usuarios` (paginacao server-side).
  */
 import { useEffect, useState } from 'react';
-import { Pencil, Search, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -31,20 +24,25 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { ApiError, crud, supabase } from '@/lib/api';
-import { useCrud } from '@/hooks/useCrud';
+import { useListaPaginada } from '@/hooks/useListaPaginada';
 import { useOpcoesFK } from '@/hooks/useOpcoesFK';
 import { usePermissao } from '@/hooks/usePermissao';
+import { DataTable } from '@/components/crud/DataTable';
 import { FormDialog } from '@/components/crud/FormDialog';
 import { SemAcesso } from '@/components/crud/SemAcesso';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import type { Perfil, Usuario, UsuarioPerfil } from '@/types';
 
+interface UsuarioListado extends Usuario {
+  departamentoNome: string | null;
+}
+
 export function UsuariosPage() {
   const { podeLer, podeEscrever } = usePermissao('admin.usuarios');
 
-  const { itens: usuarios, isLoading, atualizar, recarregar } = useCrud<Usuario>('usuarios', {
-    ordenarPor: 'nome',
+  const lista = useListaPaginada<UsuarioListado>({
+    rpc: 'fn_listar_usuarios',
   });
 
   const { opcoes: departamentos } = useOpcoesFK('departamentos', 'nome', {
@@ -52,120 +50,83 @@ export function UsuariosPage() {
   });
   const { opcoes: unidades } = useOpcoesFK('unidades', 'nome', { filtros: { status: 'active' } });
 
-  const [busca, setBusca] = useState('');
-  const [editando, setEditando] = useState<Usuario | null>(null);
-  const [perfilUsuario, setPerfilUsuario] = useState<Usuario | null>(null);
+  const [editando, setEditando] = useState<UsuarioListado | null>(null);
+  const [perfilUsuario, setPerfilUsuario] = useState<UsuarioListado | null>(null);
+  const [salvando, setSalvando] = useState(false);
 
   if (!podeLer) return <SemAcesso rotaCodigo="admin.usuarios" />;
 
-  const usuariosFiltrados = busca.trim()
-    ? usuarios.filter(
-        (u) =>
-          u.nome.toLowerCase().includes(busca.toLowerCase()) ||
-          u.email.toLowerCase().includes(busca.toLowerCase()) ||
-          (u.cargo ?? '').toLowerCase().includes(busca.toLowerCase()),
-      )
-    : usuarios;
-
-  const nomeDepartamento = (id: string | null) =>
-    departamentos.find((d) => d.valor === id)?.label ?? '—';
-
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4">
       <div>
         <h1 className="text-2xl font-semibold">Usuarios</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-muted-foreground mt-1 text-sm">
           Cadastros novos sao feitos via tela de signup. Aqui voce edita dados e atribui perfis.
         </p>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nome, email ou cargo..."
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          className="pl-9"
-        />
-      </div>
-
-      {isLoading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>E-mail</TableHead>
-                <TableHead>Cargo</TableHead>
-                <TableHead>Departamento</TableHead>
-                <TableHead className="text-center w-24">Ativo</TableHead>
-                <TableHead className="text-right w-32">Acoes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {usuariosFiltrados.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                    Nenhum usuario encontrado.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                usuariosFiltrados.map((u) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.nome}</TableCell>
-                    <TableCell className="text-sm">{u.email}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {u.cargo ?? '—'}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {nomeDepartamento(u.departamentoId)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={u.ativo ? 'default' : 'outline'}>
-                        {u.ativo ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {podeEscrever && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setEditando(u)}
-                              title="Editar"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setPerfilUsuario(u)}
-                              title="Atribuir perfis"
-                            >
-                              <Shield className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      <div className="text-xs text-muted-foreground">
-        {usuariosFiltrados.length} de {usuarios.length} usuario(s)
-      </div>
+      <DataTable<UsuarioListado>
+        itens={lista.itens}
+        isLoading={lista.isLoading}
+        colunas={[
+          { chave: 'nome', titulo: 'Nome' },
+          {
+            chave: 'email',
+            titulo: 'E-mail',
+            render: (u) => <span className="text-sm">{u.email}</span>,
+          },
+          {
+            chave: 'cargo',
+            titulo: 'Cargo',
+            render: (u) => <span className="text-muted-foreground text-sm">{u.cargo ?? '—'}</span>,
+          },
+          {
+            chave: 'departamentoNome',
+            titulo: 'Departamento',
+            render: (u) => <span className="text-sm">{u.departamentoNome ?? '—'}</span>,
+          },
+          {
+            chave: 'ativo',
+            titulo: 'Ativo',
+            largura: '90px',
+            alinhar: 'center',
+            render: (u) => (
+              <Badge variant={u.ativo ? 'default' : 'outline'}>
+                {u.ativo ? 'Ativo' : 'Inativo'}
+              </Badge>
+            ),
+          },
+          {
+            chave: 'acoes_perfis',
+            titulo: 'Perfis',
+            largura: '70px',
+            alinhar: 'center',
+            render: (u) =>
+              podeEscrever && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setPerfilUsuario(u)}
+                  title="Atribuir perfis"
+                >
+                  <Shield className="h-4 w-4" />
+                </Button>
+              ),
+          },
+        ]}
+        podeEditar={podeEscrever}
+        aoEditar={(u) => setEditando(u)}
+        paginacao={{
+          total: lista.total,
+          pagina: lista.paginacao.pagina,
+          tamanho: lista.paginacao.tamanho,
+          busca: lista.paginacao.busca,
+          placeholderBusca: 'Buscar por nome, email ou cargo...',
+          aoMudarPagina: lista.paginacao.setPagina,
+          aoMudarTamanho: lista.paginacao.setTamanho,
+          aoMudarBusca: lista.paginacao.setBusca,
+        }}
+      />
 
       <FormDialog<Usuario>
         aberto={!!editando}
@@ -195,13 +156,30 @@ export function UsuariosPage() {
         ]}
         aoSalvar={async (valores) => {
           if (!editando) return;
-          // Remove campos imutaveis
-          const { id: _id, email: _email, criadoEm: _c, atualizadoEm: _a, authUsuarioId: _au, ...rest } =
-            valores as Record<string, unknown>;
-          const ok = await atualizar(editando.id, rest as Partial<Usuario>);
-          if (ok) setEditando(null);
+          setSalvando(true);
+          try {
+            const {
+              id: _id,
+              email: _email,
+              criadoEm: _c,
+              atualizadoEm: _a,
+              authUsuarioId: _au,
+              departamentoNome: _dn,
+              ...rest
+            } = valores as Record<string, unknown>;
+            await crud<Usuario>('usuarios').update(editando.id, rest as Partial<Usuario>);
+            toast.success('Usuario atualizado');
+            setEditando(null);
+            await lista.recarregar();
+          } catch (e) {
+            toast.error(e instanceof ApiError ? e.message : 'Erro ao salvar');
+          } finally {
+            setSalvando(false);
+          }
         }}
-        aoFechar={() => setEditando(null)}
+        aoFechar={() => {
+          if (!salvando) setEditando(null);
+        }}
       />
 
       {perfilUsuario && (
@@ -209,7 +187,7 @@ export function UsuariosPage() {
           usuario={perfilUsuario}
           aoFechar={() => {
             setPerfilUsuario(null);
-            void recarregar();
+            void lista.recarregar();
           }}
         />
       )}
@@ -300,12 +278,10 @@ function DialogPerfis({ usuario, aoFechar }: { usuario: Usuario; aoFechar: () =>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Atribuir perfis</DialogTitle>
-          <DialogDescription>
-            {usuario.nome} — selecione os perfis aplicaveis
-          </DialogDescription>
+          <DialogDescription>{usuario.nome} — selecione os perfis aplicaveis</DialogDescription>
         </DialogHeader>
 
-        <div className="py-2 space-y-2">
+        <div className="space-y-2 py-2">
           {carregando ? (
             <div className="space-y-2">
               <Skeleton className="h-10 w-full" />
@@ -313,24 +289,24 @@ function DialogPerfis({ usuario, aoFechar }: { usuario: Usuario; aoFechar: () =>
               <Skeleton className="h-10 w-full" />
             </div>
           ) : perfis.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">
+            <p className="text-muted-foreground py-6 text-center text-sm">
               Nenhum perfil cadastrado. Crie em Admin {'>'} Perfis de acesso.
             </p>
           ) : (
             perfis.map((p) => (
               <label
                 key={p.id}
-                className="flex items-start gap-3 p-3 rounded-md border border-input hover:bg-muted/50 cursor-pointer"
+                className="border-input hover:bg-muted/50 flex cursor-pointer items-start gap-3 rounded-md border p-3"
               >
                 <Checkbox
                   checked={perfisAtuais.includes(p.id)}
                   onCheckedChange={() => alternar(p.id)}
                   className="mt-0.5"
                 />
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <Label className="font-medium cursor-pointer">{p.nome}</Label>
-                    <span className="text-xs font-mono text-muted-foreground">{p.codigo}</span>
+                    <Label className="cursor-pointer font-medium">{p.nome}</Label>
+                    <span className="text-muted-foreground font-mono text-xs">{p.codigo}</span>
                     {p.ehProtegido && (
                       <Badge variant="secondary" className="text-xs">
                         protegido
@@ -338,7 +314,7 @@ function DialogPerfis({ usuario, aoFechar }: { usuario: Usuario; aoFechar: () =>
                     )}
                   </div>
                   {p.descricao && (
-                    <p className="text-xs text-muted-foreground mt-0.5">{p.descricao}</p>
+                    <p className="text-muted-foreground mt-0.5 text-xs">{p.descricao}</p>
                   )}
                 </div>
               </label>

@@ -11,7 +11,7 @@ dist
 .env.*.local
 
 # Pasta temporaria de SQLs e backups
-temp/
+
 
 # Editor / IDE
 .vscode/*

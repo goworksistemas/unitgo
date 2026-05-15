@@ -57,15 +57,15 @@ export function AppLayout() {
     .toUpperCase();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="bg-background flex h-screen overflow-hidden">
       <AppSidebar
         abertaMobile={sidebarMobileAberta}
         onFecharMobile={() => setSidebarMobileAberta(false)}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}
-        <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
+        <header className="border-border bg-card flex h-16 shrink-0 items-center gap-3 border-b px-4">
           <Button
             variant="ghost"
             size="icon"
@@ -90,33 +90,31 @@ export function AppLayout() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="gap-2 h-9">
-                <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
+              <Button variant="ghost" className="h-9 gap-2">
+                <div className="bg-primary text-primary-foreground flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold">
                   {iniciais}
                 </div>
-                <span className="hidden sm:inline text-sm">{nomeUsuario}</span>
+                <span className="hidden text-sm sm:inline">{nomeUsuario}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuLabel>
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold leading-none">{nomeUsuario}</p>
-                  <p className="text-xs text-muted-foreground leading-none">
-                    {sessao?.user.email}
-                  </p>
+                  <p className="text-sm leading-none font-semibold">{nomeUsuario}</p>
+                  <p className="text-muted-foreground text-xs leading-none">{sessao?.user.email}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {perfis.length > 0 && (
                 <>
-                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                  <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
                     Perfis: {perfis.map((p) => p.codigo).join(', ')}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                 </>
               )}
               <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                <LogOut className="h-4 w-4 mr-2" />
+                <LogOut className="mr-2 h-4 w-4" />
                 Sair
               </DropdownMenuItem>
             </DropdownMenuContent>

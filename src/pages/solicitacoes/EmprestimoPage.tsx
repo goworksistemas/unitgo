@@ -10,7 +10,7 @@ export function EmprestimoPage() {
       statusInicial="pending_approval"
       mostrarTomador
       mostrarDevolucaoPrevista
-      filtroItens={(it) => it.permiteEmprestimo}
+      filtroItensParamsRpc={{ pPermiteEmprestimo: true }}
     />
   );
 }

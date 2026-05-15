@@ -11,20 +11,21 @@ interface SemAcessoProps {
 
 export function SemAcesso({ rotaCodigo, mensagem }: SemAcessoProps) {
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="mx-auto max-w-2xl">
       <Card className="border-dashed">
-        <CardContent className="py-16 text-center space-y-4">
-          <div className="mx-auto h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-            <Lock className="h-8 w-8 text-muted-foreground" />
+        <CardContent className="space-y-4 py-16 text-center">
+          <div className="bg-muted mx-auto flex h-16 w-16 items-center justify-center rounded-full">
+            <Lock className="text-muted-foreground h-8 w-8" />
           </div>
           <div>
             <h2 className="text-xl font-semibold">Sem permissao</h2>
-            <p className="text-sm text-muted-foreground mt-2">
-              {mensagem ?? 'Voce nao tem permissao para acessar esta tela. Contate um administrador.'}
+            <p className="text-muted-foreground mt-2 text-sm">
+              {mensagem ??
+                'Voce nao tem permissao para acessar esta tela. Contate um administrador.'}
             </p>
           </div>
           {rotaCodigo && (
-            <div className="text-xs text-muted-foreground font-mono">{rotaCodigo}</div>
+            <div className="text-muted-foreground font-mono text-xs">{rotaCodigo}</div>
           )}
         </CardContent>
       </Card>

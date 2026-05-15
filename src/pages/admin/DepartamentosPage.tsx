@@ -7,8 +7,7 @@ export function DepartamentosPage() {
   const { opcoes: usuarios } = useOpcoesFK('usuarios', 'nome', { filtros: { ativo: true } });
 
   // Mapa para mostrar o nome do responsavel na lista
-  const nomeUsuario = (id: string | null) =>
-    usuarios.find((u) => u.valor === id)?.label ?? '—';
+  const nomeUsuario = (id: string | null) => usuarios.find((u) => u.valor === id)?.label ?? '—';
 
   return (
     <CrudPage<Departamento>
@@ -18,20 +17,19 @@ export function DepartamentosPage() {
       subtitulo="Setores funcionais (Obras, Arquitetura, Facilities...)"
       ordenarPor="nome"
       textoBotaoNovo="Novo departamento"
+      colunasBuscaServidor={['nome', 'descricao']}
+      placeholderBusca="Buscar por nome ou descricao..."
       colunas={[
-        { chave: 'nome', titulo: 'Nome', pesquisavel: true },
+        { chave: 'nome', titulo: 'Nome' },
         {
           chave: 'descricao',
           titulo: 'Descricao',
-          pesquisavel: true,
           render: (d) => <span className="text-muted-foreground">{d.descricao ?? '—'}</span>,
         },
         {
           chave: 'responsavelUsuarioId',
           titulo: 'Responsavel',
-          render: (d) => (
-            <span className="text-sm">{nomeUsuario(d.responsavelUsuarioId)}</span>
-          ),
+          render: (d) => <span className="text-sm">{nomeUsuario(d.responsavelUsuarioId)}</span>,
         },
         {
           chave: 'ativo',
@@ -39,9 +37,7 @@ export function DepartamentosPage() {
           largura: '100px',
           alinhar: 'center',
           render: (d) => (
-            <Badge variant={d.ativo ? 'default' : 'outline'}>
-              {d.ativo ? 'Ativo' : 'Inativo'}
-            </Badge>
+            <Badge variant={d.ativo ? 'default' : 'outline'}>{d.ativo ? 'Ativo' : 'Inativo'}</Badge>
           ),
         },
       ]}

@@ -1,16 +1,12 @@
 /**
  * TimelinePage — busca log de atividades de qualquer entidade.
  *
- * Permite filtrar por tipo de entidade + id especifico ou ver todos os
- * eventos recentes do sistema.
+ * Lista via RPC `fn_listar_log_atividades` (paginada server-side, JOIN com
+ * usuario ja resolvido).
  */
-import { useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -18,20 +14,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { ApiError, crud } from '@/lib/api';
+import { useListaPaginada } from '@/hooks/useListaPaginada';
 import { usePermissao } from '@/hooks/usePermissao';
+import { DataTable, type ColunaDataTable } from '@/components/crud/DataTable';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SemAcesso } from '@/components/crud/SemAcesso';
 import { formatDate, formatRelativeTimePast } from '@/lib/format';
-import type { LogAtividade, Usuario } from '@/types';
+import type { LogAtividade } from '@/types';
+
+interface LogListado extends LogAtividade {
+  usuarioNome: string | null;
+}
 
 const TIPOS_ENTIDADE = [
   'usuario',
@@ -44,148 +37,131 @@ const TIPOS_ENTIDADE = [
   'pedido_compra',
   'nota_fiscal',
   'contrato',
-  'recebimento',
+  'recebimento_compra',
   'lote_entrega',
 ];
 
 export function TimelinePage() {
   const { podeLer } = usePermissao('auditoria.timeline');
 
-  const [logs, setLogs] = useState<LogAtividade[]>([]);
-  const [usuariosMap, setUsuariosMap] = useState<Map<string, Usuario>>(new Map());
-  const [carregando, setCarregando] = useState(false);
   const [tipoEntidade, setTipoEntidade] = useState<string>('todos');
   const [entidadeId, setEntidadeId] = useState('');
 
-  async function buscar() {
-    setCarregando(true);
-    try {
-      const filtros: Record<string, unknown> = {};
-      if (tipoEntidade !== 'todos') filtros.tipoEntidade = tipoEntidade;
-      if (entidadeId.trim()) filtros.entidadeId = entidadeId.trim();
+  const filtrosRpc = useMemo<Record<string, unknown>>(() => {
+    const f: Record<string, unknown> = {};
+    if (tipoEntidade !== 'todos') f.pTipoEntidade = tipoEntidade;
+    const id = entidadeId.trim();
+    // UUID basico tem 36 caracteres com hifens. So passa para o servidor
+    // quando parecer um UUID valido para nao gerar erro.
+    if (id && /^[0-9a-f-]{30,40}$/i.test(id)) f.pEntidadeId = id;
+    return f;
+  }, [tipoEntidade, entidadeId]);
 
-      const [ls, us] = await Promise.all([
-        crud<LogAtividade>('log_atividades').list({
-          igualdade: Object.keys(filtros).length > 0 ? filtros : undefined,
-          ordenarPor: 'criadoEm',
-          ascendente: false,
-          limite: 200,
-        }),
-        usuariosMap.size === 0 ? crud<Usuario>('usuarios').list({}) : Promise.resolve([]),
-      ]);
-      setLogs(ls);
-      if (Array.isArray(us) && us.length > 0) {
-        setUsuariosMap(new Map(us.map((u) => [u.id, u])));
-      }
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Erro ao buscar');
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  useEffect(() => {
-    void buscar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const lista = useListaPaginada<LogListado>({
+    rpc: 'fn_listar_log_atividades',
+    filtros: filtrosRpc,
+  });
 
   if (!podeLer) return <SemAcesso rotaCodigo="auditoria.timeline" />;
 
+  const colunas: ColunaDataTable<LogListado>[] = [
+    {
+      chave: 'criadoEm',
+      titulo: 'Quando',
+      largura: '180px',
+      render: (l) => (
+        <div className="text-xs">
+          <div>{formatDate(l.criadoEm)}</div>
+          <div className="text-muted-foreground">{formatRelativeTimePast(l.criadoEm)}</div>
+        </div>
+      ),
+    },
+    {
+      chave: 'entidade',
+      titulo: 'Entidade',
+      largura: '180px',
+      render: (l) => (
+        <div className="text-xs">
+          <div className="font-mono">{l.tipoEntidade}</div>
+          <div className="text-muted-foreground">{l.entidadeId.slice(0, 8)}...</div>
+        </div>
+      ),
+    },
+    {
+      chave: 'acao',
+      titulo: 'Acao',
+      largura: '160px',
+      render: (l) => <span className="text-sm font-medium">{l.acao}</span>,
+    },
+    {
+      chave: 'status',
+      titulo: 'Status',
+      render: (l) =>
+        l.statusAnterior && l.statusNovo ? (
+          <span className="font-mono text-xs">
+            {l.statusAnterior} → {l.statusNovo}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      chave: 'usuarioNome',
+      titulo: 'Usuario',
+      render: (l) => <span className="text-sm">{l.usuarioNome ?? '—'}</span>,
+    },
+  ];
+
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4">
       <PageHeader
         titulo="Timeline de Atividades"
         subtitulo="Historico de mudancas em qualquer entidade do sistema"
       />
 
-      <div className="rounded-md border p-4 space-y-3">
-        <div className="grid grid-cols-12 gap-3">
-          <div className="col-span-4 space-y-1.5">
-            <Label>Tipo de entidade</Label>
-            <Select value={tipoEntidade} onValueChange={setTipoEntidade}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todas</SelectItem>
-                {TIPOS_ENTIDADE.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="col-span-6 space-y-1.5">
-            <Label>ID da entidade (opcional)</Label>
-            <Input
-              value={entidadeId}
-              onChange={(e) => setEntidadeId(e.target.value)}
-              placeholder="UUID"
-            />
-          </div>
-          <div className="col-span-2 flex items-end">
-            <Button onClick={buscar} disabled={carregando} className="w-full">
-              <Search className="h-4 w-4 mr-1.5" />
-              Buscar
-            </Button>
-          </div>
+      <div className="grid grid-cols-1 gap-3 rounded-md border p-4 md:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label>Tipo de entidade</Label>
+          <Select value={tipoEntidade} onValueChange={setTipoEntidade}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas</SelectItem>
+              {TIPOS_ENTIDADE.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label>ID da entidade (opcional)</Label>
+          <Input
+            value={entidadeId}
+            onChange={(e) => setEntidadeId(e.target.value)}
+            placeholder="UUID"
+          />
         </div>
       </div>
 
-      {carregando ? (
-        <div className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ) : logs.length === 0 ? (
-        <div className="rounded-md border border-dashed p-12 text-center text-muted-foreground">
-          Nenhum log encontrado.
-        </div>
-      ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-44">Quando</TableHead>
-                <TableHead className="w-40">Entidade</TableHead>
-                <TableHead className="w-40">Acao</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Usuario</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {logs.map((l) => (
-                <TableRow key={l.id}>
-                  <TableCell className="text-xs">
-                    <div>{formatDate(l.criadoEm)}</div>
-                    <div className="text-muted-foreground">{formatRelativeTimePast(l.criadoEm)}</div>
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    <div className="font-mono">{l.tipoEntidade}</div>
-                    <div className="text-muted-foreground">{l.entidadeId.slice(0, 8)}...</div>
-                  </TableCell>
-                  <TableCell className="text-sm font-medium">{l.acao}</TableCell>
-                  <TableCell className="text-xs">
-                    {l.statusAnterior && l.statusNovo ? (
-                      <span className="font-mono">
-                        {l.statusAnterior} → {l.statusNovo}
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {l.usuarioId ? usuariosMap.get(l.usuarioId)?.nome ?? '?' : '—'}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      <div className="text-xs text-muted-foreground">{logs.length} evento(s)</div>
+      <DataTable<LogListado>
+        itens={lista.itens}
+        colunas={colunas}
+        isLoading={lista.isLoading}
+        mensagemVazia="Nenhum log encontrado."
+        paginacao={{
+          total: lista.total,
+          pagina: lista.paginacao.pagina,
+          tamanho: lista.paginacao.tamanho,
+          busca: lista.paginacao.busca,
+          placeholderBusca: 'Buscar acao, tipo de entidade ou usuario...',
+          aoMudarPagina: lista.paginacao.setPagina,
+          aoMudarTamanho: lista.paginacao.setTamanho,
+          aoMudarBusca: lista.paginacao.setBusca,
+        }}
+      />
     </div>
   );
 }

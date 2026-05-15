@@ -6,14 +6,7 @@
  *   for fornecido, anima a troca como uma onda circular expandindo a partir
  *   do ponto de clique (mesmo efeito do NetworkGo).
  */
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 
 type Theme = 'light' | 'dark';

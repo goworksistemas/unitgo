@@ -1,0 +1,1868 @@
+[
+  {
+    "codigo": "012048",
+    "descricao": "¿¿¿FORNECIMENTO E INSTALAÇÃO  DAS PEÇAS  DE DUTO NECESSÁRIAS  PARA  OS 02 EQUIPAMENTOS  EXISTENTE (lembrando que , vamos",
+    "normalizado": "FORNECIMENTO E INSTALACAO DAS PECAS DE DUTO NECESSARIAS PARA OS 02 EQUIPAMENTOS EXISTENTE (LEMBRANDO QUE , VAMOS",
+    "motivo": "fragmento ou lixo (muito curto, parenteses desbalanceados, descricao livre)"
+  },
+  {
+    "codigo": "011909",
+    "descricao": "(ESPECIALISTAS EM ROTORES E TURBINAS",
+    "normalizado": "(ESPECIALISTAS EM ROTORES E TURBINAS",
+    "motivo": "fragmento ou lixo (muito curto, parenteses desbalanceados, descricao livre)"
+  },
+  {
+    "codigo": "011548",
+    "descricao": "CONSULTORIA DE INSTALAÇÃO CONTROLID",
+    "normalizado": "CONSULTORIA DE INSTALACAO CONTROLID",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012304",
+    "descricao": "DUTO FLEXIVEL C/ ISOLAMENTO 6&apos;&apos; (PACT 6MT",
+    "normalizado": "DUTO FLEXIVEL C/ ISOLAMENTO 6'' (PACT 6MT",
+    "motivo": "fragmento ou lixo (muito curto, parenteses desbalanceados, descricao livre)"
+  },
+  {
+    "codigo": "012312",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO  02 GRELHAS DE RETORNO SOB  MEDIDA",
+    "normalizado": "FORNECIMENTO E INSTALACAO 02 GRELHAS DE RETORNO SOB MEDIDA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011935",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO  DAS PEÇAS DE DUTOS  NECESSÁRIAS (04 PEÇAS POR  EVAPORADORA)",
+    "normalizado": "FORNECIMENTO E INSTALACAO DAS PECAS DE DUTOS NECESSARIAS (04 PECAS POR EVAPORADORA)",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012313",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO  DAS PEÇAS DE DUTOS  NECESSÁRIAS,  APROXIMADAMENTE 7 METROS",
+    "normalizado": "FORNECIMENTO E INSTALACAO DAS PECAS DE DUTOS NECESSARIAS, APROXIMADAMENTE 7 METROS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012330",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO  DAS PEÇAS DE DUTOS  NECESSÁRIAS, PARA 02  EQUIPAMENTOS. SENDO 04 PEÇAS  PARA CADA MÁQUINA .",
+    "normalizado": "FORNECIMENTO E INSTALACAO DAS PECAS DE DUTOS NECESSARIAS, PARA 02 EQUIPAMENTOS. SENDO 04 PECAS PARA CADA MAQUINA .",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012307",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO  DE 01 DIFUSOR PEQUENO PARA  ATENDER A SALA PEQUENA",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE 01 DIFUSOR PEQUENO PARA ATENDER A SALA PEQUENA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012305",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO  DE 01 PEÇA DE DUTO,  COLARINHO E INSTALAÇÃO DE  01 DIFUSOR",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE 01 PECA DE DUTO, COLARINHO E INSTALACAO DE 01 DIFUSOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012309",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO  DE 01 RAMAL DE DUTO,  APROXIMADAMENTE 4 METROS",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE 01 RAMAL DE DUTO, APROXIMADAMENTE 4 METROS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012306",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO  DE 01 RAMAL DE DUTOS 1,5 M",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE 01 RAMAL DE DUTOS 1,5 M",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012324",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO  DE 03 RAMAIS DE DUTOS ISOLADOS  DE APROXIMADAMENTE 7 METROS  CADA",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE 03 RAMAIS DE DUTOS ISOLADOS DE APROXIMADAMENTE 7 METROS CADA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009057",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DA INFRAESTRUTURA (TUBULAÇÕES DE COBRE)",
+    "normalizado": "FORNECIMENTO E INSTALACAO DA INFRAESTRUTURA (TUBULACOES DE COBRE)",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007155",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DAS PEÇAS DE DUTOS",
+    "normalizado": "FORNECIMENTO E INSTALACAO DAS PECAS DE DUTOS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012039",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DAS PEÇAS DE DUTOS NECESSÁRIOS",
+    "normalizado": "FORNECIMENTO E INSTALACAO DAS PECAS DE DUTOS NECESSARIOS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "010986",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DAS PEÇAS DE DUTOS NECESSÁRIOS P/ FECHAMENTO DE EQUIPAMENTOS E INSTALAÇÃO DE DIFUDORES",
+    "normalizado": "FORNECIMENTO E INSTALACAO DAS PECAS DE DUTOS NECESSARIOS P/ FECHAMENTO DE EQUIPAMENTOS E INSTALACAO DE DIFUDORES",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011750",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DAS PEÇAS DE DUTOS NECESSÁRIOS PARA EQUIPAMENTOS SENDO PEÇAS PARA CADA MÁQUINA",
+    "normalizado": "FORNECIMENTO E INSTALACAO DAS PECAS DE DUTOS NECESSARIOS PARA EQUIPAMENTOS SENDO PECAS PARA CADA MAQUINA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012425",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE 01 RAMAL  DE DUTO ISOLADO DE 05 MTS E DE 01 RAMAL  DE DUTO ISOLADO DE 02 MTS TOTAL DE 07 ME",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE 01 RAMAL DE DUTO ISOLADO DE 05 MTS E DE 01 RAMAL DE DUTO ISOLADO DE 02 MTS TOTAL DE 07 ME",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012317",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE 01 RAMAL DE DUTO DE 2 METROS",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE 01 RAMAL DE DUTO DE 2 METROS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012316",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE 02 GRELHAS LATERAIS DE DUTOS E COLARINHOS (botinha) NA LATERAL DO DUTO",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE 02 GRELHAS LATERAIS DE DUTOS E COLARINHOS (BOTINHA) NA LATERAL DO DUTO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011552",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE 02 PEÇAS DE DUTO, PARA DAR MAIS VAZÃO DE AR, PARA 04 DIFUSORES",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE 02 PECAS DE DUTO, PARA DAR MAIS VAZAO DE AR, PARA 04 DIFUSORES",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012497",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE 02 RAMAIS DE  DUTOS ISOLADO DE 06 METROS CADA.",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE 02 RAMAIS DE DUTOS ISOLADO DE 06 METROS CADA.",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011938",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE 03  RAMAIS DE DUTOS DE 07 METROS  CADA",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE 03 RAMAIS DE DUTOS DE 07 METROS CADA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011917",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE 04  RAMAIS DE DUTOS NOVOS, ISOLADO DE  APROXIMADAMENTE 05 METROS POR  ANDAR",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE 04 RAMAIS DE DUTOS NOVOS, ISOLADO DE APROXIMADAMENTE 05 METROS POR ANDAR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012534",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE 04 RAMAIS  DE DUTOS ISOLADO (02 DUTOS DE 03 METROS  CADA E 02 DUTOS DE 02 METROS CADA, TOTA",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE 04 RAMAIS DE DUTOS ISOLADO (02 DUTOS DE 03 METROS CADA E 02 DUTOS DE 02 METROS CADA, TOTA",
+    "motivo": "fragmento ou lixo (muito curto, parenteses desbalanceados, descricao livre)"
+  },
+  {
+    "codigo": "011116",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE ACRILICO PARA TERMOSTATO",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE ACRILICO PARA TERMOSTATO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007375",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE BANDEJAS",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE BANDEJAS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007248",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE CORREIA",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE CORREIA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007378",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE DIFUSOR",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE DIFUSOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007376",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE DRENO",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE DRENO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011897",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE DUTO MPU FECHAMENTO DE MÁQUINA",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE DUTO MPU FECHAMENTO DE MAQUINA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007196",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE EQUIPAMENTO",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE EQUIPAMENTO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011860",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE ESPELHO BIZOTE",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE ESPELHO BIZOTE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007224",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE GRELHA DE RETORNO",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE GRELHA DE RETORNO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011476",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE INFRA",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE INFRA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008746",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE PEÇA DE DUTO",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE PECA DE DUTO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008201",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE RAMAIS DE DUTOS COMPLETOS ISOLADOS",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE RAMAIS DE DUTOS COMPLETOS ISOLADOS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007368",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DE RAMAL DE DUTO ISOLADO",
+    "normalizado": "FORNECIMENTO E INSTALACAO DE RAMAL DE DUTO ISOLADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008802",
+    "descricao": "FORNECIMENTO E INSTALAÇÃO DOS RAMAIS DE DUTOS NOVOS",
+    "normalizado": "FORNECIMENTO E INSTALACAO DOS RAMAIS DE DUTOS NOVOS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007542",
+    "descricao": "FRETE",
+    "normalizado": "FRETE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012495",
+    "descricao": "INSTALAÇÃO DE 01 EQUIPAMENTO DUTO CARRIER  CONVENCIONAL DE 48.000 btus.",
+    "normalizado": "INSTALACAO DE 01 EQUIPAMENTO DUTO CARRIER CONVENCIONAL DE 48.000 BTUS.",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012318",
+    "descricao": "INSTALAÇÃO DE 01 EQUIPAMENTO SPLIT HIWALL VRF 1.5 hp HITACHI E STARTUP DO SISTEMA.",
+    "normalizado": "INSTALACAO DE 01 EQUIPAMENTO SPLIT HIWALL VRF 1.5 HP HITACHI E STARTUP DO SISTEMA.",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012319",
+    "descricao": "INSTALAÇÃO DE 01 EQUIPAMENTO SPLIT HIWALL VRF HITACHI 01 HP E STARTUP DO SISTEMA",
+    "normalizado": "INSTALACAO DE 01 EQUIPAMENTO SPLIT HIWALL VRF HITACHI 01 HP E STARTUP DO SISTEMA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012533",
+    "descricao": "INSTALAÇÃO DE 01 SPLIT HIWALL 18.000 btus",
+    "normalizado": "INSTALACAO DE 01 SPLIT HIWALL 18.000 BTUS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012310",
+    "descricao": "INSTALAÇÃO DE 02 DIFUSORES  E 01 GRELHA DE RETORNO",
+    "normalizado": "INSTALACAO DE 02 DIFUSORES E 01 GRELHA DE RETORNO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012507",
+    "descricao": "INSTALAÇÃO DE 02 DIFUSORES NOVOS E RELOCAÇÃO DE 01 DIFUSOR EXISTENTE",
+    "normalizado": "INSTALACAO DE 02 DIFUSORES NOVOS E RELOCACAO DE 01 DIFUSOR EXISTENTE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012511",
+    "descricao": "INSTALAÇÃO DE 02 DIFUSORES NOVOS E TROCA DE 03 DIFUSORES VELHOS E COM DEFEITO (5)",
+    "normalizado": "INSTALACAO DE 02 DIFUSORES NOVOS E TROCA DE 03 DIFUSORES VELHOS E COM DEFEITO (5)",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012314",
+    "descricao": "INSTALAÇÃO DE 02 EQUIPAMENTOS SPLIT HIWALL",
+    "normalizado": "INSTALACAO DE 02 EQUIPAMENTOS SPLIT HIWALL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012323",
+    "descricao": "INSTALAÇÃO DE 03 EQUIPAMENTOS  DUTO 30.000 btus CADA",
+    "normalizado": "INSTALACAO DE 03 EQUIPAMENTOS DUTO 30.000 BTUS CADA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012539",
+    "descricao": "INSTALAÇÃO DE 03 GRELHAS DE RETORNO",
+    "normalizado": "INSTALACAO DE 03 GRELHAS DE RETORNO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012537",
+    "descricao": "INSTALAÇÃO DE 04 GRELHAS DE RETORNO",
+    "normalizado": "INSTALACAO DE 04 GRELHAS DE RETORNO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011456",
+    "descricao": "INSTALAÇÃO DE 07  DIFUSORES",
+    "normalizado": "INSTALACAO DE 07 DIFUSORES",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011937",
+    "descricao": "INSTALAÇÃO DE 10 GRELHAS DE  RETORNO",
+    "normalizado": "INSTALACAO DE 10 GRELHAS DE RETORNO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012496",
+    "descricao": "INSTALAÇÃO DE 10 SPLIT HIWALL 9.000 btus CADA  (5 BI SPLIT)",
+    "normalizado": "INSTALACAO DE 10 SPLIT HIWALL 9.000 BTUS CADA (5 BI SPLIT)",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011936",
+    "descricao": "INSTALAÇÃO DE 18 DIFUSORES",
+    "normalizado": "INSTALACAO DE 18 DIFUSORES",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012536",
+    "descricao": "INSTALAÇÃO DE 26 DIFUSORES",
+    "normalizado": "INSTALACAO DE 26 DIFUSORES",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011921",
+    "descricao": "Instalação de 4 a 6 difusores por ramal novo por andar",
+    "normalizado": "INSTALACAO DE 4 A 6 DIFUSORES POR RAMAL NOVO POR ANDAR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011920",
+    "descricao": "Instalação de 4 evaporadoras VRF Daikin 3HP (uma por andar)",
+    "normalizado": "INSTALACAO DE 4 EVAPORADORAS VRF DAIKIN 3HP (UMA POR ANDAR)",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007250",
+    "descricao": "INSTALAÇÃO DE AR CONDICIONADO",
+    "normalizado": "INSTALACAO DE AR CONDICIONADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011121",
+    "descricao": "INSTALAÇÃO DE BOMBAS DE DRENO",
+    "normalizado": "INSTALACAO DE BOMBAS DE DRENO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007042",
+    "descricao": "INSTALAÇÃO DE DIFUSOR",
+    "normalizado": "INSTALACAO DE DIFUSOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011767",
+    "descricao": "INSTALAÇÃO DE DIFUSORES",
+    "normalizado": "INSTALACAO DE DIFUSORES",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009311",
+    "descricao": "INSTALAÇÃO DE DIFUSORES E GRELHAS",
+    "normalizado": "INSTALACAO DE DIFUSORES E GRELHAS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009644",
+    "descricao": "INSTALAÇÃO DE DIVISORIA DE DRYWALL COM MANTA DE ISOLAMENTO ACUSTICO",
+    "normalizado": "INSTALACAO DE DIVISORIA DE DRYWALL COM MANTA DE ISOLAMENTO ACUSTICO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011389",
+    "descricao": "Instalação de divisórias de  vidro",
+    "normalizado": "INSTALACAO DE DIVISORIAS DE VIDRO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007405",
+    "descricao": "INSTALAÇÃO DE EQUIPAMENTO",
+    "normalizado": "INSTALACAO DE EQUIPAMENTO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008436",
+    "descricao": "INSTALAÇÃO DE EQUIPAMENTO CONDENSADORA PENTA",
+    "normalizado": "INSTALACAO DE EQUIPAMENTO CONDENSADORA PENTA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008428",
+    "descricao": "INSTALAÇÃO DE EQUIPAMENTO K7",
+    "normalizado": "INSTALACAO DE EQUIPAMENTO K7",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011770",
+    "descricao": "INSTALAÇÃO DE EQUIPAMENTO K7 4 hp VRF HITACHI 2",
+    "normalizado": "INSTALACAO DE EQUIPAMENTO K7 4 HP VRF HITACHI 2",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008777",
+    "descricao": "INSTALAÇÃO DE EQUIPAMENTO NOVO + STARTUP DO SISTEMA",
+    "normalizado": "INSTALACAO DE EQUIPAMENTO NOVO + STARTUP DO SISTEMA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008181",
+    "descricao": "INSTALAÇÃO DE EQUIPAMENTO SPLIT",
+    "normalizado": "INSTALACAO DE EQUIPAMENTO SPLIT",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011771",
+    "descricao": "INSTALAÇÃO DE EQUIPAMENTO SPLIT HIWAILL 1 hp VRF HITACHI",
+    "normalizado": "INSTALACAO DE EQUIPAMENTO SPLIT HIWAILL 1 HP VRF HITACHI",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008779",
+    "descricao": "INSTALAÇÃO DE EQUIPAMENTOS DUTO DE 5HP",
+    "normalizado": "INSTALACAO DE EQUIPAMENTOS DUTO DE 5HP",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008775",
+    "descricao": "INSTALAÇÃO DE EQUIPAMENTOS DUTO DE 5HP, 01 HW DE 2HP + INSTALAÇÃO DA REDE FRIGORIGENA NOVA",
+    "normalizado": "INSTALACAO DE EQUIPAMENTOS DUTO DE 5HP, 01 HW DE 2HP + INSTALACAO DA REDE FRIGORIGENA NOVA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004896",
+    "descricao": "INSTALAÇÃO DE ESTRUTURA",
+    "normalizado": "INSTALACAO DE ESTRUTURA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008162",
+    "descricao": "INSTALAÇÃO DE EVAPORADORA DUTO DE 5HP",
+    "normalizado": "INSTALACAO DE EVAPORADORA DUTO DE 5HP",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011707",
+    "descricao": "Instalação de grelha",
+    "normalizado": "INSTALACAO DE GRELHA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007226",
+    "descricao": "INSTALAÇÃO DE GRELHA DE RETORNO",
+    "normalizado": "INSTALACAO DE GRELHA DE RETORNO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011703",
+    "descricao": "instalação de grelhas de retorno",
+    "normalizado": "INSTALACAO DE GRELHAS DE RETORNO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008457",
+    "descricao": "INSTALAÇÃO DE INFRA NOVA",
+    "normalizado": "INSTALACAO DE INFRA NOVA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009482",
+    "descricao": "INSTALAÇÃO DE MAQUINA DUTO 5HP",
+    "normalizado": "INSTALACAO DE MAQUINA DUTO 5HP",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008432",
+    "descricao": "INSTALAÇÃO DE NOVA FIAÇÃO ELETRICA PARA CASA DE MAQUINAS DOS ELEVADORES",
+    "normalizado": "INSTALACAO DE NOVA FIACAO ELETRICA PARA CASA DE MAQUINAS DOS ELEVADORES",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012517",
+    "descricao": "INSTALAÇÃO DE OUTRO EQUIPAMENTO NA SALA",
+    "normalizado": "INSTALACAO DE OUTRO EQUIPAMENTO NA SALA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008792",
+    "descricao": "INSTALAÇÃO DE PISO LAMINADO",
+    "normalizado": "INSTALACAO DE PISO LAMINADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008459",
+    "descricao": "INSTALAÇÃO DE PISO TETO E STARTUP DOS EQUIPAMENTOS",
+    "normalizado": "INSTALACAO DE PISO TETO E STARTUP DOS EQUIPAMENTOS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004023",
+    "descricao": "INSTALAÇÃO DE PISO VINILICO/LAMINADO",
+    "normalizado": "INSTALACAO DE PISO VINILICO/LAMINADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006911",
+    "descricao": "INSTALAÇÃO DE PLACAS",
+    "normalizado": "INSTALACAO DE PLACAS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006924",
+    "descricao": "INSTALAÇÃO DE PLACAS",
+    "normalizado": "INSTALACAO DE PLACAS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011744",
+    "descricao": "Instalação de porta madeira",
+    "normalizado": "INSTALACAO DE PORTA MADEIRA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004173",
+    "descricao": "INSTALAÇÃO DE REDE DE PROTEÇÃO",
+    "normalizado": "INSTALACAO DE REDE DE PROTECAO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011475",
+    "descricao": "INSTALAÇÃO DE SISTEMA BI SPLIT COM EVAPORADORES MIDEA 9.000 BTUS",
+    "normalizado": "INSTALACAO DE SISTEMA BI SPLIT COM EVAPORADORES MIDEA 9.000 BTUS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011549",
+    "descricao": "INSTALAÇÃO DE SISTEMA DE BIOMETRIA CONTROLID",
+    "normalizado": "INSTALACAO DE SISTEMA DE BIOMETRIA CONTROLID",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011465",
+    "descricao": "INSTALAÇÃO DE SISTEMA MINI VRF (CONDENSADORA 18HP, HIWALL E DUTOS DE 04HP)",
+    "normalizado": "INSTALACAO DE SISTEMA MINI VRF (CONDENSADORA 18HP, HIWALL E DUTOS DE 04HP)",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011468",
+    "descricao": "INSTALAÇÃO DE SISTEMA PENTA LG (05 EVAP. 9.000 BTUS)",
+    "normalizado": "INSTALACAO DE SISTEMA PENTA LG (05 EVAP. 9.000 BTUS)",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012058",
+    "descricao": "INSTALAÇÃO DE SPLIT 1HP VR",
+    "normalizado": "INSTALACAO DE SPLIT 1HP VR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011705",
+    "descricao": "INSTALAÇÃO DE SPLIT HW",
+    "normalizado": "INSTALACAO DE SPLIT HW",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011534",
+    "descricao": "INSTALAÇÃO DE SUPORTE DE BANDEIRA",
+    "normalizado": "INSTALACAO DE SUPORTE DE BANDEIRA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012006",
+    "descricao": "INTERF AUTOMAÇÃO AIRCLOUD INTERFACE AUTOM AIRCLOUD GATEWAY (SIST 100~240VCA 50~60Hz",
+    "normalizado": "INTERF AUTOMACAO AIRCLOUD INTERFACE AUTOM AIRCLOUD GATEWAY (SIST 100~240VCA 50~60HZ",
+    "motivo": "fragmento ou lixo (muito curto, parenteses desbalanceados, descricao livre)"
+  },
+  {
+    "codigo": "006030",
+    "descricao": "LOCAÇÃO DE ANDAIME",
+    "normalizado": "LOCACAO DE ANDAIME",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006037",
+    "descricao": "LOCAÇÃO DE CAÇAMBA PARA DESCARTE",
+    "normalizado": "LOCACAO DE CACAMBA PARA DESCARTE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006029",
+    "descricao": "LOCAÇÃO DE COMPRESSOR P/ PINTURA",
+    "normalizado": "LOCACAO DE COMPRESSOR P/ PINTURA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008931",
+    "descricao": "LOCAÇÃO DE EQUIPAMENTO BOSCH DTECT 150",
+    "normalizado": "LOCACAO DE EQUIPAMENTO BOSCH DTECT 150",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011966",
+    "descricao": "LOCAÇÃO DE GERADOR",
+    "normalizado": "LOCACAO DE GERADOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007259",
+    "descricao": "LOCAÇÃO DE LIXADEIRA INDUSTRIAL MODELO ENCERADEIRA",
+    "normalizado": "LOCACAO DE LIXADEIRA INDUSTRIAL MODELO ENCERADEIRA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008843",
+    "descricao": "LOCAÇÃO DE MAÇARICO PARA CORTE DE AÇO PESADO",
+    "normalizado": "LOCACAO DE MACARICO PARA CORTE DE ACO PESADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "005160",
+    "descricao": "LOCAÇÃO DE MAQUINAS E EQUIPAMENTOS",
+    "normalizado": "LOCACAO DE MAQUINAS E EQUIPAMENTOS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008535",
+    "descricao": "LOCAÇÃO DE MARTELETE DE 10KG",
+    "normalizado": "LOCACAO DE MARTELETE DE 10KG",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011550",
+    "descricao": "LOCAÇÃO DE MARTELETE DE 15KG",
+    "normalizado": "LOCACAO DE MARTELETE DE 15KG",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "010992",
+    "descricao": "LOCAÇÃO DE NO BREAK TRIFÁSICO",
+    "normalizado": "LOCACAO DE NO BREAK TRIFASICO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006343",
+    "descricao": "LOCAÇÃO DE PROJETOR",
+    "normalizado": "LOCACAO DE PROJETOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011446",
+    "descricao": "Manutenção de Jardim",
+    "normalizado": "MANUTENCAO DE JARDIM",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011555",
+    "descricao": "Manutenção de Jardim",
+    "normalizado": "MANUTENCAO DE JARDIM",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011950",
+    "descricao": "manutenção preventiva das cabines de barramento e centros de medição",
+    "normalizado": "MANUTENCAO PREVENTIVA DAS CABINES DE BARRAMENTO E CENTROS DE MEDICAO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009455",
+    "descricao": "MANUTENÇÃO PREVENTIVA DIVISÓRIA RETRATIL",
+    "normalizado": "MANUTENCAO PREVENTIVA DIVISORIA RETRATIL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011658",
+    "descricao": "Manutenção preventiva para gerador",
+    "normalizado": "MANUTENCAO PREVENTIVA PARA GERADOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004059",
+    "descricao": "MÃO DE OBRA DE PINTURA FRIA",
+    "normalizado": "MAO DE OBRA DE PINTURA FRIA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009012",
+    "descricao": "MÃO DE OBRA DE REVISÃO E TROCA DE ROLAMENTO",
+    "normalizado": "MAO DE OBRA DE REVISAO E TROCA DE ROLAMENTO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "003960",
+    "descricao": "PRESTAÇÃO DE SERVIÇO DE FURO TECNICO",
+    "normalizado": "PRESTACAO DE SERVICO DE FURO TECNICO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "010751",
+    "descricao": "PROJETO DE INSTALAÇÃO ELÉTRICA",
+    "normalizado": "PROJETO DE INSTALACAO ELETRICA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009441",
+    "descricao": "PROJETO DE PCCI",
+    "normalizado": "PROJETO DE PCCI",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008790",
+    "descricao": "PROJETO PARA SISTEMA ELETRICO E ILUMINAÇÃO",
+    "normalizado": "PROJETO PARA SISTEMA ELETRICO E ILUMINACAO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006477",
+    "descricao": "REPARO ACIONADOR 4336 0004 VALVULA HYDRA LUXO MASTER",
+    "normalizado": "REPARO ACIONADOR 4336 0004 VALVULA HYDRA LUXO MASTER",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004893",
+    "descricao": "REPARO CAIXA ACOPLADA",
+    "normalizado": "REPARO CAIXA ACOPLADA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "010361",
+    "descricao": "REPARO CAIXA DESCARGA IDEAL STANDARD ALAVANCA E OBTURADOR",
+    "normalizado": "REPARO CAIXA DESCARGA IDEAL STANDARD ALAVANCA E OBTURADOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012514",
+    "descricao": "Reparo de vazamento realizado; equipamento reinstalado, testado e operando normalmente.",
+    "normalizado": "REPARO DE VAZAMENTO REALIZADO; EQUIPAMENTO REINSTALADO, TESTADO E OPERANDO NORMALMENTE.",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "003293",
+    "descricao": "REPARO DECA TORRE SAIDA CAIXA ACOPLADA",
+    "normalizado": "REPARO DECA TORRE SAIDA CAIXA ACOPLADA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011378",
+    "descricao": "REPARO EM PLACA FILTRO",
+    "normalizado": "REPARO EM PLACA FILTRO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011377",
+    "descricao": "REPARO EM PLACA RETIFICADORA",
+    "normalizado": "REPARO EM PLACA RETIFICADORA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "001273",
+    "descricao": "REPARO HYDRA MAX 11/2,11/4 325  ORIG",
+    "normalizado": "REPARO HYDRA MAX 11/2,11/4 325 ORIG",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "003909",
+    "descricao": "REPARO P/ TORNEIRA 1/4",
+    "normalizado": "REPARO P/ TORNEIRA 1/4",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007364",
+    "descricao": "REPARO PARA TORNEIRA AUTOMÁTICA COM TEMPORIZADOR CROMADO",
+    "normalizado": "REPARO PARA TORNEIRA AUTOMATICA COM TEMPORIZADOR CROMADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007271",
+    "descricao": "REPARO PARA VALVULA 1.1/4 4686014 HYDRA DUO/ECO DECA",
+    "normalizado": "REPARO PARA VALVULA 1.1/4 4686014 HYDRA DUO/ECO DECA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009732",
+    "descricao": "REPARO REGISTRO GAVETA 3/4",
+    "normalizado": "REPARO REGISTRO GAVETA 3/4",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "003350",
+    "descricao": "REPARO VÁLVULA DE DESCARGA HYDRA MAX",
+    "normalizado": "REPARO VALVULA DE DESCARGA HYDRA MAX",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007072",
+    "descricao": "SERVIÇO DE ACABAMENTO DE DRYWALL",
+    "normalizado": "SERVICO DE ACABAMENTO DE DRYWALL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009060",
+    "descricao": "SERVIÇO DE ADEQUAÇÃO CIVIL PARA AUMENTO DE PARADA SUPERIOR DO ELEVADOR",
+    "normalizado": "SERVICO DE ADEQUACAO CIVIL PARA AUMENTO DE PARADA SUPERIOR DO ELEVADOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007284",
+    "descricao": "SERVIÇO DE ADEQUAÇÃO DO SISTEMA DE CHUVEIRO AUTOMÁTICO",
+    "normalizado": "SERVICO DE ADEQUACAO DO SISTEMA DE CHUVEIRO AUTOMATICO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011820",
+    "descricao": "SERVIÇO DE ADEQUAÇÃO DO SISTEMA DE SPRINKLERS",
+    "normalizado": "SERVICO DE ADEQUACAO DO SISTEMA DE SPRINKLERS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009063",
+    "descricao": "SERVIÇO DE ADEQUAÇÕES HIDRAULICAS",
+    "normalizado": "SERVICO DE ADEQUACOES HIDRAULICAS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007347",
+    "descricao": "SERVIÇO DE ALINHAMENTO",
+    "normalizado": "SERVICO DE ALINHAMENTO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006346",
+    "descricao": "SERVIÇO DE AMACEAMENTO E PINTURA DE FORRO",
+    "normalizado": "SERVICO DE AMACEAMENTO E PINTURA DE FORRO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "005043",
+    "descricao": "SERVIÇO DE ANALISE DA QUALIDADE DA ÁGUA",
+    "normalizado": "SERVICO DE ANALISE DA QUALIDADE DA AGUA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "005010",
+    "descricao": "SERVIÇO DE ANALISE DA QUALIDADE DO AR",
+    "normalizado": "SERVICO DE ANALISE DA QUALIDADE DO AR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012135",
+    "descricao": "SERVIÇO DE APLICAÇÃO DE CIMENTO QUEIMADO",
+    "normalizado": "SERVICO DE APLICACAO DE CIMENTO QUEIMADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008938",
+    "descricao": "SERVIÇO DE APLICAÇÃO DE HIPERMEABILIZANTE",
+    "normalizado": "SERVICO DE APLICACAO DE HIPERMEABILIZANTE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "005954",
+    "descricao": "SERVIÇO DE APLICAÇÃO DE PELICULA",
+    "normalizado": "SERVICO DE APLICACAO DE PELICULA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "005955",
+    "descricao": "SERVIÇO DE APLICAÇÃO DE PELICULA",
+    "normalizado": "SERVICO DE APLICACAO DE PELICULA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008646",
+    "descricao": "SERVIÇO DE ASSENTAMENTO DE PISO E RODAPÉ",
+    "normalizado": "SERVICO DE ASSENTAMENTO DE PISO E RODAPE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008584",
+    "descricao": "SERVIÇO DE CARPINTARIA",
+    "normalizado": "SERVICO DE CARPINTARIA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007218",
+    "descricao": "SERVIÇO DE CONFECÇÃO DE CAIXOTE DE DRYWALL",
+    "normalizado": "SERVICO DE CONFECCAO DE CAIXOTE DE DRYWALL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006863",
+    "descricao": "SERVIÇO DE CONFECÇÃO DE LETREIRO EM NEON",
+    "normalizado": "SERVICO DE CONFECCAO DE LETREIRO EM NEON",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009772",
+    "descricao": "SERVIÇO DE CONSTRUÇÃO DE DIVISÓRIA DE DRYWALL",
+    "normalizado": "SERVICO DE CONSTRUCAO DE DIVISORIA DE DRYWALL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "005535",
+    "descricao": "SERVIÇO DE CORTE",
+    "normalizado": "SERVICO DE CORTE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008536",
+    "descricao": "SERVIÇO DE DEMOLIÇÃO",
+    "normalizado": "SERVICO DE DEMOLICAO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011218",
+    "descricao": "SERVIÇO DE DEMOLIÇÃO DE FORRO",
+    "normalizado": "SERVICO DE DEMOLICAO DE FORRO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "003887",
+    "descricao": "SERVIÇO DE DESENTUPIMENTO LIMPEZA RASPAGEM E DESOBSTRUÇÃO",
+    "normalizado": "SERVICO DE DESENTUPIMENTO LIMPEZA RASPAGEM E DESOBSTRUCAO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011453",
+    "descricao": "SERVIÇO DE DESLOCAMENTO DE CENTRAL DE ALARME DE INCENDIO",
+    "normalizado": "SERVICO DE DESLOCAMENTO DE CENTRAL DE ALARME DE INCENDIO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011494",
+    "descricao": "SERVIÇO DE DESMONTAGEM DE DIVISÓRIAS",
+    "normalizado": "SERVICO DE DESMONTAGEM DE DIVISORIAS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011598",
+    "descricao": "SERVIÇO DE DESMONTAGEM DE FORRO MINERAL",
+    "normalizado": "SERVICO DE DESMONTAGEM DE FORRO MINERAL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011495",
+    "descricao": "SERVIÇO DE DESMONTAGEM DE MESAS",
+    "normalizado": "SERVICO DE DESMONTAGEM DE MESAS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009062",
+    "descricao": "SERVIÇO DE DESMONTAGEM DE PAREDE DE DRYWALL",
+    "normalizado": "SERVICO DE DESMONTAGEM DE PAREDE DE DRYWALL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "010082",
+    "descricao": "SERVIÇO DE DESMONTAGEM DE SOFA",
+    "normalizado": "SERVICO DE DESMONTAGEM DE SOFA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006934",
+    "descricao": "SERVIÇO DE DESMONTAGEM E INSTALAÇÃO DE FORROS",
+    "normalizado": "SERVICO DE DESMONTAGEM E INSTALACAO DE FORROS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007279",
+    "descricao": "SERVIÇO DE DIVULGAÇÃO DE VAGA",
+    "normalizado": "SERVICO DE DIVULGACAO DE VAGA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007152",
+    "descricao": "SERVIÇO DE DIVULGAÇÃO DE VAGA NO JORNAL AMARELINHO",
+    "normalizado": "SERVICO DE DIVULGACAO DE VAGA NO JORNAL AMARELINHO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "010966",
+    "descricao": "SERVIÇO DE ELABORAÇÃO DE MEMORIAL DE CALCULO DE POPULAÇÃO",
+    "normalizado": "SERVICO DE ELABORACAO DE MEMORIAL DE CALCULO DE POPULACAO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008940",
+    "descricao": "SERVIÇO DE EMBUTIR E ACABAMENTO DE CABOS",
+    "normalizado": "SERVICO DE EMBUTIR E ACABAMENTO DE CABOS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007175",
+    "descricao": "SERVIÇO DE EXECUÇÃO DE CAIXOTE",
+    "normalizado": "SERVICO DE EXECUCAO DE CAIXOTE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007177",
+    "descricao": "SERVIÇO DE EXECUÇÃO DE FORRO DE DRYWALL",
+    "normalizado": "SERVICO DE EXECUCAO DE FORRO DE DRYWALL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007174",
+    "descricao": "SERVIÇO DE EXECUÇÃO DE PAREDE",
+    "normalizado": "SERVICO DE EXECUCAO DE PAREDE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007071",
+    "descricao": "SERVIÇO DE EXECUÇÃO DE PAREDE DE DRYWALL",
+    "normalizado": "SERVICO DE EXECUCAO DE PAREDE DE DRYWALL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006796",
+    "descricao": "SERVIÇO DE EXECUÇÃO DE PAREDE DE DRYWALL COM LÃ DE ROCHA",
+    "normalizado": "SERVICO DE EXECUCAO DE PAREDE DE DRYWALL COM LA DE ROCHA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006795",
+    "descricao": "SERVIÇO DE EXECUÇÃO DE SEPTO",
+    "normalizado": "SERVICO DE EXECUCAO DE SEPTO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008937",
+    "descricao": "SERVIÇO DE EXECUSÃO DE CONTRAPISO",
+    "normalizado": "SERVICO DE EXECUSAO DE CONTRAPISO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008856",
+    "descricao": "SERVIÇO DE FABRICAÇÃO E COLOCAÇÃO DE LAVATÓRIOS",
+    "normalizado": "SERVICO DE FABRICACAO E COLOCACAO DE LAVATORIOS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006913",
+    "descricao": "SERVIÇO DE FECHAMENTO DE FORRO HALL ELEVADOR",
+    "normalizado": "SERVICO DE FECHAMENTO DE FORRO HALL ELEVADOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006915",
+    "descricao": "SERVIÇO DE FECHAMENTO DE JANELAS DOS BANHEIROS COM DRYWALL",
+    "normalizado": "SERVICO DE FECHAMENTO DE JANELAS DOS BANHEIROS COM DRYWALL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004190",
+    "descricao": "SERVIÇO DE IMPERMEABILIZAÇÃO",
+    "normalizado": "SERVICO DE IMPERMEABILIZACAO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009055",
+    "descricao": "SERVIÇO DE IMPERMEABILIZAÇÃO DE ESTOFADO",
+    "normalizado": "SERVICO DE IMPERMEABILIZACAO DE ESTOFADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009303",
+    "descricao": "SERVIÇO DE IMPLANTAÇÃO DE ACCESS POINTS",
+    "normalizado": "SERVICO DE IMPLANTACAO DE ACCESS POINTS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008565",
+    "descricao": "SERVIÇO DE IMPRESSÃO",
+    "normalizado": "SERVICO DE IMPRESSAO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008942",
+    "descricao": "SERVIÇO DE INFRAESTRUTURA ELETROCALHA",
+    "normalizado": "SERVICO DE INFRAESTRUTURA ELETROCALHA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009773",
+    "descricao": "SERVIÇO DE INFRAESTRUTURA SECA",
+    "normalizado": "SERVICO DE INFRAESTRUTURA SECA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009603",
+    "descricao": "SERVIÇO DE INSTAÇÃO DE MANTA ASFALTICA",
+    "normalizado": "SERVICO DE INSTACAO DE MANTA ASFALTICA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006914",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE ALÇAPÃO",
+    "normalizado": "SERVICO DE INSTALACAO DE ALCAPAO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "010129",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE CATRACAS",
+    "normalizado": "SERVICO DE INSTALACAO DE CATRACAS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006344",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE CONTRA PISO",
+    "normalizado": "SERVICO DE INSTALACAO DE CONTRA PISO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007443",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE DETECTOR DE FUMAÇA",
+    "normalizado": "SERVICO DE INSTALACAO DE DETECTOR DE FUMACA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008908",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE DIFUSORES PARA AR-CONDICIONADO",
+    "normalizado": "SERVICO DE INSTALACAO DE DIFUSORES PARA AR-CONDICIONADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007470",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE DUTO DE DESCARGA CONDENSADORA",
+    "normalizado": "SERVICO DE INSTALACAO DE DUTO DE DESCARGA CONDENSADORA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008909",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE ELETROCALHA",
+    "normalizado": "SERVICO DE INSTALACAO DE ELETROCALHA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012408",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE ESPELHO 4 MM LAPIDADO 140X600",
+    "normalizado": "SERVICO DE INSTALACAO DE ESPELHO 4 MM LAPIDADO 140X600",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012409",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE ESPELHO 4 MM LAPIDADO 970X1800",
+    "normalizado": "SERVICO DE INSTALACAO DE ESPELHO 4 MM LAPIDADO 970X1800",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006950",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE FORRO",
+    "normalizado": "SERVICO DE INSTALACAO DE FORRO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004440",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE FORRO ACARTONADO",
+    "normalizado": "SERVICO DE INSTALACAO DE FORRO ACARTONADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006371",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE FORRO MINERAL",
+    "normalizado": "SERVICO DE INSTALACAO DE FORRO MINERAL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007176",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE FORRO MODULAR",
+    "normalizado": "SERVICO DE INSTALACAO DE FORRO MODULAR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009020",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE GESSO",
+    "normalizado": "SERVICO DE INSTALACAO DE GESSO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006868",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE GRAMA SINTETICA",
+    "normalizado": "SERVICO DE INSTALACAO DE GRAMA SINTETICA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007440",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE PAPEL DE PAREDE",
+    "normalizado": "SERVICO DE INSTALACAO DE PAPEL DE PAREDE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007701",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE PAPEL DE PAREDE",
+    "normalizado": "SERVICO DE INSTALACAO DE PAPEL DE PAREDE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012077",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE PERSIANA",
+    "normalizado": "SERVICO DE INSTALACAO DE PERSIANA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012083",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE PORTA CORTA FOGO COM BATENTE E FECHADURA",
+    "normalizado": "SERVICO DE INSTALACAO DE PORTA CORTA FOGO COM BATENTE E FECHADURA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004289",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE PORTAS COM GUARNIÇÕES",
+    "normalizado": "SERVICO DE INSTALACAO DE PORTAS COM GUARNICOES",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009442",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE SISTEMA BI SPLIT",
+    "normalizado": "SERVICO DE INSTALACAO DE SISTEMA BI SPLIT",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008185",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE TANQUE AÉREO PARA ARMAZEMAMENTO DE LIQUIDOS - TANQUE E BACIA 250 LITROS",
+    "normalizado": "SERVICO DE INSTALACAO DE TANQUE AEREO PARA ARMAZEMAMENTO DE LIQUIDOS - TANQUE E BACIA 250 LITROS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "001499",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE TOLDOS",
+    "normalizado": "SERVICO DE INSTALACAO DE TOLDOS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008988",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE TORNEIRA, VALVULA DE PIA E SIFÃO",
+    "normalizado": "SERVICO DE INSTALACAO DE TORNEIRA, VALVULA DE PIA E SIFAO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008989",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE VASO SANITÁRIO",
+    "normalizado": "SERVICO DE INSTALACAO DE VASO SANITARIO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012332",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE VIDRO 0,55 X 1,05M",
+    "normalizado": "SERVICO DE INSTALACAO DE VIDRO 0,55 X 1,05M",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004774",
+    "descricao": "SERVIÇO DE INSTALAÇÃO DE VIDROS",
+    "normalizado": "SERVICO DE INSTALACAO DE VIDROS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004829",
+    "descricao": "SERVIÇO DE INSTALAÇÃO E MANUTENÇÃO DE FECHADURA",
+    "normalizado": "SERVICO DE INSTALACAO E MANUTENCAO DE FECHADURA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009886",
+    "descricao": "SERVIÇO DE INSTALAÇÃO REVESTIMENTO EM PORCELANATO",
+    "normalizado": "SERVICO DE INSTALACAO REVESTIMENTO EM PORCELANATO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "002663",
+    "descricao": "SERVIÇO DE JARDINAGEM",
+    "normalizado": "SERVICO DE JARDINAGEM",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "003869",
+    "descricao": "SERVIÇO DE JARDINAGEM",
+    "normalizado": "SERVICO DE JARDINAGEM",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007346",
+    "descricao": "SERVIÇO DE LAVAGEM",
+    "normalizado": "SERVICO DE LAVAGEM",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009353",
+    "descricao": "SERVIÇO DE LAVAGEM DE ALMOFADAS",
+    "normalizado": "SERVICO DE LAVAGEM DE ALMOFADAS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009053",
+    "descricao": "SERVIÇO DE LAVAGEM DE ESTOFADO",
+    "normalizado": "SERVICO DE LAVAGEM DE ESTOFADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "010974",
+    "descricao": "SERVIÇO DE LAVAGEM DE VIDROS",
+    "normalizado": "SERVICO DE LAVAGEM DE VIDROS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "005096",
+    "descricao": "SERVIÇO DE LETREIRO AÇO GALV. FACE ACRÍLICA CRISTAL LED INTERNO COM LOGO",
+    "normalizado": "SERVICO DE LETREIRO ACO GALV. FACE ACRILICA CRISTAL LED INTERNO COM LOGO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004384",
+    "descricao": "SERVIÇO DE LIMPEZA",
+    "normalizado": "SERVICO DE LIMPEZA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009054",
+    "descricao": "SERVIÇO DE LIMPEZA DE ESTOFADO",
+    "normalizado": "SERVICO DE LIMPEZA DE ESTOFADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007436",
+    "descricao": "SERVIÇO DE LIMPEZA DE FACHADA",
+    "normalizado": "SERVICO DE LIMPEZA DE FACHADA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008337",
+    "descricao": "SERVIÇO DE LIMPEZA DE VIDROS",
+    "normalizado": "SERVICO DE LIMPEZA DE VIDROS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "010244",
+    "descricao": "SERVIÇO DE LIMPEZA DO ACM",
+    "normalizado": "SERVICO DE LIMPEZA DO ACM",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "010245",
+    "descricao": "SERVIÇO DE LIMPEZA DO ACM E VIDRO",
+    "normalizado": "SERVICO DE LIMPEZA DO ACM E VIDRO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009093",
+    "descricao": "SERVIÇO DE LIMPEZA E DESENTUPIMENTO DA CAIXA DE ESGOTO",
+    "normalizado": "SERVICO DE LIMPEZA E DESENTUPIMENTO DA CAIXA DE ESGOTO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007135",
+    "descricao": "SERVIÇO DE LIMPEZA PÓS OBRA",
+    "normalizado": "SERVICO DE LIMPEZA POS OBRA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011319",
+    "descricao": "SERVIÇO DE LIMPEZA QUIMICA SISTEMA DUTO VRF DAIKIN 5HP",
+    "normalizado": "SERVICO DE LIMPEZA QUIMICA SISTEMA DUTO VRF DAIKIN 5HP",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "003797",
+    "descricao": "SERVIÇO DE LIMPEZA, HIGIENIZAÇÃO E IMPERMEABILIZAÇÃO",
+    "normalizado": "SERVICO DE LIMPEZA, HIGIENIZACAO E IMPERMEABILIZACAO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004951",
+    "descricao": "SERVIÇO DE LIMPEZA, HIGIENIZAÇÃO E IMPERMEABILIZAÇÃO",
+    "normalizado": "SERVICO DE LIMPEZA, HIGIENIZACAO E IMPERMEABILIZACAO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008913",
+    "descricao": "SERVIÇO DE LIMPEZA, RASPAGEM, DESOBSTRUÇÃO E LIMPEZA TÉCNICA EM TUBULAÇÕES",
+    "normalizado": "SERVICO DE LIMPEZA, RASPAGEM, DESOBSTRUCAO E LIMPEZA TECNICA EM TUBULACOES",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006449",
+    "descricao": "SERVIÇO DE MANUTENÇÃO CORRETIVA DE AR CONDICIONADO",
+    "normalizado": "SERVICO DE MANUTENCAO CORRETIVA DE AR CONDICIONADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007167",
+    "descricao": "SERVIÇO DE MANUTENÇÃO CORRETIVA DE GERADORES",
+    "normalizado": "SERVICO DE MANUTENCAO CORRETIVA DE GERADORES",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009617",
+    "descricao": "SERVIÇO DE MANUTENÇÃO DE ELEVADOR",
+    "normalizado": "SERVICO DE MANUTENCAO DE ELEVADOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012391",
+    "descricao": "SERVIÇO DE MANUTENÇÃO DE FACHADA COM PAINEL EM POLICARBONATO",
+    "normalizado": "SERVICO DE MANUTENCAO DE FACHADA COM PAINEL EM POLICARBONATO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006591",
+    "descricao": "SERVIÇO DE MANUTENÇÃO DE GELADEIRA",
+    "normalizado": "SERVICO DE MANUTENCAO DE GELADEIRA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007169",
+    "descricao": "SERVIÇO DE MANUTENÇÃO DE GERADORES",
+    "normalizado": "SERVICO DE MANUTENCAO DE GERADORES",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006687",
+    "descricao": "SERVIÇO DE MANUTENÇÃO DE NEON LETREIRO",
+    "normalizado": "SERVICO DE MANUTENCAO DE NEON LETREIRO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012373",
+    "descricao": "SERVIÇO DE MANUTENÇÃO DE PORTA AUTOMATICA",
+    "normalizado": "SERVICO DE MANUTENCAO DE PORTA AUTOMATICA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011604",
+    "descricao": "SERVIÇO DE MANUTENÇÃO DE PORTAS E DIVISÓRIAS",
+    "normalizado": "SERVICO DE MANUTENCAO DE PORTAS E DIVISORIAS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007424",
+    "descricao": "SERVIÇO DE MANUTENÇÃO DE TELEVISOR",
+    "normalizado": "SERVICO DE MANUTENCAO DE TELEVISOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004730",
+    "descricao": "SERVIÇO DE MANUTENÇÃO DE VEICULOS",
+    "normalizado": "SERVICO DE MANUTENCAO DE VEICULOS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008582",
+    "descricao": "SERVIÇO DE MANUTENÇÃO DO DECK",
+    "normalizado": "SERVICO DE MANUTENCAO DO DECK",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007292",
+    "descricao": "SERVIÇO DE MANUTENÇÃO DO PROJETOR",
+    "normalizado": "SERVICO DE MANUTENCAO DO PROJETOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "003814",
+    "descricao": "SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO DE AR CONDICIONADO",
+    "normalizado": "SERVICO DE MANUTENCAO E INSTALACAO DE AR CONDICIONADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011896",
+    "descricao": "Serviço de mão de obra",
+    "normalizado": "SERVICO DE MAO DE OBRA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008855",
+    "descricao": "SERVIÇO DE MÃO DE OBRA DE ALVENARIA E ACABAMENTOS",
+    "normalizado": "SERVICO DE MAO DE OBRA DE ALVENARIA E ACABAMENTOS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006517",
+    "descricao": "SERVIÇO DE MÃO DE OBRA DE DIVISÓRIA RETRÁTIL",
+    "normalizado": "SERVICO DE MAO DE OBRA DE DIVISORIA RETRATIL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006884",
+    "descricao": "SERVIÇO DE MÃO DE OBRA DE INSTALAÇÃO DE PORTA",
+    "normalizado": "SERVICO DE MAO DE OBRA DE INSTALACAO DE PORTA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008213",
+    "descricao": "SERVIÇO DE MÃO DE OBRA DE INSTALAÇÃO DO SISTEMA MINI VRF DE 18 HP COM 04 EVAP DUTO DE 5 HP",
+    "normalizado": "SERVICO DE MAO DE OBRA DE INSTALACAO DO SISTEMA MINI VRF DE 18 HP COM 04 EVAP DUTO DE 5 HP",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011167",
+    "descricao": "SERVIÇO DE MÃO DE OBRA ELETRICISTA",
+    "normalizado": "SERVICO DE MAO DE OBRA ELETRICISTA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007348",
+    "descricao": "SERVIÇO DE MÃO DE OBRA MECÂNICA",
+    "normalizado": "SERVICO DE MAO DE OBRA MECANICA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "010178",
+    "descricao": "SERVIÇO DE MARCENARIA",
+    "normalizado": "SERVICO DE MARCENARIA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008563",
+    "descricao": "SERVIÇO DE MOBILIZAÇÃO",
+    "normalizado": "SERVICO DE MOBILIZACAO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007063",
+    "descricao": "SERVIÇO DE MODIFICAÇÃO NOS RAMAIS DE DUTOS",
+    "normalizado": "SERVICO DE MODIFICACAO NOS RAMAIS DE DUTOS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011599",
+    "descricao": "SERVIÇO DE MONTAGEM DE FORRO MINERAL",
+    "normalizado": "SERVICO DE MONTAGEM DE FORRO MINERAL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009579",
+    "descricao": "SERVIÇO DE MONTAGEM DE QUADRO ELETRICO",
+    "normalizado": "SERVICO DE MONTAGEM DE QUADRO ELETRICO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012371",
+    "descricao": "SERVIÇO DE MOVIMENTAÇÃO DE MATERIAIS E ORGANIZAÇÃO DO ESPAÇO",
+    "normalizado": "SERVICO DE MOVIMENTACAO DE MATERIAIS E ORGANIZACAO DO ESPACO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006345",
+    "descricao": "SERVIÇO DE NIVELAMENTO DE CONTRA PISO",
+    "normalizado": "SERVICO DE NIVELAMENTO DE CONTRA PISO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008910",
+    "descricao": "SERVIÇO DE PANAGEM DE MALHA DE ATERRAMENTO",
+    "normalizado": "SERVICO DE PANAGEM DE MALHA DE ATERRAMENTO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008943",
+    "descricao": "SERVIÇO DE PASSAGEM DE CABEAMENTO PARA O AR CONDICIONADO",
+    "normalizado": "SERVICO DE PASSAGEM DE CABEAMENTO PARA O AR CONDICIONADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011862",
+    "descricao": "SERVIÇO DE PASSAGEM DE CABEAMENTO PARA PONTOS DE REDE",
+    "normalizado": "SERVICO DE PASSAGEM DE CABEAMENTO PARA PONTOS DE REDE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009605",
+    "descricao": "SERVIÇO DE PASSAGEM DE CIRCUITO ELETRICO",
+    "normalizado": "SERVICO DE PASSAGEM DE CIRCUITO ELETRICO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004990",
+    "descricao": "SERVIÇO DE PINTURA",
+    "normalizado": "SERVICO DE PINTURA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004987",
+    "descricao": "SERVIÇO DE PINTURA DE FACHADA PREDIAL",
+    "normalizado": "SERVICO DE PINTURA DE FACHADA PREDIAL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008896",
+    "descricao": "SERVIÇO DE PREPARAÇÃO DE PAREDES E PINTURA DAS PAREDES DE DRYWALL",
+    "normalizado": "SERVICO DE PREPARACAO DE PAREDES E PINTURA DAS PAREDES DE DRYWALL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006667",
+    "descricao": "SERVIÇO DE RASPAGEM E APLICAÇÃO DE VERNIZ",
+    "normalizado": "SERVICO DE RASPAGEM E APLICACAO DE VERNIZ",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006912",
+    "descricao": "SERVIÇO DE RECOLOCAÇÃO DE PLACAS DESMONTAGEM",
+    "normalizado": "SERVICO DE RECOLOCACAO DE PLACAS DESMONTAGEM",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007433",
+    "descricao": "SERVIÇO DE REFORÇO ESTRUTURAL",
+    "normalizado": "SERVICO DE REFORCO ESTRUTURAL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012485",
+    "descricao": "SERVIÇO DE REFORMA CIVIL PARA CONSTRUÇÃO DE LAYOUT DE ESCRITÓRIO",
+    "normalizado": "SERVICO DE REFORMA CIVIL PARA CONSTRUCAO DE LAYOUT DE ESCRITORIO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007267",
+    "descricao": "SERVIÇO DE REFORMA DE ESTOFADO",
+    "normalizado": "SERVICO DE REFORMA DE ESTOFADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006514",
+    "descricao": "SERVIÇO DE REGULAGEM E ALINHAMENTO",
+    "normalizado": "SERVICO DE REGULAGEM E ALINHAMENTO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007286",
+    "descricao": "SERVIÇO DE REGULAGEM, TROCA DE PLACA E PERFIL",
+    "normalizado": "SERVICO DE REGULAGEM, TROCA DE PLACA E PERFIL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008936",
+    "descricao": "SERVIÇO DE REGULARIZAÇÃO DO PISO",
+    "normalizado": "SERVICO DE REGULARIZACAO DO PISO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007073",
+    "descricao": "SERVIÇO DE REGULARIZAÇÃO DO PISO E MASSA ALTO NIVELANTE",
+    "normalizado": "SERVICO DE REGULARIZACAO DO PISO E MASSA ALTO NIVELANTE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008992",
+    "descricao": "SERVIÇO DE RELOCAÇÃO DE PONTOS DE AGUA",
+    "normalizado": "SERVICO DE RELOCACAO DE PONTOS DE AGUA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008939",
+    "descricao": "SERVIÇO DE REMANEJAMENTO DE CABOS DE AR CONDICIONADO",
+    "normalizado": "SERVICO DE REMANEJAMENTO DE CABOS DE AR CONDICIONADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008941",
+    "descricao": "SERVIÇO DE REMANEJAMENTO DO QUADRO DE AR CONDICIONADO",
+    "normalizado": "SERVICO DE REMANEJAMENTO DO QUADRO DE AR CONDICIONADO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011947",
+    "descricao": "Serviço de remoção de adesivo",
+    "normalizado": "SERVICO DE REMOCAO DE ADESIVO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007446",
+    "descricao": "SERVIÇO DE REMOÇÃO DE PAPEL DE PAREDE",
+    "normalizado": "SERVICO DE REMOCAO DE PAPEL DE PAREDE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009058",
+    "descricao": "SERVIÇO DE REMOÇÃO DE PELICULA",
+    "normalizado": "SERVICO DE REMOCAO DE PELICULA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009059",
+    "descricao": "SERVIÇO DE REMOÇÃO DE PELICULA",
+    "normalizado": "SERVICO DE REMOCAO DE PELICULA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008647",
+    "descricao": "SERVIÇO DE REMOÇÃO DO REVESTIMENTO E REGULARIZAÇÃO DO PISO",
+    "normalizado": "SERVICO DE REMOCAO DO REVESTIMENTO E REGULARIZACAO DO PISO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008648",
+    "descricao": "SERVIÇO DE REMOÇÃO E INSTALAÇÃO DE ESGOTO GERAL - INSTALAÇÃO HIDRAULICA",
+    "normalizado": "SERVICO DE REMOCAO E INSTALACAO DE ESGOTO GERAL - INSTALACAO HIDRAULICA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004968",
+    "descricao": "SERVIÇO DE REPARAÇÃO E MANUTENÇÃO HIDRAULICO",
+    "normalizado": "SERVICO DE REPARACAO E MANUTENCAO HIDRAULICO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "011806",
+    "descricao": "Serviço de reparo de vazamento de gás",
+    "normalizado": "SERVICO DE REPARO DE VAZAMENTO DE GAS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008993",
+    "descricao": "SERVIÇO DE REPARO DOS RALOS, RETIRADA E RECOLOCAÇÃO DE PISOS",
+    "normalizado": "SERVICO DE REPARO DOS RALOS, RETIRADA E RECOLOCACAO DE PISOS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008847",
+    "descricao": "SERVIÇO DE REPARO ELETRICO NO GERADOR",
+    "normalizado": "SERVICO DE REPARO ELETRICO NO GERADOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008990",
+    "descricao": "SERVIÇO DE REPARO GERAL NO REGISTRO",
+    "normalizado": "SERVICO DE REPARO GERAL NO REGISTRO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007256",
+    "descricao": "SERVIÇO DE REPARO NA ESTRUTURA DA PORTA",
+    "normalizado": "SERVICO DE REPARO NA ESTRUTURA DA PORTA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "005039",
+    "descricao": "SERVIÇO DE REPARO NA MOTOBOMBA",
+    "normalizado": "SERVICO DE REPARO NA MOTOBOMBA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "005290",
+    "descricao": "SERVIÇO DE REPARO NA MOTOBOMBA",
+    "normalizado": "SERVICO DE REPARO NA MOTOBOMBA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009660",
+    "descricao": "SERVIÇO DE REPARO NA TUBULAÇÃO DE AGUA",
+    "normalizado": "SERVICO DE REPARO NA TUBULACAO DE AGUA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008991",
+    "descricao": "SERVIÇO DE REPARO NO GESSO",
+    "normalizado": "SERVICO DE REPARO NO GESSO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007296",
+    "descricao": "SERVIÇO DE REPARO NO MÓDULO DE POTÊNCIA DO ELEVADOR",
+    "normalizado": "SERVICO DE REPARO NO MODULO DE POTENCIA DO ELEVADOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "012180",
+    "descricao": "SERVICO DE REPINTURA",
+    "normalizado": "SERVICO DE REPINTURA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008929",
+    "descricao": "SERVIÇO DE RETIRADA DE ENTULHO",
+    "normalizado": "SERVICO DE RETIRADA DE ENTULHO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008911",
+    "descricao": "SERVIÇO DE RETIRADA E INSTALAÇÃO DO DISJUNTOR",
+    "normalizado": "SERVICO DE RETIRADA E INSTALACAO DO DISJUNTOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "004806",
+    "descricao": "SERVIÇO DE REVALIDAÇÃO DO AVCB",
+    "normalizado": "SERVICO DE REVALIDACAO DO AVCB",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009674",
+    "descricao": "SERVIÇO DE SUBSTITUIÇÃO DE REGISTRO DE HIDRANTE",
+    "normalizado": "SERVICO DE SUBSTITUICAO DE REGISTRO DE HIDRANTE",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "010480",
+    "descricao": "SERVIÇO DE SUBSTITUIÇÃO DE TORNEIRA DE BOIA",
+    "normalizado": "SERVICO DE SUBSTITUICAO DE TORNEIRA DE BOIA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006802",
+    "descricao": "SERVIÇO DE TRANSPORTE INSTAÇÃO E MEDIÇÃO TECNICA CONF. PROJETO",
+    "normalizado": "SERVICO DE TRANSPORTE INSTACAO E MEDICAO TECNICA CONF. PROJETO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008166",
+    "descricao": "SERVIÇO DE TROCA DE FILTROS E OLEO DO GERADOR",
+    "normalizado": "SERVICO DE TROCA DE FILTROS E OLEO DO GERADOR",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "006513",
+    "descricao": "SERVIÇO DE TROCA DE MECANISMO",
+    "normalizado": "SERVICO DE TROCA DE MECANISMO",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "010208",
+    "descricao": "TELA POLIÉSTER PVC IMPERMEABILIZAÇÃO RODAPÉ (ROLO 21CMX35M",
+    "normalizado": "TELA POLIESTER PVC IMPERMEABILIZACAO RODAPE (ROLO 21CMX35M",
+    "motivo": "fragmento ou lixo (muito curto, parenteses desbalanceados, descricao livre)"
+  },
+  {
+    "codigo": "009322",
+    "descricao": "TREINAMENTO - METODO CIS GLOBAL",
+    "normalizado": "TREINAMENTO - METODO CIS GLOBAL",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "008393",
+    "descricao": "TREINAMENTO IN COMPANY - TECNICAS EM VENDAS",
+    "normalizado": "TREINAMENTO IN COMPANY - TECNICAS EM VENDAS",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "009809",
+    "descricao": "TREINAMENTO PARA TRABALHO EM ALTURA",
+    "normalizado": "TREINAMENTO PARA TRABALHO EM ALTURA",
+    "motivo": "servico (nao e item de catalogo)"
+  },
+  {
+    "codigo": "007277",
+    "descricao": "VISITA TÉCNICA",
+    "normalizado": "VISITA TECNICA",
+    "motivo": "servico (nao e item de catalogo)"
+  }
+]

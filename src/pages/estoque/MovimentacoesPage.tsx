@@ -1,18 +1,17 @@
 /**
  * MovimentacoesPage — historico de movimentacoes + criacao manual.
  *
- * Lista todas as movimentacoes com filtros por tipo/item/unidade.
- * Permite criar movimentacao manual (entry, exit, transfer, disposal, adjustment).
+ * Listagem via RPC `fn_listar_movimentacoes` (paginada server-side, JOIN
+ * com item/unidade/usuario ja resolvido pelo banco — sem N+1 no client).
  * O trigger fn_aplicar_movimentacao no banco atualiza saldos automaticamente.
  */
-import { useEffect, useMemo, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -29,21 +28,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { ApiError, crud } from '@/lib/api';
+import { useListaPaginada } from '@/hooks/useListaPaginada';
+import { useOpcoesFK } from '@/hooks/useOpcoesFK';
 import { usePermissao } from '@/hooks/usePermissao';
 import { usePerfil } from '@/contexts/PerfilContext';
+import { ComboboxFK } from '@/components/crud/ComboboxFK';
+import { DataTable, type ColunaDataTable } from '@/components/crud/DataTable';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SemAcesso } from '@/components/crud/SemAcesso';
 import { formatDate, getTipoMovimentacaoLabel } from '@/lib/format';
-import type { Item, Movimentacao, TipoMovimentacao, Unidade, Usuario } from '@/types';
+import type { Movimentacao, TipoMovimentacao } from '@/types';
+
+interface MovimentacaoListada extends Movimentacao {
+  itemNome: string;
+  produtoCodigo: number | null;
+  unidadeNome: string | null;
+  unidadeOrigemNome: string | null;
+  unidadeDestinoNome: string | null;
+  usuarioNome: string;
+  tomadorNome: string | null;
+}
 
 const TIPOS_MOV: { valor: TipoMovimentacao; label: string }[] = [
   { valor: 'entry', label: 'Entrada' },
@@ -57,71 +62,77 @@ export function MovimentacoesPage() {
   const { podeLer, podeEscrever } = usePermissao('estoque.movimentacoes');
   const perfil = usePerfil();
 
-  const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
-  const [itens, setItens] = useState<Item[]>([]);
-  const [unidades, setUnidades] = useState<Unidade[]>([]);
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [busca, setBusca] = useState('');
   const [filtroTipo, setFiltroTipo] = useState<string>('todos');
   const [dialogAberto, setDialogAberto] = useState(false);
 
-  async function recarregar() {
-    setCarregando(true);
-    try {
-      const [mov, its, unis, usrs] = await Promise.all([
-        crud<Movimentacao>('movimentacoes').list({
-          ordenarPor: 'criadoEm',
-          ascendente: false,
-          limite: 500,
-        }),
-        crud<Item>('itens').list({}),
-        crud<Unidade>('unidades').list({}),
-        crud<Usuario>('usuarios').list({}),
-      ]);
-      setMovimentacoes(mov);
-      setItens(its);
-      setUnidades(unis);
-      setUsuarios(usrs);
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Erro ao carregar');
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  useEffect(() => {
-    void recarregar();
-  }, []);
-
-  const itensMap = useMemo(() => new Map(itens.map((i) => [i.id, i])), [itens]);
-  const unidadesMap = useMemo(() => new Map(unidades.map((u) => [u.id, u])), [unidades]);
-  const usuariosMap = useMemo(() => new Map(usuarios.map((u) => [u.id, u])), [usuarios]);
-
-  const movFiltradas = useMemo(() => {
-    let r = movimentacoes;
-    if (filtroTipo !== 'todos') r = r.filter((m) => m.tipo === filtroTipo);
-    if (busca.trim()) {
-      const t = busca.toLowerCase();
-      r = r.filter((m) => {
-        const item = itensMap.get(m.itemId);
-        return item?.nome.toLowerCase().includes(t);
-      });
-    }
-    return r;
-  }, [movimentacoes, filtroTipo, busca, itensMap]);
+  const lista = useListaPaginada<MovimentacaoListada, { pTipo?: string }>({
+    rpc: 'fn_listar_movimentacoes',
+    filtros: filtroTipo !== 'todos' ? { pTipo: filtroTipo } : {},
+  });
 
   if (!podeLer) return <SemAcesso rotaCodigo="estoque.movimentacoes" />;
 
+  const colunas: ColunaDataTable<MovimentacaoListada>[] = [
+    {
+      chave: 'criadoEm',
+      titulo: 'Quando',
+      largura: '140px',
+      render: (m) => <span className="text-xs">{formatDate(m.criadoEm)}</span>,
+    },
+    {
+      chave: 'tipo',
+      titulo: 'Tipo',
+      largura: '140px',
+      render: (m) => (
+        <Badge variant={tipoVariant(m.tipo)}>{getTipoMovimentacaoLabel(m.tipo)}</Badge>
+      ),
+    },
+    {
+      chave: 'item',
+      titulo: 'Item',
+      render: (m) => <span className="text-sm">{m.itemNome}</span>,
+    },
+    {
+      chave: 'quantidade',
+      titulo: 'Qtd',
+      largura: '90px',
+      alinhar: 'right',
+      render: (m) => <span className="font-mono">{m.quantidade}</span>,
+    },
+    {
+      chave: 'unidade',
+      titulo: 'Unidade',
+      render: (m) => (
+        <span className="text-sm">
+          {m.tipo === 'transfer'
+            ? `${m.unidadeOrigemNome ?? '?'} -> ${m.unidadeDestinoNome ?? '?'}`
+            : (m.unidadeNome ?? '—')}
+        </span>
+      ),
+    },
+    {
+      chave: 'usuario',
+      titulo: 'Usuario',
+      render: (m) => <span className="text-muted-foreground text-sm">{m.usuarioNome}</span>,
+    },
+    {
+      chave: 'observacoes',
+      titulo: 'Observacoes',
+      render: (m) => (
+        <span className="text-muted-foreground line-clamp-1 text-xs">{m.observacoes ?? ''}</span>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4">
       <PageHeader
         titulo="Movimentacoes de Estoque"
         subtitulo="Historico de entradas, saidas, transferencias e ajustes"
         acoes={
           podeEscrever && (
             <Button onClick={() => setDialogAberto(true)}>
-              <Plus className="h-4 w-4 mr-1.5" />
+              <Plus className="mr-1.5 h-4 w-4" />
               Nova movimentacao
             </Button>
           )
@@ -129,15 +140,6 @@ export function MovimentacoesPage() {
       />
 
       <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por item..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="pl-9"
-          />
-        </div>
         <Select value={filtroTipo} onValueChange={setFiltroTipo}>
           <SelectTrigger className="w-56">
             <SelectValue />
@@ -155,82 +157,30 @@ export function MovimentacoesPage() {
         </Select>
       </div>
 
-      {carregando ? (
-        <div className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-32">Quando</TableHead>
-                <TableHead className="w-36">Tipo</TableHead>
-                <TableHead>Item</TableHead>
-                <TableHead className="text-right w-24">Qtd</TableHead>
-                <TableHead>Unidade</TableHead>
-                <TableHead>Usuario</TableHead>
-                <TableHead>Observacoes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {movFiltradas.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                    Nenhuma movimentacao encontrada.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                movFiltradas.map((m) => {
-                  const item = itensMap.get(m.itemId);
-                  const unidade = m.unidadeId ? unidadesMap.get(m.unidadeId) : null;
-                  const origem = m.unidadeOrigemId ? unidadesMap.get(m.unidadeOrigemId) : null;
-                  const destino = m.unidadeDestinoId ? unidadesMap.get(m.unidadeDestinoId) : null;
-                  const usuario = usuariosMap.get(m.usuarioId);
-                  return (
-                    <TableRow key={m.id}>
-                      <TableCell className="text-xs">{formatDate(m.criadoEm)}</TableCell>
-                      <TableCell>
-                        <Badge variant={tipoVariant(m.tipo)}>
-                          {getTipoMovimentacaoLabel(m.tipo)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">{item?.nome ?? '?'}</TableCell>
-                      <TableCell className="text-right font-mono">{m.quantidade}</TableCell>
-                      <TableCell className="text-sm">
-                        {m.tipo === 'transfer'
-                          ? `${origem?.nome ?? '?'} → ${destino?.nome ?? '?'}`
-                          : (unidade?.nome ?? '—')}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {usuario?.nome ?? '?'}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-xs truncate">
-                        {m.observacoes ?? ''}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      <div className="text-xs text-muted-foreground">
-        {movFiltradas.length} de {movimentacoes.length} registro(s)
-      </div>
+      <DataTable<MovimentacaoListada>
+        itens={lista.itens}
+        colunas={colunas}
+        isLoading={lista.isLoading}
+        mensagemVazia="Nenhuma movimentacao encontrada."
+        paginacao={{
+          total: lista.total,
+          pagina: lista.paginacao.pagina,
+          tamanho: lista.paginacao.tamanho,
+          busca: lista.paginacao.busca,
+          placeholderBusca: 'Buscar por item, observacao ou OS...',
+          aoMudarPagina: lista.paginacao.setPagina,
+          aoMudarTamanho: lista.paginacao.setTamanho,
+          aoMudarBusca: lista.paginacao.setBusca,
+        }}
+      />
 
       {dialogAberto && (
         <DialogNovaMov
-          itens={itens}
-          unidades={unidades}
           meuUsuarioId={perfil.usuario?.id ?? null}
           aoFechar={() => setDialogAberto(false)}
           aoSalvar={async () => {
             setDialogAberto(false);
-            await recarregar();
+            await lista.recarregar();
           }}
         />
       )}
@@ -260,20 +210,19 @@ function tipoVariant(t: TipoMovimentacao) {
 // ============================================================================
 
 function DialogNovaMov({
-  itens,
-  unidades,
   meuUsuarioId,
   aoFechar,
   aoSalvar,
 }: {
-  itens: Item[];
-  unidades: Unidade[];
   meuUsuarioId: string | null;
   aoFechar: () => void;
   aoSalvar: () => Promise<void>;
 }) {
+  // Unidades sao um universo pequeno -> mantemos select carregado.
+  const { opcoes: unidadesOpcoes } = useOpcoesFK('unidades', 'nome');
+
   const [tipo, setTipo] = useState<TipoMovimentacao>('entry');
-  const [itemId, setItemId] = useState('');
+  const [itemId, setItemId] = useState<string | null>(null);
   const [quantidade, setQuantidade] = useState(1);
   const [unidadeId, setUnidadeId] = useState('');
   const [unidadeOrigemId, setUnidadeOrigemId] = useState('');
@@ -341,9 +290,7 @@ function DialogNovaMov({
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>Nova movimentacao</DialogTitle>
-          <DialogDescription>
-            O saldo do estoque sera atualizado automaticamente
-          </DialogDescription>
+          <DialogDescription>O saldo do estoque sera atualizado automaticamente</DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-3 py-2">
@@ -375,18 +322,15 @@ function DialogNovaMov({
 
           <div className="col-span-2 space-y-1.5">
             <Label>Item</Label>
-            <Select value={itemId} onValueChange={setItemId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione..." />
-              </SelectTrigger>
-              <SelectContent>
-                {itens.map((i) => (
-                  <SelectItem key={i.id} value={i.id}>
-                    {i.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ComboboxFK
+              valor={itemId}
+              aoMudar={setItemId}
+              rpc="fn_listar_itens"
+              campoLabel="nome"
+              paramsRpc={{ pAtivo: true }}
+              placeholder="Buscar item..."
+              permiteVazio={false}
+            />
           </div>
 
           {ehTransferencia ? (
@@ -398,9 +342,9 @@ function DialogNovaMov({
                     <SelectValue placeholder="..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {unidades.map((u) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.nome}
+                    {unidadesOpcoes.map((u) => (
+                      <SelectItem key={u.valor} value={u.valor}>
+                        {u.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -413,9 +357,9 @@ function DialogNovaMov({
                     <SelectValue placeholder="..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {unidades.map((u) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.nome}
+                    {unidadesOpcoes.map((u) => (
+                      <SelectItem key={u.valor} value={u.valor}>
+                        {u.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -430,9 +374,9 @@ function DialogNovaMov({
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {unidades.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.nome}
+                  {unidadesOpcoes.map((u) => (
+                    <SelectItem key={u.valor} value={u.valor}>
+                      {u.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

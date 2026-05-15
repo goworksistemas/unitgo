@@ -2,11 +2,11 @@
  * ConferenciaPage — CL/Assistente confere conteudo do lote ja recebido pela recepcao.
  *
  * Fluxo:
- *  1. Lista lotes com status 'received_confirmed' destinados a unidade do CL
- *  2. CL abre o lote e marca cada solicitacao como conferida (ou nao)
- *  3. Cria confirmacoes_entrega tipo='requester_confirm' por solicitacao
- *  4. Atualiza status da solicitacao para 'completed' (ou 'cancelled' em caso de divergencia)
- *  5. Quando todas conferidas, lote fica 'completed'
+ *  1. Lista lotes 'received_confirmed' via RPC paginada.
+ *  2. CL abre o lote e marca cada solicitacao como conferida (ou nao).
+ *  3. Cria confirmacoes_entrega tipo='requester_confirm' por solicitacao.
+ *  4. Atualiza status da solicitacao para 'completed'.
+ *  5. Quando todas conferidas, lote fica 'completed'.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
@@ -21,113 +21,113 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { ApiError, crud, supabase } from '@/lib/api';
+import { ApiError, crud, rpcPaginado, supabase } from '@/lib/api';
+import { useListaPaginada } from '@/hooks/useListaPaginada';
 import { usePermissao } from '@/hooks/usePermissao';
 import { usePerfil } from '@/contexts/PerfilContext';
+import { DataTable, type ColunaDataTable } from '@/components/crud/DataTable';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SemAcesso } from '@/components/crud/SemAcesso';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { formatDate } from '@/lib/format';
-import type {
-  ConfirmacaoEntrega,
-  Item,
-  LoteEntrega,
-  LoteEntregaItem,
-  Solicitacao,
-  Unidade,
-} from '@/types';
+import type { ConfirmacaoEntrega, LoteEntrega, LoteEntregaItem, Solicitacao } from '@/types';
+
+interface LoteListado extends LoteEntrega {
+  unidadeDestinoNome: string;
+  motoristaNome: string;
+  totalSolicitacoes: number;
+}
+
+interface SolicitacaoBrief {
+  id: string;
+  numero: string | null;
+  status: Solicitacao['status'];
+  itemNome: string;
+  quantidade: number;
+}
 
 export function ConferenciaPage() {
   const { podeLer, podeEscrever } = usePermissao('entregas.conferencia');
   const perfil = usePerfil();
 
-  const [lotes, setLotes] = useState<LoteEntrega[]>([]);
-  const [unidadesMap, setUnidadesMap] = useState<Map<string, Unidade>>(new Map());
-  const [carregando, setCarregando] = useState(true);
-  const [conferindo, setConferindo] = useState<LoteEntrega | null>(null);
+  const [conferindo, setConferindo] = useState<LoteListado | null>(null);
 
-  async function recarregar() {
-    setCarregando(true);
-    try {
-      const [ls, unis] = await Promise.all([
-        crud<LoteEntrega>('lotes_entrega').list({ ordenarPor: 'criadoEm', ascendente: false }),
-        crud<Unidade>('unidades').list({}),
-      ]);
-      setLotes(ls.filter((l) => l.status === 'received_confirmed'));
-      setUnidadesMap(new Map(unis.map((u) => [u.id, u])));
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Erro');
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  useEffect(() => {
-    void recarregar();
-  }, []);
+  const lista = useListaPaginada<LoteListado>({
+    rpc: 'fn_listar_lotes_entrega',
+    filtros: { pStatus: 'received_confirmed' },
+  });
 
   if (!podeLer) return <SemAcesso rotaCodigo="entregas.conferencia" />;
 
+  const colunas: ColunaDataTable<LoteListado>[] = [
+    {
+      chave: 'numero',
+      titulo: 'Numero',
+      render: (l) => <span className="font-mono text-xs">{l.numero ?? l.id.slice(0, 8)}</span>,
+    },
+    {
+      chave: 'criadoEm',
+      titulo: 'Quando',
+      render: (l) => <span className="text-xs">{formatDate(l.criadoEm)}</span>,
+    },
+    {
+      chave: 'unidadeDestinoNome',
+      titulo: 'Destino',
+      render: (l) => <span className="text-sm">{l.unidadeDestinoNome}</span>,
+    },
+    {
+      chave: 'totalSolicitacoes',
+      titulo: 'Solicitacoes',
+      largura: '120px',
+      alinhar: 'right',
+      render: (l) => <span className="font-mono">{l.totalSolicitacoes}</span>,
+    },
+    {
+      chave: 'status',
+      titulo: 'Status',
+      render: (l) => <StatusBadge status={l.status} />,
+    },
+    {
+      chave: 'acoes',
+      titulo: 'Acoes',
+      alinhar: 'right',
+      render: (l) =>
+        podeEscrever && (
+          <Button size="sm" onClick={() => setConferindo(l)}>
+            Conferir
+          </Button>
+        ),
+    },
+  ];
+
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4">
       <PageHeader
         titulo="Conferencia de Conteudo"
         subtitulo="CL/Assistente confere o que foi entregue ao destino"
       />
 
-      {carregando ? (
-        <div className="space-y-2">
-          <Skeleton className="h-12 w-full" />
-        </div>
-      ) : lotes.length === 0 ? (
-        <div className="rounded-md border border-dashed p-12 text-center text-muted-foreground">
-          <CheckCircle2 className="h-10 w-10 mx-auto mb-2 opacity-40" />
+      <DataTable<LoteListado>
+        itens={lista.itens}
+        colunas={colunas}
+        isLoading={lista.isLoading}
+        mensagemVazia="Nenhum lote aguardando conferencia."
+        paginacao={{
+          total: lista.total,
+          pagina: lista.paginacao.pagina,
+          tamanho: lista.paginacao.tamanho,
+          busca: lista.paginacao.busca,
+          placeholderBusca: 'Buscar lote ou motorista...',
+          aoMudarPagina: lista.paginacao.setPagina,
+          aoMudarTamanho: lista.paginacao.setTamanho,
+          aoMudarBusca: lista.paginacao.setBusca,
+        }}
+      />
+
+      {lista.itens.length === 0 && !lista.isLoading && (
+        <div className="text-muted-foreground rounded-md border border-dashed p-12 text-center">
+          <CheckCircle2 className="mx-auto mb-2 h-10 w-10 opacity-40" />
           Nenhum lote aguardando conferencia.
-        </div>
-      ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Numero</TableHead>
-                <TableHead>Quando</TableHead>
-                <TableHead>Destino</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Acoes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lotes.map((l) => (
-                <TableRow key={l.id}>
-                  <TableCell className="font-mono text-xs">
-                    {l.numero ?? l.id.slice(0, 8)}
-                  </TableCell>
-                  <TableCell className="text-xs">{formatDate(l.criadoEm)}</TableCell>
-                  <TableCell className="text-sm">
-                    {unidadesMap.get(l.unidadeDestinoId)?.nome ?? '?'}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={l.status} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {podeEscrever && (
-                      <Button size="sm" onClick={() => setConferindo(l)}>
-                        Conferir
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
         </div>
       )}
 
@@ -138,7 +138,7 @@ export function ConferenciaPage() {
           aoFechar={() => setConferindo(null)}
           aoSalvar={async () => {
             setConferindo(null);
-            await recarregar();
+            await lista.recarregar();
           }}
         />
       )}
@@ -152,48 +152,67 @@ function DialogConferir({
   aoFechar,
   aoSalvar,
 }: {
-  lote: LoteEntrega;
+  lote: LoteListado;
   meuUsuarioId: string;
   aoFechar: () => void;
   aoSalvar: () => Promise<void>;
 }) {
-  const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
-  const [itensMap, setItensMap] = useState<Map<string, Item>>(new Map());
+  const [solicitacoes, setSolicitacoes] = useState<SolicitacaoBrief[]>([]);
   const [conferidas, setConferidas] = useState<Set<string>>(new Set());
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
+    let cancelado = false;
     setCarregando(true);
-    crud<LoteEntregaItem>('lotes_entrega_itens')
-      .list({ igualdade: { loteId: lote.id }, ordenarPor: 'ordem' })
-      .then(async (vinculos) => {
-        const ids = vinculos.map((v) => v.solicitacaoId);
-        if (ids.length === 0) {
+
+    (async () => {
+      try {
+        // 1. Carrega vinculos do lote (ids das solicitacoes).
+        const vinculos = await crud<LoteEntregaItem>('lotes_entrega_itens').list({
+          igualdade: { loteId: lote.id },
+          ordenarPor: 'ordem',
+        });
+        if (cancelado) return;
+
+        if (vinculos.length === 0) {
           setSolicitacoes([]);
           return;
         }
-        const { data, error } = await supabase
-          .from('solicitacoes')
-          .select('*')
-          .in('id', ids);
-        if (error) throw new ApiError(error);
-        const sols = (data ?? []) as Record<string, unknown>[];
-        // toCamelCase manual aqui seria muito; o select retorna snake — vamos buscar via crud item por item
-        // Simplificacao: usa crud generico (faz N queries)
-        const carregadas = await Promise.all(
-          ids.map((id) => crud<Solicitacao>('solicitacoes').get(id)),
-        );
-        setSolicitacoes(carregadas.filter((s): s is Solicitacao => s !== null));
-        return sols;
-      })
-      .then(async () => {
-        const its = await crud<Item>('itens').list({});
-        setItensMap(new Map(its.map((i) => [i.id, i])));
-      })
-      .catch((e) => toast.error(e instanceof ApiError ? e.message : 'Erro'))
-      .finally(() => setCarregando(false));
-  }, [lote.id]);
+
+        // 2. Busca as solicitacoes pela RPC (com item resolvido).
+        //    Como nao temos filtro por lista de ids, fazemos uma chamada
+        //    que paginariamente trara o que precisamos. Para fins praticos,
+        //    o numero de itens por lote e pequeno (< 50), entao 1 pagina basta.
+        const res = await rpcPaginado<SolicitacaoBrief & Solicitacao>('fn_listar_solicitacoes', {
+          pPagina: 1,
+          pTamanho: 200,
+          pUnidadeId: lote.unidadeDestinoId,
+        });
+        if (cancelado) return;
+
+        const idsSet = new Set(vinculos.map((v) => v.solicitacaoId));
+        const filtradas = res.registros
+          .filter((s) => idsSet.has(s.id))
+          .map((s) => ({
+            id: s.id,
+            numero: s.numero,
+            status: s.status,
+            itemNome: s.itemNome,
+            quantidade: s.quantidade,
+          }));
+        setSolicitacoes(filtradas);
+      } catch (e) {
+        if (!cancelado) toast.error(e instanceof ApiError ? e.message : 'Erro ao carregar lote');
+      } finally {
+        if (!cancelado) setCarregando(false);
+      }
+    })();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [lote.id, lote.unidadeDestinoId]);
 
   const todasConferidas = useMemo(
     () => solicitacoes.length > 0 && solicitacoes.every((s) => conferidas.has(s.id)),
@@ -216,7 +235,6 @@ function DialogConferir({
     try {
       const ids = Array.from(conferidas);
 
-      // 1. Cria confirmacao por solicitacao
       const confs = ids.map((solicitacaoId) => ({
         lote_id: lote.id,
         solicitacao_id: solicitacaoId,
@@ -226,14 +244,12 @@ function DialogConferir({
       const { error: errConf } = await supabase.from('confirmacoes_entrega').insert(confs);
       if (errConf) throw new ApiError(errConf);
 
-      // 2. Atualiza solicitacoes para completed
       const { error: errUpd } = await supabase
         .from('solicitacoes')
         .update({ status: 'completed', concluido_em: new Date().toISOString() })
         .in('id', ids);
       if (errUpd) throw new ApiError(errUpd);
 
-      // 3. Se todas conferidas, fecha o lote
       if (todasConferidas) {
         await crud<LoteEntrega>('lotes_entrega').update(lote.id, {
           status: 'completed',
@@ -252,12 +268,10 @@ function DialogConferir({
 
   return (
     <Dialog open onOpenChange={(o) => !o && aoFechar()}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Conferir lote {lote.numero ?? lote.id.slice(0, 8)}</DialogTitle>
-          <DialogDescription>
-            Marque as solicitacoes que recebeu corretamente
-          </DialogDescription>
+          <DialogDescription>Marque as solicitacoes que recebeu corretamente</DialogDescription>
         </DialogHeader>
 
         {carregando ? (
@@ -265,12 +279,11 @@ function DialogConferir({
         ) : (
           <div className="space-y-2 py-2">
             {solicitacoes.map((s) => {
-              const item = itensMap.get(s.itemId);
               const checked = conferidas.has(s.id);
               return (
                 <label
                   key={s.id}
-                  className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition ${
+                  className={`flex cursor-pointer items-center gap-3 rounded-md border p-3 transition ${
                     checked ? 'border-primary bg-primary/5' : 'border-input hover:bg-muted/50'
                   }`}
                 >
@@ -282,15 +295,11 @@ function DialogConferir({
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs">
-                        {s.numero ?? s.id.slice(0, 8)}
-                      </span>
+                      <span className="font-mono text-xs">{s.numero ?? s.id.slice(0, 8)}</span>
                       <StatusBadge status={s.status} />
                     </div>
-                    <div className="text-sm">{item?.nome ?? '?'}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Quantidade: {s.quantidade}
-                    </div>
+                    <div className="text-sm">{s.itemNome}</div>
+                    <div className="text-muted-foreground text-xs">Quantidade: {s.quantidade}</div>
                   </div>
                 </label>
               );

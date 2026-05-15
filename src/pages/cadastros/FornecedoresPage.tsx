@@ -13,19 +13,24 @@ function formatarDoc(cnpj?: string | null, cpf?: string | null): string {
   return cnpj ?? cpf ?? '—';
 }
 
+interface FornecedorListado extends Fornecedor {
+  categoriaNome: string | null;
+}
+
 export function FornecedoresPage() {
   const { opcoes: categorias } = useOpcoesFK('categorias_fornecedor', 'nome', {
     filtros: { ativo: true },
   });
 
   return (
-    <CrudPage<Fornecedor>
+    <CrudPage<FornecedorListado>
       rotaCodigo="cadastros.fornecedores"
       tabela="fornecedores"
       titulo="Fornecedores"
       subtitulo="Empresas e pessoas que vendem para o grupo"
-      ordenarPor="razaoSocial"
       textoBotaoNovo="Novo fornecedor"
+      rpcLista="fn_listar_fornecedores"
+      placeholderBusca="Buscar por razao social, fantasia, CNPJ..."
       antesDeSalvar={(valores) => {
         // Garante que JSONB nunca seja null/string vazia
         if (!valores.endereco || typeof valores.endereco !== 'object') valores.endereco = {};
@@ -37,20 +42,17 @@ export function FornecedoresPage() {
         return valores;
       }}
       colunas={[
-        { chave: 'razaoSocial', titulo: 'Razao Social', pesquisavel: true },
+        { chave: 'razaoSocial', titulo: 'Razao Social' },
         {
           chave: 'nomeFantasia',
           titulo: 'Nome Fantasia',
-          pesquisavel: true,
           render: (f) => f.nomeFantasia ?? '—',
         },
         {
           chave: 'documento',
           titulo: 'CNPJ/CPF',
           largura: '180px',
-          render: (f) => (
-            <span className="font-mono text-xs">{formatarDoc(f.cnpj, f.cpf)}</span>
-          ),
+          render: (f) => <span className="font-mono text-xs">{formatarDoc(f.cnpj, f.cpf)}</span>,
         },
         {
           chave: 'contatoNome',
@@ -59,7 +61,7 @@ export function FornecedoresPage() {
             <div className="text-sm">
               <div>{f.contatoNome ?? '—'}</div>
               {f.contatoEmail && (
-                <div className="text-xs text-muted-foreground">{f.contatoEmail}</div>
+                <div className="text-muted-foreground text-xs">{f.contatoEmail}</div>
               )}
             </div>
           ),
@@ -72,7 +74,11 @@ export function FornecedoresPage() {
           render: (f) => (
             <Badge
               variant={
-                f.status === 'active' ? 'default' : f.status === 'blocked' ? 'destructive' : 'outline'
+                f.status === 'active'
+                  ? 'default'
+                  : f.status === 'blocked'
+                    ? 'destructive'
+                    : 'outline'
               }
             >
               {f.status === 'active' ? 'Ativo' : f.status === 'blocked' ? 'Bloqueado' : 'Inativo'}

@@ -8,7 +8,7 @@
  *  4. Comparativo: mostra valores por fornecedor
  *  5. Finalizar: escolhe vencedor; status vira 'finalized' e sols viram 'quotation_completed'
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Eye, Plus, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -35,8 +35,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ApiError, crud, supabase } from '@/lib/api';
+import { useListaPaginada } from '@/hooks/useListaPaginada';
 import { usePermissao } from '@/hooks/usePermissao';
 import { usePerfil } from '@/contexts/PerfilContext';
+import { DataTable, type ColunaDataTable } from '@/components/crud/DataTable';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SemAcesso } from '@/components/crud/SemAcesso';
 import { StatusBadge } from '@/components/shared/StatusBadge';
@@ -47,8 +49,15 @@ import type {
   CotacaoResposta,
   Fornecedor,
   SolicitacaoCompra,
-  Usuario,
 } from '@/types';
+
+interface CotacaoListada extends Cotacao {
+  compradorNome: string;
+  fornecedorVencedorNome: string | null;
+  localEntregaNome: string | null;
+  totalFornecedores: number;
+  totalRespostas: number;
+}
 
 const FMT_BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -56,101 +65,104 @@ export function CotacoesPage() {
   const { podeLer, podeEscrever } = usePermissao('compras.cotacoes');
   const perfil = usePerfil();
 
-  const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [carregando, setCarregando] = useState(true);
   const [novoAberto, setNovoAberto] = useState(false);
-  const [verCotacao, setVerCotacao] = useState<Cotacao | null>(null);
+  const [verCotacao, setVerCotacao] = useState<CotacaoListada | null>(null);
 
-  async function recarregar() {
-    setCarregando(true);
-    try {
-      const [cs, us] = await Promise.all([
-        crud<Cotacao>('cotacoes').list({ ordenarPor: 'criadoEm', ascendente: false }),
-        crud<Usuario>('usuarios').list({}),
-      ]);
-      setCotacoes(cs);
-      setUsuarios(us);
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Erro');
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  useEffect(() => {
-    void recarregar();
-  }, []);
-
-  const usuariosMap = useMemo(() => new Map(usuarios.map((u) => [u.id, u])), [usuarios]);
+  const lista = useListaPaginada<CotacaoListada>({ rpc: 'fn_listar_cotacoes' });
 
   if (!podeLer) return <SemAcesso rotaCodigo="compras.cotacoes" />;
 
+  const colunas: ColunaDataTable<CotacaoListada>[] = [
+    {
+      chave: 'numero',
+      titulo: 'Numero',
+      render: (c) => <span className="font-mono text-xs">{c.numero ?? c.id.slice(0, 8)}</span>,
+    },
+    {
+      chave: 'criadoEm',
+      titulo: 'Quando',
+      render: (c) => <span className="text-xs">{formatDate(c.criadoEm)}</span>,
+    },
+    {
+      chave: 'compradorNome',
+      titulo: 'Comprador',
+      render: (c) => <span className="text-sm">{c.compradorNome}</span>,
+    },
+    {
+      chave: 'totalFornecedores',
+      titulo: 'Fornecedores',
+      largura: '120px',
+      alinhar: 'right',
+      render: (c) => (
+        <span className="text-sm">
+          {c.totalRespostas}/{c.totalFornecedores}
+        </span>
+      ),
+    },
+    {
+      chave: 'dataLimiteResposta',
+      titulo: 'Limite resposta',
+      render: (c) => (
+        <span className="text-xs">
+          {c.dataLimiteResposta ? formatDate(c.dataLimiteResposta) : '—'}
+        </span>
+      ),
+    },
+    {
+      chave: 'status',
+      titulo: 'Status',
+      render: (c) => <StatusBadge status={c.status} />,
+    },
+    {
+      chave: 'acao',
+      titulo: '',
+      largura: '60px',
+      render: (c) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setVerCotacao(c);
+          }}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4">
       <PageHeader
         titulo="Cotacoes"
         subtitulo="Comprador agrupa solicitacoes aprovadas e cota com multiplos fornecedores"
         acoes={
           podeEscrever && (
             <Button onClick={() => setNovoAberto(true)}>
-              <Plus className="h-4 w-4 mr-1.5" />
+              <Plus className="mr-1.5 h-4 w-4" />
               Nova cotacao
             </Button>
           )
         }
       />
 
-      {carregando ? (
-        <Skeleton className="h-32 w-full" />
-      ) : cotacoes.length === 0 ? (
-        <div className="rounded-md border border-dashed p-12 text-center text-muted-foreground">
-          Nenhuma cotacao criada.
-        </div>
-      ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Numero</TableHead>
-                <TableHead>Quando</TableHead>
-                <TableHead>Comprador</TableHead>
-                <TableHead>Limite resposta</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-16"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {cotacoes.map((c) => (
-                <TableRow
-                  key={c.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => setVerCotacao(c)}
-                >
-                  <TableCell className="font-mono text-xs">
-                    {c.numero ?? c.id.slice(0, 8)}
-                  </TableCell>
-                  <TableCell className="text-xs">{formatDate(c.criadoEm)}</TableCell>
-                  <TableCell className="text-sm">
-                    {usuariosMap.get(c.compradorId)?.nome ?? '?'}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {c.dataLimiteResposta ? formatDate(c.dataLimiteResposta) : '—'}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={c.status} />
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setVerCotacao(c); }}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      <DataTable<CotacaoListada>
+        itens={lista.itens}
+        colunas={colunas}
+        isLoading={lista.isLoading}
+        mensagemVazia="Nenhuma cotacao criada."
+        paginacao={{
+          total: lista.total,
+          pagina: lista.paginacao.pagina,
+          tamanho: lista.paginacao.tamanho,
+          busca: lista.paginacao.busca,
+          placeholderBusca: 'Buscar por numero ou comprador...',
+          aoMudarPagina: lista.paginacao.setPagina,
+          aoMudarTamanho: lista.paginacao.setTamanho,
+          aoMudarBusca: lista.paginacao.setBusca,
+        }}
+      />
 
       {novoAberto && perfil.usuario && (
         <DialogNovaCotacao
@@ -158,7 +170,7 @@ export function CotacoesPage() {
           aoFechar={() => setNovoAberto(false)}
           aoSalvar={async () => {
             setNovoAberto(false);
-            await recarregar();
+            await lista.recarregar();
           }}
         />
       )}
@@ -168,8 +180,7 @@ export function CotacoesPage() {
           cotacao={verCotacao}
           aoFechar={() => setVerCotacao(null)}
           aoAtualizar={async () => {
-            await recarregar();
-            // mantem o dialog aberto carregando dados
+            await lista.recarregar();
           }}
         />
       )}
@@ -267,7 +278,7 @@ function DialogNovaCotacao({
 
   return (
     <Dialog open onOpenChange={(o) => !o && aoFechar()}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nova cotacao</DialogTitle>
           <DialogDescription>
@@ -287,16 +298,16 @@ function DialogNovaCotacao({
 
           <div>
             <Label>Solicitacoes aprovadas ({solSel.size} selecionadas)</Label>
-            <div className="rounded-md border max-h-48 overflow-y-auto p-2 mt-1.5">
+            <div className="mt-1.5 max-h-48 overflow-y-auto rounded-md border p-2">
               {solicitacoes.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">
+                <p className="text-muted-foreground py-4 text-center text-sm">
                   Nenhuma solicitacao aprovada disponivel.
                 </p>
               ) : (
                 solicitacoes.map((s) => (
                   <label
                     key={s.id}
-                    className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer text-sm"
+                    className="hover:bg-muted/50 flex cursor-pointer items-center gap-2 rounded p-2 text-sm"
                   >
                     <Checkbox
                       checked={solSel.has(s.id)}
@@ -312,18 +323,20 @@ function DialogNovaCotacao({
 
           <div>
             <Label>Fornecedores ({fornSel.size} selecionados)</Label>
-            <div className="rounded-md border max-h-48 overflow-y-auto p-2 mt-1.5">
+            <div className="mt-1.5 max-h-48 overflow-y-auto rounded-md border p-2">
               {fornecedores.map((f) => (
                 <label
                   key={f.id}
-                  className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer text-sm"
+                  className="hover:bg-muted/50 flex cursor-pointer items-center gap-2 rounded p-2 text-sm"
                 >
                   <Checkbox
                     checked={fornSel.has(f.id)}
                     onCheckedChange={() => toggle(fornSel, setFornSel, f.id)}
                   />
                   <span>{f.razaoSocial}</span>
-                  {f.cnpj && <span className="text-xs font-mono text-muted-foreground">{f.cnpj}</span>}
+                  {f.cnpj && (
+                    <span className="text-muted-foreground font-mono text-xs">{f.cnpj}</span>
+                  )}
                 </label>
               ))}
             </div>
@@ -425,7 +438,7 @@ function DialogVerCotacao({
 
   return (
     <Dialog open onOpenChange={(o) => !o && aoFechar()}>
-      <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-h-[92vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <span>Cotacao {cotacao.numero ?? cotacao.id.slice(0, 8)}</span>
@@ -439,17 +452,17 @@ function DialogVerCotacao({
         ) : (
           <div className="space-y-4 py-2">
             <div>
-              <h3 className="font-semibold text-sm mb-2">
+              <h3 className="mb-2 text-sm font-semibold">
                 Fornecedores convidados ({convidados.length})
               </h3>
-              <div className="rounded-md border overflow-hidden">
+              <div className="overflow-hidden rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Fornecedor</TableHead>
                       <TableHead>Resposta</TableHead>
                       <TableHead className="text-right">Valor total</TableHead>
-                      <TableHead className="text-right w-32">Acoes</TableHead>
+                      <TableHead className="w-32 text-right">Acoes</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -466,7 +479,9 @@ function DialogVerCotacao({
                             </div>
                           </TableCell>
                           <TableCell>
-                            {resp ? <StatusBadge status={resp.status} /> : (
+                            {resp ? (
+                              <StatusBadge status={resp.status} />
+                            ) : (
                               <Badge variant="outline">—</Badge>
                             )}
                           </TableCell>
@@ -476,7 +491,11 @@ function DialogVerCotacao({
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
                               {!resp && cotacao.status !== 'finalized' && (
-                                <Button size="sm" variant="outline" onClick={() => setAdicionandoResp(c)}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setAdicionandoResp(c)}
+                                >
                                   Lancar resposta
                                 </Button>
                               )}
@@ -486,7 +505,7 @@ function DialogVerCotacao({
                                   onClick={() => escolherVencedor(c.fornecedorId)}
                                   className="bg-amber-500 hover:bg-amber-600"
                                 >
-                                  <Trophy className="h-3 w-3 mr-1" />
+                                  <Trophy className="mr-1 h-3 w-3" />
                                   Vencedor
                                 </Button>
                               )}
@@ -502,8 +521,8 @@ function DialogVerCotacao({
 
             {cotacao.observacoesFornecedor && (
               <div>
-                <span className="text-xs text-muted-foreground">Observacoes para fornecedor</span>
-                <p className="text-sm mt-1">{cotacao.observacoesFornecedor}</p>
+                <span className="text-muted-foreground text-xs">Observacoes para fornecedor</span>
+                <p className="mt-1 text-sm">{cotacao.observacoesFornecedor}</p>
               </div>
             )}
           </div>

@@ -8,7 +8,7 @@ export function MaterialPage() {
       titulo="Pedidos de Material"
       subtitulo="Solicitacoes de materiais consumiveis para uma unidade"
       statusInicial="pending"
-      filtroItens={(it) => it.ehConsumivel || (!it.ehMovel && !it.permiteEmprestimo)}
+      filtroItensParamsRpc={{ pEhMovel: false }}
     />
   );
 }

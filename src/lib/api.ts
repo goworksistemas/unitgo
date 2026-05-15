@@ -68,7 +68,9 @@ export class ApiError extends Error {
   readonly details: string | null;
   readonly hint: string | null;
 
-  constructor(error: PostgrestError | { message: string; code?: string; details?: string; hint?: string }) {
+  constructor(
+    error: PostgrestError | { message: string; code?: string; details?: string; hint?: string },
+  ) {
     super(error.message);
     this.name = 'ApiError';
     this.code = error.code ?? null;
@@ -90,6 +92,41 @@ export interface CrudFiltros {
   limite?: number;
   /** Filtros simples (igualdade): { ativo: true, status: 'active' }. */
   igualdade?: Record<string, unknown>;
+}
+
+/**
+ * Resultado de uma consulta paginada (RPC fn_listar_* ou crud.list paginado).
+ *
+ * - `total`     -> contagem absoluta apos filtros (nao apenas da pagina).
+ * - `registros` -> array de itens da pagina atual ja convertidos para camelCase.
+ */
+export interface ResultadoPaginado<T> {
+  total: number;
+  registros: T[];
+}
+
+/** Parametros padrao de paginacao usados em hooks/componentes. */
+export interface ParametrosPaginacao {
+  /** 1-based. */
+  pagina: number;
+  /** 1..200. Default 50. */
+  tamanho: number;
+  /** Termo de busca livre (ILIKE no servidor). */
+  busca?: string;
+  /** Coluna para ordenar (snake_case ou camelCase). */
+  ordenarPor?: string;
+  /** Default: ascendente. */
+  ascendente?: boolean;
+}
+
+/** Filtros adicionais para `crud.list` paginado em CRUDs simples (sem RPC). */
+export interface CrudFiltrosPaginado extends CrudFiltros {
+  pagina: number;
+  tamanho: number;
+  /** Termo livre para ILIKE. */
+  busca?: string;
+  /** Colunas usadas na busca por ILIKE (snake_case ou camelCase). */
+  colunasBusca?: string[];
 }
 
 /**
@@ -156,6 +193,52 @@ export function crud<T = Record<string, unknown>>(tabela: string) {
       const { error } = await supabase.from(tabela).delete().eq('id', id);
       if (error) throw new ApiError(error);
     },
+
+    /**
+     * Lista paginada server-side usando `range()` + `count: 'exact'` do PostgREST.
+     * Usado em CRUDs simples (sem JOIN). Para telas com JOIN, prefira `rpcPaginado`.
+     */
+    async listPaginado(filtros: CrudFiltrosPaginado): Promise<ResultadoPaginado<T>> {
+      const tamanho = Math.min(Math.max(filtros.tamanho ?? 50, 1), 200);
+      const pagina = Math.max(filtros.pagina ?? 1, 1);
+      const inicio = (pagina - 1) * tamanho;
+      const fim = inicio + tamanho - 1;
+
+      let q = supabase.from(tabela).select('*', { count: 'exact' });
+
+      if (filtros.igualdade) {
+        for (const [campo, valor] of Object.entries(filtros.igualdade)) {
+          const snake = campo.replace(SNAKE_RE, (l) => `_${l.toLowerCase()}`);
+          q = q.eq(snake, valor as never);
+        }
+      }
+
+      const termo = filtros.busca?.trim();
+      if (termo && filtros.colunasBusca && filtros.colunasBusca.length > 0) {
+        // Monta um OR com ILIKE para cada coluna pesquisavel.
+        const partes = filtros.colunasBusca.map((col) => {
+          const snake = col.replace(SNAKE_RE, (l) => `_${l.toLowerCase()}`);
+          // PostgREST OR syntax usa virgulas; escapar virgula no termo.
+          const termoEscapado = termo.replace(/[,()*]/g, ' ');
+          return `${snake}.ilike.%${termoEscapado}%`;
+        });
+        q = q.or(partes.join(','));
+      }
+
+      if (filtros.ordenarPor) {
+        const snake = filtros.ordenarPor.replace(SNAKE_RE, (l) => `_${l.toLowerCase()}`);
+        q = q.order(snake, { ascending: filtros.ascendente !== false });
+      }
+
+      q = q.range(inicio, fim);
+
+      const { data, error, count } = await q;
+      if (error) throw new ApiError(error);
+      return {
+        total: count ?? 0,
+        registros: toCamelCase(data ?? []) as T[],
+      };
+    },
   };
 }
 
@@ -163,12 +246,39 @@ export function crud<T = Record<string, unknown>>(tabela: string) {
 // RPC (functions do banco)
 // ============================================================================
 
-export async function rpc<T = unknown>(
-  funcao: string,
-  args?: Record<string, unknown>,
-): Promise<T> {
+export async function rpc<T = unknown>(funcao: string, args?: Record<string, unknown>): Promise<T> {
   const argsSnake = args ? (toSnakeCase(args) as Record<string, unknown>) : undefined;
   const { data, error } = await supabase.rpc(funcao, argsSnake);
   if (error) throw new ApiError(error);
   return toCamelCase(data) as T;
+}
+
+/**
+ * Chama uma RPC `fn_listar_*` que segue o padrao paginado do projeto
+ * (RETURNS TABLE(total bigint, registros jsonb)) e devolve o resultado
+ * tipado em camelCase.
+ *
+ * Uso:
+ *   const { total, registros } = await rpcPaginado<Item>('fn_listar_itens', {
+ *     pBusca: 'cad', pPagina: 1, pTamanho: 50,
+ *   });
+ */
+export async function rpcPaginado<T>(
+  funcao: string,
+  args?: Record<string, unknown>,
+): Promise<ResultadoPaginado<T>> {
+  const argsSnake = args ? (toSnakeCase(args) as Record<string, unknown>) : undefined;
+  const { data, error } = await supabase.rpc(funcao, argsSnake);
+  if (error) throw new ApiError(error);
+
+  // A RPC retorna `setof TABLE(total, registros)` -> chega como array com 1 linha.
+  const linha = Array.isArray(data) ? data[0] : data;
+  if (!linha) return { total: 0, registros: [] };
+
+  const totalRaw = (linha as { total?: unknown }).total;
+  const registrosRaw = (linha as { registros?: unknown }).registros ?? [];
+  return {
+    total: typeof totalRaw === 'number' ? totalRaw : Number(totalRaw ?? 0),
+    registros: toCamelCase(registrosRaw) as T[],
+  };
 }

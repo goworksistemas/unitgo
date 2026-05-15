@@ -16,7 +16,9 @@ function getIcone(nome: string | null | undefined): React.ComponentType<{ classN
     .split(/[-_]/)
     .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
     .join('');
-  const Comp = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[pascal];
+  const Comp = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[
+    pascal
+  ];
   return Comp ?? Icons.Hammer;
 }
 
@@ -29,21 +31,19 @@ export function EmConstrucao() {
   const Icon = getIcone(rota?.icone);
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="mx-auto max-w-2xl">
       <Card className="border-dashed">
-        <CardContent className="py-16 text-center space-y-4">
-          <div className="mx-auto h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-            <Icon className="h-8 w-8 text-muted-foreground" />
+        <CardContent className="space-y-4 py-16 text-center">
+          <div className="bg-muted mx-auto flex h-16 w-16 items-center justify-center rounded-full">
+            <Icon className="text-muted-foreground h-8 w-8" />
           </div>
           <div>
             <h2 className="text-xl font-semibold">{nome}</h2>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-2 text-sm">
               Esta tela sera implementada em breve.
             </p>
           </div>
-          <div className="text-xs text-muted-foreground font-mono">
-            {location.pathname}
-          </div>
+          <div className="text-muted-foreground font-mono text-xs">{location.pathname}</div>
         </CardContent>
       </Card>
     </div>

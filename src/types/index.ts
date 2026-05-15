@@ -88,33 +88,15 @@ export interface FormaPagamento {
   criadoEm: string;
 }
 
-export type TipoCondicaoPagamento = 'a_vista' | 'parcelado' | 'recorrente';
-
-export type PeriodicidadeCondicaoPagamento =
-  | 'diaria'
-  | 'semanal'
-  | 'quinzenal'
-  | 'mensal'
-  | 'bimestral'
-  | 'trimestral'
-  | 'semestral'
-  | 'anual'
-  | 'customizada';
-
 export interface CondicaoPagamento {
   id: string;
   codigo: string;
   nome: string;
   descricao: string | null;
-  tipo: TipoCondicaoPagamento;
-  periodicidade: PeriodicidadeCondicaoPagamento | null;
-  intervaloDias: number;
-  qtdParcelas: number | null;
-  primeiroVencDias: number;
-  ehIndefinido: boolean;
+  /** Numero de dias ate o vencimento (NULL = a vista). */
+  dias: number | null;
   ativo: boolean;
   criadoEm: string;
-  atualizadoEm: string;
 }
 
 // ============================================================================
@@ -234,11 +216,7 @@ export interface Movimentacao {
 // Solicitacoes operacionais (material, movel, retirada-movel, emprestimo)
 // ============================================================================
 
-export type TipoSolicitacao =
-  | 'material'
-  | 'furniture_to_unit'
-  | 'furniture_removal'
-  | 'loan';
+export type TipoSolicitacao = 'material' | 'furniture_to_unit' | 'furniture_removal' | 'loan';
 
 export type StatusSolicitacao =
   | 'pending'
@@ -281,7 +259,7 @@ export interface Solicitacao {
   aprovadoPorUsuarioId: string | null;
   aprovadoEm: string | null;
   designerUsuarioId: string | null;
-  designerDecidirdoEm: string | null;
+  designerDecididoEm: string | null;
   decisaoDescarte: 'storage' | 'disposal' | null;
   justificativaDescarte: string | null;
   emprestimoDevolucaoPrevista: string | null;
@@ -340,10 +318,7 @@ export interface LoteEntregaItem {
   criadoEm: string;
 }
 
-export type TipoConfirmacaoEntrega =
-  | 'driver_delivery'
-  | 'reception_receipt'
-  | 'requester_confirm';
+export type TipoConfirmacaoEntrega = 'driver_delivery' | 'reception_receipt' | 'requester_confirm';
 
 export interface ConfirmacaoEntrega {
   id: string;
@@ -410,21 +385,50 @@ export interface UsuarioPerfil {
   usuarioId: string;
   perfilId: string;
   criadoEm: string;
+  criadoPorUsuarioId: string | null;
 }
 
 /**
- * Alcada de aprovacao por valor.
+ * Permissoes extras concedidas diretamente a um usuario (alem dos perfis).
+ */
+export interface UsuarioRotaExtra {
+  usuarioId: string;
+  rotaId: string;
+  podeLer: boolean;
+  podeEscrever: boolean;
+  podeExcluir: boolean;
+  podeAprovar: boolean;
+  motivo: string | null;
+  criadoEm: string;
+  criadoPorUsuarioId: string | null;
+}
+
+/** Escopo de aplicacao da alcada de aprovacao. */
+export type EscopoAlcada = 'pedido' | 'requisicao';
+
+/**
+ * Alcada de aprovacao por faixa de valor.
  *
- * Regra: aprovador com `valorLimite >= valor_pedido` (ou `null` = sem teto)
- * pode aprovar. Hierarquia natural — quem aprova R$ 500k tambem aprova R$ 5k.
+ * Aprovador (usuario direto OU perfil) aprova quando o valor do pedido cai na
+ * faixa `[valor_limite_min, valor_limite_max]`. `valor_limite_max` NULL = sem
+ * teto. Pode ainda ser restringida a departamentos especificos via N:N.
  */
 export interface AlcadaAprovacao {
   id: string;
-  usuarioId: string;
-  valorLimite: number | null;
+  escopo: EscopoAlcada;
+  usuarioId: string | null;
+  perfilAprovador: string | null;
+  valorLimiteMin: number;
+  valorLimiteMax: number | null;
   ativo: boolean;
   criadoEm: string;
   atualizadoEm: string;
+}
+
+/** Vinculo N:N alcadas <-> departamentos (restringe alcada a setores). */
+export interface AlcadaAprovacaoDepartamento {
+  alcadaId: string;
+  departamentoId: string;
 }
 
 /**
@@ -444,11 +448,7 @@ export interface RotaPermitida {
   podeAprovar: boolean;
 }
 
-export type FlagPermissao =
-  | 'podeLer'
-  | 'podeEscrever'
-  | 'podeExcluir'
-  | 'podeAprovar';
+export type FlagPermissao = 'podeLer' | 'podeEscrever' | 'podeExcluir' | 'podeAprovar';
 
 /**
  * Resposta da RPC `meu_perfil()`.
@@ -587,11 +587,14 @@ export interface CotacaoRespostaItem {
 }
 
 export type StatusPedidoCompra =
+  | 'draft'
   | 'pending_approval'
   | 'approved'
+  | 'rejected'
   | 'sent_to_supplier'
   | 'awaiting_nf'
   | 'nf_issued'
+  | 'in_transit'
   | 'partially_received'
   | 'fully_received'
   | 'completed'
@@ -659,18 +662,16 @@ export interface PedidoCompraAprovacao {
   criadoEm: string;
 }
 
-export type StatusNotaFiscal =
-  | 'received'
-  | 'paid'
-  | 'cancelled'
-  | 'returned';
+export type StatusNotaFiscal = 'received' | 'paid' | 'cancelled' | 'returned';
+
+export type TipoNotaFiscal = 'entrada' | 'devolucao' | 'servico';
 
 export interface NotaFiscal {
   id: string;
   numero: string;
   serie: string | null;
   chaveAcesso: string | null;
-  tipo: string;
+  tipo: TipoNotaFiscal;
   fornecedorId: string;
   cnpjEmissor: string;
   empresaEmitenteId: string;
@@ -687,6 +688,7 @@ export interface NotaFiscal {
   urlXml: string | null;
   urlPdf: string | null;
   urlBoleto: string | null;
+  lancadaPorUsuarioId: string | null;
   observacoes: string | null;
   criadoEm: string;
   atualizadoEm: string;
@@ -695,6 +697,8 @@ export interface NotaFiscal {
 export interface NotaFiscalPedido {
   notaFiscalId: string;
   pedidoCompraId: string;
+  /** Quanto do total da NF foi alocado a este pedido (R$). */
+  valorAlocado: number | null;
 }
 
 export type StatusContrato = 'active' | 'concluded' | 'suspended' | 'cancelled';
@@ -776,4 +780,58 @@ export interface Notificacao {
   enviadoWhatsapp: boolean;
   enviadoPush: boolean;
   criadoEm: string;
+}
+
+// ============================================================================
+// Views de Dashboard (somente leitura)
+//
+// Refletem as views SQL criadas em 001_schema_completo.sql (secao 16).
+// Cada interface estende a tabela base com os campos enriquecidos via JOIN.
+// ============================================================================
+
+/** View `estoques_abaixo_minimo` — itens cujo saldo esta abaixo do minimo. */
+export interface ViewEstoqueAbaixoMinimo extends EstoqueUnidade {
+  itemNome: string;
+  produtoCodigo: number | null;
+  unidadeNome: string;
+  /** Quantidade que falta para atingir o minimo. */
+  deficit: number;
+}
+
+/** View `emprestimos_atrasados` — emprestimos em aberto com prazo vencido. */
+export interface ViewEmprestimoAtrasado extends Movimentacao {
+  /** Sempre `loan_out` aqui, herdado de Movimentacao.tipo. */
+}
+
+/** View `contratos_proximos_vencimento` — contratos vencendo em 30d ou saldo < 10%. */
+export interface ViewContratoProximoVencimento extends Contrato {
+  fornecedorRazaoSocial: string;
+  /** Pode ser negativo se ja venceu. */
+  diasParaVencer: number;
+  /** Percentual restante do contrato (0-100). */
+  percentualSaldo: number | null;
+}
+
+/** View `pedidos_aguardando_aprovacao` — pedidos com status_aprovacao = 'pendente'. */
+export interface ViewPedidoAguardandoAprovacao extends PedidoCompra {
+  fornecedorRazaoSocial: string;
+  compradorNome: string;
+  aprovadorNome: string | null;
+}
+
+/**
+ * View `solicitacoes_tempo_etapas` — agregado de tempos por etapa de solicitacao.
+ * So inclui solicitacoes ja concluidas.
+ */
+export interface ViewSolicitacaoTempoEtapas {
+  id: string;
+  numero: string | null;
+  tipo: TipoSolicitacao;
+  status: StatusSolicitacao;
+  criadoEm: string;
+  aprovadoEm: string | null;
+  concluidoEm: string;
+  horasAteAprovacao: number | null;
+  horasAprovacaoAConclusao: number | null;
+  horasTotal: number;
 }

@@ -4,7 +4,7 @@
  * Cria pedido a partir de uma cotacao finalizada. Status inicial:
  * pending_approval. Apos aprovado por alcada, vira sent_to_supplier.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Eye, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -35,21 +35,24 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ApiError, crud, supabase } from '@/lib/api';
+import { useListaPaginada } from '@/hooks/useListaPaginada';
 import { usePermissao } from '@/hooks/usePermissao';
 import { usePerfil } from '@/contexts/PerfilContext';
+import { DataTable, type ColunaDataTable } from '@/components/crud/DataTable';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SemAcesso } from '@/components/crud/SemAcesso';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Timeline } from '@/components/shared/Timeline';
 import { formatDate } from '@/lib/format';
-import type {
-  Cotacao,
-  CotacaoResposta,
-  EmpresaEmitente,
-  Fornecedor,
-  PedidoCompra,
-  Usuario,
-} from '@/types';
+import type { Cotacao, CotacaoResposta, EmpresaEmitente, Fornecedor, PedidoCompra } from '@/types';
+
+interface PedidoListado extends PedidoCompra {
+  fornecedorRazaoSocial: string;
+  fornecedorNomeFantasia: string | null;
+  empresaEmitenteRazaoSocial: string;
+  compradorNome: string;
+  aprovadorNome: string | null;
+}
 
 const FMT_BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -57,109 +60,96 @@ export function PedidosCompraPage() {
   const { podeLer, podeEscrever } = usePermissao('compras.pedidos');
   const perfil = usePerfil();
 
-  const [pedidos, setPedidos] = useState<PedidoCompra[]>([]);
-  const [fornecedoresMap, setFornMap] = useState<Map<string, Fornecedor>>(new Map());
-  const [usuariosMap, setUsuariosMap] = useState<Map<string, Usuario>>(new Map());
-  const [carregando, setCarregando] = useState(true);
   const [novoAberto, setNovoAberto] = useState(false);
-  const [verPedido, setVerPedido] = useState<PedidoCompra | null>(null);
+  const [verPedido, setVerPedido] = useState<PedidoListado | null>(null);
 
-  async function recarregar() {
-    setCarregando(true);
-    try {
-      const [ps, fs, us] = await Promise.all([
-        crud<PedidoCompra>('pedidos_compra').list({
-          ordenarPor: 'criadoEm',
-          ascendente: false,
-        }),
-        crud<Fornecedor>('fornecedores').list({}),
-        crud<Usuario>('usuarios').list({}),
-      ]);
-      setPedidos(ps);
-      setFornMap(new Map(fs.map((f) => [f.id, f])));
-      setUsuariosMap(new Map(us.map((u) => [u.id, u])));
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : 'Erro');
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  useEffect(() => {
-    void recarregar();
-  }, []);
+  const lista = useListaPaginada<PedidoListado>({ rpc: 'fn_listar_pedidos_compra' });
 
   if (!podeLer) return <SemAcesso rotaCodigo="compras.pedidos" />;
 
+  const colunas: ColunaDataTable<PedidoListado>[] = [
+    {
+      chave: 'numero',
+      titulo: 'Numero',
+      render: (p) => <span className="font-mono text-xs">{p.numero ?? p.id.slice(0, 8)}</span>,
+    },
+    {
+      chave: 'criadoEm',
+      titulo: 'Quando',
+      render: (p) => <span className="text-xs">{formatDate(p.criadoEm)}</span>,
+    },
+    {
+      chave: 'fornecedorRazaoSocial',
+      titulo: 'Fornecedor',
+      render: (p) => <span className="text-sm">{p.fornecedorRazaoSocial}</span>,
+    },
+    {
+      chave: 'compradorNome',
+      titulo: 'Comprador',
+      render: (p) => <span className="text-sm">{p.compradorNome}</span>,
+    },
+    {
+      chave: 'valorTotal',
+      titulo: 'Valor total',
+      largura: '160px',
+      alinhar: 'right',
+      render: (p) => <span className="font-mono">{FMT_BRL.format(Number(p.valorTotal))}</span>,
+    },
+    {
+      chave: 'status',
+      titulo: 'Status',
+      render: (p) => <StatusBadge status={p.status} />,
+    },
+    {
+      chave: 'acao',
+      titulo: '',
+      largura: '60px',
+      render: (p) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setVerPedido(p);
+          }}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
+
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4">
       <PageHeader
         titulo="Pedidos de Compra"
         subtitulo="Pedido fechado para fornecedor. Apos aprovado por alcada, vai para o fornecedor."
         acoes={
           podeEscrever && (
             <Button onClick={() => setNovoAberto(true)}>
-              <Plus className="h-4 w-4 mr-1.5" />
+              <Plus className="mr-1.5 h-4 w-4" />
               Novo pedido
             </Button>
           )
         }
       />
 
-      {carregando ? (
-        <Skeleton className="h-32 w-full" />
-      ) : pedidos.length === 0 ? (
-        <div className="rounded-md border border-dashed p-12 text-center text-muted-foreground">
-          Nenhum pedido criado.
-        </div>
-      ) : (
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Numero</TableHead>
-                <TableHead>Quando</TableHead>
-                <TableHead>Fornecedor</TableHead>
-                <TableHead>Comprador</TableHead>
-                <TableHead className="text-right">Valor total</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-16"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pedidos.map((p) => (
-                <TableRow
-                  key={p.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => setVerPedido(p)}
-                >
-                  <TableCell className="font-mono text-xs">
-                    {p.numero ?? p.id.slice(0, 8)}
-                  </TableCell>
-                  <TableCell className="text-xs">{formatDate(p.criadoEm)}</TableCell>
-                  <TableCell className="text-sm">
-                    {fornecedoresMap.get(p.fornecedorId)?.razaoSocial ?? '?'}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {usuariosMap.get(p.compradorId)?.nome ?? '?'}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {FMT_BRL.format(Number(p.valorTotal))}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={p.status} />
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setVerPedido(p); }}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      <DataTable<PedidoListado>
+        itens={lista.itens}
+        colunas={colunas}
+        isLoading={lista.isLoading}
+        mensagemVazia="Nenhum pedido criado."
+        paginacao={{
+          total: lista.total,
+          pagina: lista.paginacao.pagina,
+          tamanho: lista.paginacao.tamanho,
+          busca: lista.paginacao.busca,
+          placeholderBusca: 'Buscar por numero ou fornecedor...',
+          aoMudarPagina: lista.paginacao.setPagina,
+          aoMudarTamanho: lista.paginacao.setTamanho,
+          aoMudarBusca: lista.paginacao.setBusca,
+        }}
+      />
 
       {novoAberto && perfil.usuario && (
         <DialogNovoPedido
@@ -167,7 +157,7 @@ export function PedidosCompraPage() {
           aoFechar={() => setNovoAberto(false)}
           aoSalvar={async () => {
             setNovoAberto(false);
-            await recarregar();
+            await lista.recarregar();
           }}
         />
       )}
@@ -175,7 +165,7 @@ export function PedidosCompraPage() {
       {verPedido && (
         <DialogVerPedido
           pedido={verPedido}
-          fornecedorNome={fornecedoresMap.get(verPedido.fornecedorId)?.razaoSocial}
+          fornecedorNome={verPedido.fornecedorRazaoSocial}
           aoFechar={() => setVerPedido(null)}
         />
       )}
@@ -319,14 +309,14 @@ function DialogNovoPedido({
           </div>
 
           {respostaVencedora && (
-            <div className="rounded-md border p-3 bg-muted/30 text-sm">
+            <div className="bg-muted/30 rounded-md border p-3 text-sm">
               <p>
                 <span className="text-muted-foreground">Valor total: </span>
                 <strong className="font-mono">
                   {FMT_BRL.format(Number(respostaVencedora.valorTotal ?? 0))}
                 </strong>
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Prazo: {respostaVencedora.prazoEntregaDias ?? '?'} dias
               </p>
             </div>
@@ -386,7 +376,7 @@ function DialogVerPedido({
 }) {
   return (
     <Dialog open onOpenChange={(o) => !o && aoFechar()}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <span>Pedido {pedido.numero ?? pedido.id.slice(0, 8)}</span>
@@ -405,14 +395,14 @@ function DialogVerPedido({
             <Linha label="Status aprovacao" valor={pedido.statusAprovacao} />
             {pedido.observacoes && (
               <div className="col-span-2">
-                <span className="text-xs text-muted-foreground">Observacoes</span>
-                <p className="text-sm mt-1">{pedido.observacoes}</p>
+                <span className="text-muted-foreground text-xs">Observacoes</span>
+                <p className="mt-1 text-sm">{pedido.observacoes}</p>
               </div>
             )}
           </div>
 
           <div className="border-t pt-4">
-            <h3 className="font-semibold text-sm mb-2">Linha do tempo</h3>
+            <h3 className="mb-2 text-sm font-semibold">Linha do tempo</h3>
             <Timeline tipoEntidade="pedido_compra" entidadeId={pedido.id} />
           </div>
         </div>
@@ -430,7 +420,7 @@ function DialogVerPedido({
 function Linha({ label, valor }: { label: string; valor: string }) {
   return (
     <div>
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-muted-foreground text-xs">{label}</span>
       <p className="text-sm">{valor}</p>
     </div>
   );

@@ -41,8 +41,7 @@ export function Timeline({ tipoEntidade, entidadeId, acaoLabels, limite = 50 }: 
         if (!cancelado) setLogs(lista);
       })
       .catch((e) => {
-        if (!cancelado)
-          setErro(e instanceof ApiError ? e.message : 'Erro ao carregar timeline');
+        if (!cancelado) setErro(e instanceof ApiError ? e.message : 'Erro ao carregar timeline');
       })
       .finally(() => {
         if (!cancelado) setCarregando(false);
@@ -69,7 +68,7 @@ export function Timeline({ tipoEntidade, entidadeId, acaoLabels, limite = 50 }: 
 
   if (logs.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-6 text-center">
+      <p className="text-muted-foreground py-6 text-center text-sm">
         Sem eventos registrados ainda.
       </p>
     );
@@ -80,27 +79,25 @@ export function Timeline({ tipoEntidade, entidadeId, acaoLabels, limite = 50 }: 
       {logs.map((log, idx) => (
         <li key={log.id} className="flex gap-3">
           <div className="flex flex-col items-center">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <Clock className="h-4 w-4 text-primary" />
+            <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
+              <Clock className="text-primary h-4 w-4" />
             </div>
-            {idx < logs.length - 1 && <div className="w-px flex-1 bg-border my-1" />}
+            {idx < logs.length - 1 && <div className="bg-border my-1 w-px flex-1" />}
           </div>
           <div className="flex-1 pb-3">
             <div className="flex items-baseline gap-2">
-              <span className="font-medium text-sm">
-                {acaoLabels?.[log.acao] ?? log.acao}
-              </span>
+              <span className="text-sm font-medium">{acaoLabels?.[log.acao] ?? log.acao}</span>
               {log.statusAnterior && log.statusNovo && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   {log.statusAnterior} → {log.statusNovo}
                 </span>
               )}
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-muted-foreground text-xs">
               {formatDate(log.criadoEm)} ({formatRelativeTimePast(log.criadoEm)})
             </div>
             {log.dados && Object.keys(log.dados).length > 0 && (
-              <pre className="mt-1 text-xs bg-muted/50 p-2 rounded overflow-x-auto max-w-full">
+              <pre className="bg-muted/50 mt-1 max-w-full overflow-x-auto rounded p-2 text-xs">
                 {JSON.stringify(log.dados, null, 2)}
               </pre>
             )}
