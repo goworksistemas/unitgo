@@ -86,8 +86,8 @@ export default function ForgotPasswordPage() {
 
                 <Button
                   type="submit"
-                  disabled={loading}
-                  className="w-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 py-2.5 font-medium"
+                  isDisabled={loading}
+                  className="w-full bg-blue-600 text-white hover:bg-blue-700 aria-disabled:opacity-60 py-2.5 font-medium"
                 >
                   {loading ? 'Enviando…' : 'Enviar link de recuperação'}
                 </Button>

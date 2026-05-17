@@ -1,3 +1,4 @@
+import { type ReactElement } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import LoginPage from '@/pages/auth/LoginPage'
@@ -5,7 +6,7 @@ import RegisterPage from '@/pages/auth/RegisterPage'
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
 
-function ProtectedRoute({ children }: { children: JSX.Element }) {
+function ProtectedRoute({ children }: { children: ReactElement }) {
   const { user, loading } = useAuth()
 
   if (loading) {
@@ -21,7 +22,7 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
   return children
 }
 
-function PublicRoute({ children }: { children: JSX.Element }) {
+function PublicRoute({ children }: { children: ReactElement }) {
   const { user, loading } = useAuth()
 
   if (loading) return null

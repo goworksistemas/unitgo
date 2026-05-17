@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Button, Card, CardContent } from '@heroui/react'
 import { supabase } from '@/lib/supabase'
 import { generatePassword } from '@/lib/password'
@@ -8,7 +8,6 @@ import { AuthLayout } from '@/layouts/AuthLayout'
 import { Field, PasswordInput, inputClass } from './LoginPage'
 
 export default function RegisterPage() {
-  const navigate = useNavigate()
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -165,8 +164,8 @@ export default function RegisterPage() {
 
               <Button
                 type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 py-2.5 font-medium mt-2"
+                isDisabled={loading}
+                className="w-full bg-blue-600 text-white hover:bg-blue-700 aria-disabled:opacity-60 py-2.5 font-medium mt-2"
               >
                 {loading ? 'Criando conta…' : 'Criar conta'}
               </Button>
