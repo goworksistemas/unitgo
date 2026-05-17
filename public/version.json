@@ -1,5 +1,0 @@
-{
-  "version": "0.3.0",
-  "buildDate": "2026-05-15T00:00:00Z",
-  "commitMessage": "Paginacao server-side em todas as telas com RPCs dedicadas e indices trigram"
-}

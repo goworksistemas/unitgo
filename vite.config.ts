@@ -1,22 +1,20 @@
-import path from 'path';
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react-swc';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import path from 'path'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    tailwindcss(),
+    react(),
+  ],
   resolve: {
-    extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
-  },
-  build: {
-    target: 'esnext',
-    outDir: 'dist',
   },
   server: {
     port: 3000,
     open: true,
   },
-});
+})

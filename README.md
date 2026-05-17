@@ -1,62 +1,73 @@
-# SupplyGo
+# React + TypeScript + Vite
 
-Sistema interno de gestao de estoque, solicitacoes, entregas e compras para as unidades Gowork.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Stack
+Currently, two official plugins are available:
 
-- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS 4
-- **UI**: shadcn/ui (Radix primitives) + lucide-react
-- **Backend**: Supabase (Postgres + Auth + Storage + RLS policies)
-- **Acesso**: frontend conecta direto via `@supabase/supabase-js` (sem Edge Function)
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## Instalacao
+## React Compiler
 
-```bash
-npm install
-cp .env.example .env
-# preencher VITE_SUPABASE_PROJECT_ID e VITE_SUPABASE_ANON_KEY
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-## Banco de dados
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-SQL na pasta [supabase/migrations/](supabase/migrations/), na ordem:
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-1. `000_drop_all.sql` — reset (opcional, so em ambiente novo)
-2. `001_schema_completo.sql` — 42 tabelas + indices + funcoes + triggers + views + seed
-3. `002_rls_e_auth.sql` — RLS, funcoes de permissao e trigger de cadastro
-
-Rodar copiando e colando no Supabase SQL Editor.
-
-## Executar
-
-```bash
-npm run dev          # servidor de desenvolvimento
-npm run build        # build de producao
-npm run preview      # preview do build
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-
-## Primeira conta
-
-A primeira conta cadastrada na tela `/signup` recebe automaticamente o perfil **DEV** (acesso total). Contas seguintes ficam sem perfil ate um administrador atribuir.
-
-## Estrutura
-
-```
-src/
-  components/       componentes React (auth, layout, shared, ui)
-  contexts/         AuthContext, PerfilContext, ThemeContext
-  hooks/            useInactivityLogout, usePermissao
-  lib/              api.ts (cliente Supabase), format.ts, utils.ts
-  pages/            Welcome, EmConstrucao
-  types/            tipos TypeScript pt-camelCase
-  utils/supabase/   client singleton
-  App.tsx           BrowserRouter + ProtectedRoute
-  main.tsx          entry point
-supabase/migrations/  SQL de criacao do banco
-DOCs/                 documentacao tecnica (tabelas, plano de acao)
-```
-
-## Documentacao
-
-- [DOCs/tabelas.md](DOCs/tabelas.md) — schema completo do banco
-- [DOCs/plano-acao.md](DOCs/plano-acao.md) — plano de implementacao em lotes
