@@ -1,228 +1,368 @@
-import { useState, useEffect, useRef } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, LogOut, User } from 'lucide-react'
+import { useState, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { ChevronDown, ChevronLeft, ChevronRight, LogOut, User } from 'lucide-react'
 import { SupplyGoLogo } from '@/components/shared/SupplyGoLogo'
 import { useAuth } from '@/contexts/AuthContext'
-import { NAV_GROUPS, ACCENTS, type NavGroup } from './nav'
+import { useTheme } from '@/contexts/ThemeContext'
+import { NAV_GROUPS, ACCENTS } from './nav'
 
 const STORAGE_KEY = 'supplygo-sidebar-expanded'
+const GROUPS_KEY  = 'supplygo-sidebar-groups'
 
 interface AppSidebarProps {
   onExpandedChange?: (expanded: boolean) => void
 }
 
+interface FlyoutState {
+  group: string
+  top: number
+}
+
 export function AppSidebar({ onExpandedChange }: AppSidebarProps) {
-  const location = useLocation()
+  const location  = useLocation()
+  const navigate  = useNavigate()
   const { profile, signOut } = useAuth()
-  const isAdmin = profile?.role === 'admin'
+  const { theme } = useTheme()
 
   const [expanded, setExpanded] = useState(() => {
     try { return localStorage.getItem(STORAGE_KEY) !== 'false' } catch { return true }
   })
-  const [hoveredGroup, setHoveredGroup] = useState<string | null>(null)
-  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, String(expanded)) } catch { /* noop */ }
-    onExpandedChange?.(expanded)
-  }, [expanded, onExpandedChange])
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(GROUPS_KEY)
+      if (saved) return JSON.parse(saved)
+    } catch { /* noop */ }
+    return Object.fromEntries(NAV_GROUPS.map(g => [g.group, true]))
+  })
 
-  const visibleGroups = NAV_GROUPS.filter(g => !g.adminOnly || isAdmin)
+  const [flyout, setFlyout] = useState<FlyoutState | null>(null)
+  const flyoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function toggleSidebar() {
+    setFlyout(null)
+    setExpanded(v => {
+      const next = !v
+      try { localStorage.setItem(STORAGE_KEY, String(next)) } catch { /* noop */ }
+      onExpandedChange?.(next)
+      return next
+    })
+  }
+
+  function toggleGroup(name: string) {
+    setExpandedGroups(prev => {
+      const next = { ...prev, [name]: !prev[name] }
+      try { localStorage.setItem(GROUPS_KEY, JSON.stringify(next)) } catch { /* noop */ }
+      return next
+    })
+  }
 
   function isActive(href: string) {
-    if (href === '/') return location.pathname === '/'
-    return location.pathname.startsWith(href)
+    return href === '/' ? location.pathname === '/' : location.pathname.startsWith(href)
   }
 
-  function handleMouseEnterGroup(groupName: string) {
-    if (expanded) return
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
-    setHoveredGroup(groupName)
-  }
+  const showFlyout = useCallback((name: string, el: HTMLElement) => {
+    if (flyoutTimer.current) clearTimeout(flyoutTimer.current)
+    const rect = el.getBoundingClientRect()
+    setFlyout({ group: name, top: rect.top })
+  }, [])
 
-  function handleMouseLeaveGroup() {
-    if (expanded) return
-    hoverTimerRef.current = setTimeout(() => setHoveredGroup(null), 150)
-  }
+  const hideFlyout = useCallback(() => {
+    flyoutTimer.current = setTimeout(() => setFlyout(null), 120)
+  }, [])
+
+  const keepFlyout = useCallback(() => {
+    if (flyoutTimer.current) clearTimeout(flyoutTimer.current)
+  }, [])
+
+  const flyoutGroup = flyout ? NAV_GROUPS.find(g => g.group === flyout.group) : null
+  const logoVariant = theme === 'dark' ? 'light' : 'colored'
 
   return (
-    <aside
-      className={`hidden lg:flex flex-col fixed inset-y-0 left-0 z-50 border-r border-gray-200 bg-white transition-[width] duration-200 ease-out ${
-        expanded ? 'w-64' : 'w-[68px]'
-      }`}
-    >
-      {/* Logo */}
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-100 bg-gradient-to-r from-blue-50 to-teal-50 px-3">
-        {expanded ? (
-          <SupplyGoLogo variant="colored" size={34} showText />
-        ) : (
-          <SupplyGoLogo variant="colored" size={34} />
-        )}
-        <button
-          onClick={() => setExpanded(v => !v)}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-white/70 hover:text-gray-700 transition-colors"
-          aria-label={expanded ? 'Recolher menu' : 'Expandir menu'}
-        >
-          {expanded ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-        </button>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-3 space-y-4">
-        {visibleGroups.map(group => (
-          <NavGroupSection
-            key={group.group}
-            group={group}
-            expanded={expanded}
-            isActive={isActive}
-            isHovered={hoveredGroup === group.group}
-            onMouseEnter={() => handleMouseEnterGroup(group.group)}
-            onMouseLeave={handleMouseLeaveGroup}
-            onFlyoutEnter={() => {
-              if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
-            }}
-            onFlyoutLeave={handleMouseLeaveGroup}
-          />
-        ))}
-      </nav>
-
-      {/* Footer — perfil */}
-      <div className="shrink-0 border-t border-gray-100 p-2 space-y-1">
-        <div className={`flex items-center gap-2 rounded-lg px-2 py-2 ${expanded ? '' : 'justify-center'}`}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700">
-            <User size={15} />
-          </div>
-          {expanded && (
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium text-gray-800">{profile?.nome ?? '—'}</p>
-              <p className="truncate text-[10px] text-gray-400">{profile?.role}</p>
-            </div>
-          )}
+    <>
+      <aside
+        className={`hidden lg:fixed lg:flex top-0 left-0 h-screen flex-col shadow-lg z-50 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 transition-[width] duration-200 ease-out ${
+          expanded ? 'w-56' : 'w-14'
+        }`}
+        aria-label="Menu principal"
+      >
+        {/* Header logo */}
+        <div className="relative flex h-12 shrink-0 items-center border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 px-3">
+          <Link to="/" className={`flex min-w-0 items-center overflow-hidden ${expanded ? 'flex-1 justify-start' : 'w-full justify-center'}`} title="Início">
+            {expanded ? (
+              <SupplyGoLogo variant={logoVariant} size={26} showText />
+            ) : (
+              <SupplyGoLogo variant="colored" size={26} />
+            )}
+          </Link>
+          <button
+            onClick={toggleSidebar}
+            className="absolute -bottom-3 -right-3 hidden lg:flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-all z-[51]"
+            aria-label={expanded ? 'Recolher menu' : 'Expandir menu'}
+          >
+            {expanded ? <ChevronLeft size={12} /> : <ChevronRight size={12} />}
+          </button>
         </div>
-        <button
-          onClick={signOut}
-          className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors ${
-            expanded ? '' : 'justify-center'
-          }`}
-        >
-          <LogOut size={15} />
-          {expanded && <span>Sair</span>}
-        </button>
-      </div>
-    </aside>
-  )
-}
 
-function NavGroupSection({
-  group, expanded, isActive, isHovered,
-  onMouseEnter, onMouseLeave, onFlyoutEnter, onFlyoutLeave,
-}: {
-  group: NavGroup
-  expanded: boolean
-  isActive: (href: string) => boolean
-  isHovered: boolean
-  onMouseEnter: () => void
-  onMouseLeave: () => void
-  onFlyoutEnter: () => void
-  onFlyoutLeave: () => void
-}) {
-  const accent = ACCENTS[group.accent]
+        {expanded ? (
+          /* ── EXPANDED ── */
+          <nav className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden px-2 py-3">
+            {NAV_GROUPS.map(group => {
+              const accent         = ACCENTS[group.accent]
+              const isOpen         = !!expandedGroups[group.group]
+              const groupHasActive = group.items.some(i => isActive(i.href))
+              const GroupIcon      = group.icon
 
-  return (
-    <div>
-      {expanded && (
-        <p className="mb-1 px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-          {group.group}
-        </p>
-      )}
-      <div className="space-y-0.5">
-        {group.items.map(item => {
-          const active = isActive(item.href)
-          const Icon = item.icon
-
-          if (!expanded) {
-            return (
-              <div
-                key={item.href}
-                className="relative"
-                onMouseEnter={onMouseEnter}
-                onMouseLeave={onMouseLeave}
-              >
-                <Link
-                  to={item.soon ? '#' : item.href}
-                  aria-disabled={item.soon}
-                  className={`flex h-10 w-full items-center justify-center rounded-lg transition-colors ${
-                    active ? `${accent.activeBg} ${accent.icon}` : `text-gray-500 ${accent.hover}`
-                  } ${item.soon ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <Icon size={18} />
-                </Link>
-
-                {/* Flyout tooltip para sidebar colapsada */}
-                {isHovered && (
-                  <div
-                    className="absolute left-[56px] top-0 z-[60] animate-in fade-in slide-in-from-left-2 duration-150"
-                    onMouseEnter={onFlyoutEnter}
-                    onMouseLeave={onFlyoutLeave}
+              return (
+                <div key={group.group}>
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.group)}
+                    className={`group/section flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left transition-all ${
+                      groupHasActive
+                        ? 'bg-gray-50/80 dark:bg-gray-800/80'
+                        : 'hover:bg-gray-50/90 dark:hover:bg-gray-800/60'
+                    }`}
+                    aria-expanded={isOpen}
                   >
-                    <div className="rounded-xl border border-gray-100 bg-white shadow-xl shadow-black/10 py-1 min-w-[180px]">
-                      <p className="px-3 pt-1 pb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    <div className="flex min-w-0 items-center gap-2">
+                      {GroupIcon && (
+                        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-transform group-hover/section:scale-105 ${accent.chip} `}>
+                          <GroupIcon className={`h-3.5 w-3.5 ${accent.icon}`} aria-hidden />
+                        </span>
+                      )}
+                      <span className={`truncate text-[11px] font-semibold uppercase tracking-wider ${
+                        groupHasActive ? 'text-gray-800 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'
+                      }`}>
                         {group.group}
-                      </p>
-                      {group.items.map(fi => {
-                        const FIcon = fi.icon
-                        const fActive = isActive(fi.href)
-                        const fAccent = ACCENTS[group.accent]
+                      </span>
+                    </div>
+                    <ChevronDown
+                      className={`h-3 w-3 shrink-0 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                      aria-hidden
+                    />
+                  </button>
+
+                  {isOpen && (
+                    <div className="mt-0.5 space-y-0.5 pl-2">
+                      {group.items.map((item, idx) => {
+                        const active = isActive(item.href)
+                        const Icon   = item.icon
                         return (
                           <Link
-                            key={fi.href}
-                            to={fi.soon ? '#' : fi.href}
-                            className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
-                              fActive ? `${fAccent.activeBg} ${fAccent.activeText}` : `text-gray-700 ${fAccent.hover}`
-                            } ${fi.soon ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+                            key={item.href}
+                            to={item.href}
+                            className={`group/item relative flex min-h-9 animate-flyout-item-enter items-center rounded-lg pl-3 pr-2 py-1.5 text-sm font-medium transition-all hover:translate-x-0.5 ${
+                              active
+                                ? `${accent.activeBg} ${accent.activeText}`
+                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                            }`}
+                            style={{ animationDelay: `${Math.min(idx, 12) * 22}ms` }}
                           >
-                            <FIcon size={14} />
-                            {fi.name}
-                            {fi.soon && (
-                              <span className="ml-auto text-[9px] font-semibold text-blue-500 bg-blue-50 rounded px-1">
-                                SOON
-                              </span>
+                            {active && (
+                              <span
+                                className={`pointer-events-none absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full ${accent.activeBar}`}
+                                aria-hidden
+                              />
                             )}
+                            <Icon className="w-4 h-4 mr-2 shrink-0" />
+                            <span className="flex-1 truncate">{item.name}</span>
                           </Link>
                         )
                       })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          }
 
-          return (
+                      {/* Subgroups */}
+                      {group.subgroups?.map(sub => {
+                        const SubIcon = sub.icon
+                        const subHasActive = sub.items.some(i => isActive(i.href))
+                        return (
+                          <div key={sub.subgroup} className="pt-1">
+                            <div className="flex items-center gap-1.5 px-3 pb-0.5">
+                              {SubIcon && <SubIcon className={`h-3 w-3 shrink-0 ${accent.icon}`} />}
+                              <span className={`text-[10px] font-semibold uppercase tracking-wider ${
+                                subHasActive ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500'
+                              }`}>
+                                {sub.subgroup}
+                              </span>
+                            </div>
+                            {sub.items.map((item, idx) => {
+                              const active = isActive(item.href)
+                              const Icon   = item.icon
+                              return (
+                                <Link
+                                  key={item.href}
+                                  to={item.href}
+                                  className={`group/item relative flex min-h-9 animate-flyout-item-enter items-center rounded-lg pl-3 pr-2 py-1.5 text-sm font-medium transition-all hover:translate-x-0.5 ${
+                                    active
+                                      ? `${accent.activeBg} ${accent.activeText}`
+                                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                  }`}
+                                  style={{ animationDelay: `${Math.min(idx, 12) * 22}ms` }}
+                                >
+                                  {active && (
+                                    <span
+                                      className={`pointer-events-none absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full ${accent.activeBar}`}
+                                      aria-hidden
+                                    />
+                                  )}
+                                  <Icon className="w-4 h-4 mr-2 shrink-0" />
+                                  <span className="flex-1 truncate">{item.name}</span>
+                                </Link>
+                              )
+                            })}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </nav>
+        ) : (
+          /* ── COLLAPSED ── icon-only, flyout via portal */
+          <nav className="flex min-h-0 flex-1 flex-col gap-1 py-2 px-1">
+            {NAV_GROUPS.map(group => {
+              const accent    = ACCENTS[group.accent]
+              const firstItem = group.items[0]
+              const hasActive = group.items.some(i => isActive(i.href))
+              const IconToUse = group.icon ?? firstItem?.icon
+
+              return (
+                <div
+                  key={group.group}
+                  className="relative"
+                  onMouseEnter={e => showFlyout(group.group, e.currentTarget)}
+                  onMouseLeave={hideFlyout}
+                >
+                  {hasActive && (
+                    <span
+                      className={`pointer-events-none absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full ${accent.activeBar}`}
+                      aria-hidden
+                    />
+                  )}
+                  <div
+                    onClick={() => firstItem && navigate(firstItem.href)}
+                    className={`flex h-10 w-full items-center justify-center rounded-lg transition-colors cursor-pointer ${
+                      hasActive
+                        ? `${accent.activeBg} ${accent.icon} `
+                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200'
+                    }`}
+                  >
+                    {IconToUse && <IconToUse className="w-4 h-4" />}
+                  </div>
+                </div>
+              )
+            })}
+          </nav>
+        )}
+
+        {/* Bottom */}
+        <div className="shrink-0 border-t border-gray-200 dark:border-gray-800 bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 py-1.5 px-1">
+          <div className="flex w-full flex-col gap-0.5">
             <Link
-              key={item.href}
-              to={item.soon ? '#' : item.href}
-              aria-disabled={item.soon}
-              className={`relative flex items-center gap-2.5 rounded-lg py-2 pl-3 pr-2 text-sm transition-all hover:translate-x-0.5 ${
-                active ? `${accent.activeBg} ${accent.activeText}` : `text-gray-600 hover:text-gray-900 ${accent.hover}`
-              } ${item.soon ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+              to="/perfil"
+              className={`flex w-full h-10 rounded-lg items-center transition-colors hover:bg-white/60 dark:hover:bg-white/5 ${expanded ? 'justify-start gap-2 px-2' : 'justify-center'}`}
             >
-              {active && (
-                <span className={`absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full ${accent.activeBar}`} />
-              )}
-              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${accent.chip}`}>
-                <Icon size={15} className={accent.icon} />
-              </span>
-              <span className="truncate">{item.name}</span>
-              {item.soon && (
-                <span className="ml-auto text-[9px] font-semibold text-blue-500 bg-blue-50 rounded px-1 py-0.5">
-                  SOON
-                </span>
+              <div className="w-7 h-7 shrink-0 rounded-full overflow-hidden shadow-sm">
+                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                  <User className="w-3.5 h-3.5 text-white" />
+                </div>
+              </div>
+              {expanded && (
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-100">{profile?.nome ?? '—'}</p>
+                  <p className="truncate text-[10px] text-gray-400 dark:text-gray-500 capitalize">{profile?.role}</p>
+                </div>
               )}
             </Link>
-          )
-        })}
-      </div>
-    </div>
+
+            <button
+              onClick={signOut}
+              className={`flex w-full h-10 rounded-lg items-center transition-colors text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 ${
+                expanded ? 'justify-start gap-2 px-2' : 'justify-center'
+              }`}
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+              {expanded && <span className="text-sm font-medium">Sair</span>}
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Flyout portal */}
+      {!expanded && flyoutGroup && flyout && createPortal(
+        <div
+          className="fixed z-[200]"
+          style={{ left: 56, top: flyout.top }}
+          onMouseEnter={keepFlyout}
+          onMouseLeave={hideFlyout}
+        >
+          <div
+            className="ml-1 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl py-1 min-w-[180px]"
+            style={{ animation: 'flyout-item-enter 0.15s ease both' }}
+          >
+            <p className="px-3 pt-1 pb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+              {flyoutGroup.group}
+            </p>
+            {flyoutGroup.items.map(fi => {
+              const FIcon   = fi.icon
+              const fActive = isActive(fi.href)
+              const fa      = ACCENTS[flyoutGroup.accent]
+              return (
+                <Link
+                  key={fi.href}
+                  to={fi.href}
+                  className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+                    fActive
+                      ? `${fa.activeBg} ${fa.activeText}`
+                      : `text-gray-700 dark:text-gray-300 ${fa.hover} dark:hover:bg-gray-800`
+                  }`}
+                  onClick={() => setFlyout(null)}
+                >
+                  <FIcon className="w-4 h-4 shrink-0" />
+                  {fi.name}
+                </Link>
+              )
+            })}
+            {flyoutGroup.subgroups?.map(sub => {
+              const fa      = ACCENTS[flyoutGroup.accent]
+              const SubIcon = sub.icon
+              return (
+                <div key={sub.subgroup}>
+                  <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
+                    {SubIcon && <SubIcon className={`h-3 w-3 ${fa.icon}`} />}
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+                      {sub.subgroup}
+                    </span>
+                  </div>
+                  {sub.items.map(fi => {
+                    const FIcon   = fi.icon
+                    const fActive = isActive(fi.href)
+                    return (
+                      <Link
+                        key={fi.href}
+                        to={fi.href}
+                        className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+                          fActive
+                            ? `${fa.activeBg} ${fa.activeText}`
+                            : `text-gray-700 dark:text-gray-300 ${fa.hover} dark:hover:bg-gray-800`
+                        }`}
+                        onClick={() => setFlyout(null)}
+                      >
+                        <FIcon className="w-4 h-4 shrink-0" />
+                        {fi.name}
+                      </Link>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   )
 }

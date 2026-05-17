@@ -7,10 +7,10 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-      <h1 className="text-3xl font-semibold text-gray-900">
+      <h1 className="text-3xl font-semibold text-gray-900 dark:text-gray-100">
         {saudacao}, {profile?.nome?.split(' ')[0] ?? 'usuário'} 👋
       </h1>
-      <p className="mt-2 text-gray-500">
+      <p className="mt-2 text-gray-500 dark:text-gray-400">
         Bem-vindo ao SupplyGo.
       </p>
     </div>

@@ -34,11 +34,11 @@ export default function LoginPage() {
       <div className="w-full max-w-[400px]">
         <div className="flex flex-col items-center gap-2 mb-8">
           <SupplyGoLogo variant="colored" size={56} />
-          <h1 className="text-xl font-semibold text-gray-900 mt-2">Entrar no SupplyGo</h1>
-          <p className="text-sm text-gray-500">Bem-vindo de volta.</p>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-2">Entrar no SupplyGo</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Bem-vindo de volta.</p>
         </div>
 
-        <Card className="shadow-sm border border-gray-200">
+        <Card className="shadow-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-900">
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
@@ -88,7 +88,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-sm text-gray-500 mt-5">
+        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-5">
           Não tem conta?{' '}
           <Link to="/auth/criar-conta" className="text-blue-600 font-medium hover:underline">
             Criar conta
@@ -109,7 +109,7 @@ function traduzirErro(msg: string): string {
 // ─── Componentes internos compartilhados ───────────────────────────────────
 
 export const inputClass =
-  'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50'
+  'w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50'
 
 export function Field({
   label,
@@ -125,7 +125,7 @@ export function Field({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700">
+        <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           {label}
         </label>
         {action}

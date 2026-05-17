@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\github\\\\supplygo\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(sed 's/^[0-9]*,//')",
+      "Bash(node -e \"const {Select} = require\\('./node_modules/@heroui/react'\\); const str = Select.toString\\(\\).slice\\(0,300\\); console.log\\(str\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(npx tsc *)",
+      "Bash(node -e \"const s = require\\('./node_modules/@heroui/styles/dist/index.js'\\); console.log\\(Object.keys\\(s.selectVariants?.\\({}\\) ?? {}\\)\\)\")",
+      "Bash(node --input-type=module)",
+      "Bash(node 01-classificar.mjs)"
+    ]
+  }
+}

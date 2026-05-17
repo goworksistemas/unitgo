@@ -1,48 +1,85 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
-import { Menu } from 'lucide-react'
+import { Outlet, useLocation } from 'react-router-dom'
+import { Menu, Moon, Sun } from 'lucide-react'
 import { AppSidebar } from '@/components/layout/AppSidebar'
 import { AppMobileDrawer } from '@/components/layout/AppMobileDrawer'
 import { AppBottomNav } from '@/components/layout/AppBottomNav'
 import { SupplyGoLogo } from '@/components/shared/SupplyGoLogo'
+import { useTheme } from '@/contexts/ThemeContext'
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [sidebarExpanded, setSidebarExpanded] = useState(true)
+  const [sidebarExpanded, setSidebarExpanded] = useState(() => {
+    try { return localStorage.getItem('supplygo-sidebar-expanded') !== 'false' } catch { return true }
+  })
+  const location = useLocation()
+  const { theme, toggleTheme } = useTheme()
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar desktop */}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <AppSidebar onExpandedChange={setSidebarExpanded} />
-
-      {/* Drawer mobile */}
       <AppMobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       {/* Header mobile */}
-      <header className="lg:hidden fixed top-0 inset-x-0 z-20 flex h-14 items-center gap-3 border-b border-gray-200 bg-white/95 backdrop-blur-md px-4">
+      <header className="lg:hidden fixed top-0 inset-x-0 z-20 flex h-12 items-center gap-3 border-b border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md px-4">
         <button
           onClick={() => setMobileOpen(true)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           aria-label="Abrir menu"
         >
-          <Menu size={20} />
+          <Menu size={18} />
         </button>
-        <SupplyGoLogo variant="colored" size={28} showText />
+        <SupplyGoLogo variant={theme === 'dark' ? 'light' : 'colored'} size={24} showText />
+        <div className="flex-1" />
+        <button
+          onClick={toggleTheme}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          aria-label="Alternar tema"
+        >
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
       </header>
 
-      {/* Conteúdo principal */}
+      {/* Header desktop */}
+      <header
+        className={`hidden lg:flex fixed top-0 right-0 z-40 h-12 items-center gap-3 border-b border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md px-6 transition-[left] duration-200 ease-out ${
+          sidebarExpanded ? 'left-56' : 'left-14'
+        }`}
+      >
+        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{getPageTitle(location.pathname)}</span>
+        <div className="flex-1" />
+        <button
+          onClick={toggleTheme}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          aria-label="Alternar tema"
+        >
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+      </header>
+
+      {/* Conteúdo */}
       <main
         className={`transition-[margin] duration-200 ease-out ${
-          sidebarExpanded ? 'lg:ml-64' : 'lg:ml-[68px]'
-        } pt-14 pb-20 lg:pt-0 lg:pb-6`}
+          sidebarExpanded ? 'lg:ml-56' : 'lg:ml-14'
+        } pt-12 pb-20 lg:pb-6`}
       >
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
           <Outlet />
         </div>
       </main>
 
-      {/* Bottom nav mobile */}
       <AppBottomNav />
     </div>
   )
+}
+
+function getPageTitle(pathname: string): string {
+  if (pathname === '/') return 'Início'
+  if (pathname.startsWith('/admin/usuarios')) return 'Usuários'
+  if (pathname.startsWith('/admin')) return 'Admin'
+  if (pathname.startsWith('/perfil')) return 'Meu Perfil'
+  if (pathname.startsWith('/cadastros/produtos')) return 'Produtos'
+  if (pathname.startsWith('/cadastros/unidades-medida')) return 'Unidades de medida'
+  if (pathname.startsWith('/cadastros')) return 'Cadastros'
+  return ''
 }

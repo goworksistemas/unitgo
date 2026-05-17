@@ -8,6 +8,9 @@ import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { UsuariosPage } from '@/pages/admin/UsuariosPage'
+import { PerfilPage } from '@/pages/perfil/PerfilPage'
+import { ProdutosPage } from '@/pages/cadastros/ProdutosPage'
+import { UnidadesMedidaPage } from '@/pages/cadastros/UnidadesMedidaPage'
 
 function Spinner() {
   return (
@@ -44,6 +47,9 @@ export function AppRoutes() {
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route path="/"               element={<DashboardPage />} />
         <Route path="/admin/usuarios" element={<UsuariosPage />} />
+        <Route path="/perfil"         element={<PerfilPage />} />
+        <Route path="/cadastros/produtos"        element={<ProdutosPage />} />
+        <Route path="/cadastros/unidades-medida" element={<UnidadesMedidaPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
