@@ -9,7 +9,14 @@
       "Bash(npx tsc *)",
       "Bash(node -e \"const s = require\\('./node_modules/@heroui/styles/dist/index.js'\\); console.log\\(Object.keys\\(s.selectVariants?.\\({}\\) ?? {}\\)\\)\")",
       "Bash(node --input-type=module)",
-      "Bash(node 01-classificar.mjs)"
+      "Bash(node 01-classificar.mjs)",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "Bash(node --check temp/catalogo-ia/comum.mjs)",
+      "Bash(node --check temp/catalogo-ia/1-normalizar.mjs)",
+      "Bash(node --check temp/catalogo-ia/2-fundir.mjs)",
+      "Bash(node --check temp/catalogo-ia/3-importar.mjs)",
+      "Bash(node temp/catalogo-ia/1-normalizar.mjs --dry-run)"
     ]
   }
 }

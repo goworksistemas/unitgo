@@ -1,4 +1,7 @@
-import { LayoutDashboard, Users, ShieldCheck, BookOpen, Package, Scale } from 'lucide-react'
+import {
+  LayoutDashboard, Users, ShieldCheck, BookOpen, Package, Scale,
+  ShoppingCart, FileText, Building2, Network,
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 export interface NavItem {
@@ -21,7 +24,7 @@ export interface NavGroup {
   subgroups?: NavSubgroup[]
 }
 
-export type AccentKey = 'blue' | 'slate'
+export type AccentKey = 'blue' | 'slate' | 'emerald'
 
 export const ACCENTS: Record<AccentKey, {
   chip: string
@@ -47,6 +50,14 @@ export const ACCENTS: Record<AccentKey, {
     activeBar: 'bg-slate-600 dark:bg-slate-400',
     hover: 'hover:bg-slate-50 dark:hover:bg-slate-800/60',
   },
+  emerald: {
+    chip: 'bg-emerald-100 dark:bg-emerald-900/40',
+    icon: 'text-emerald-600 dark:text-emerald-400',
+    activeBg: 'bg-emerald-50 dark:bg-emerald-900/30',
+    activeText: 'text-emerald-700 dark:text-emerald-300 font-semibold',
+    activeBar: 'bg-emerald-600 dark:bg-emerald-400',
+    hover: 'hover:bg-emerald-50/60 dark:hover:bg-emerald-900/20',
+  },
 }
 
 export const NAV_GROUPS: NavGroup[] = [
@@ -59,6 +70,14 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    group: 'Compras',
+    accent: 'emerald',
+    icon: ShoppingCart,
+    items: [
+      { name: 'Solicitações', href: '/compras/solicitacoes', icon: FileText },
+    ],
+  },
+  {
     group: 'Admin',
     accent: 'slate',
     icon: ShieldCheck,
@@ -66,6 +85,14 @@ export const NAV_GROUPS: NavGroup[] = [
       { name: 'Usuários', href: '/admin/usuarios', icon: Users },
     ],
     subgroups: [
+      {
+        subgroup: 'Organização',
+        icon: Network,
+        items: [
+          { name: 'Empresas',      href: '/cadastros/empresas',      icon: Building2 },
+          { name: 'Departamentos', href: '/cadastros/departamentos', icon: Network   },
+        ],
+      },
       {
         subgroup: 'Cadastros',
         icon: BookOpen,

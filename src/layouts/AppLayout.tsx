@@ -80,6 +80,13 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/perfil')) return 'Meu Perfil'
   if (pathname.startsWith('/cadastros/produtos')) return 'Produtos'
   if (pathname.startsWith('/cadastros/unidades-medida')) return 'Unidades de medida'
+  if (pathname.startsWith('/cadastros/empresas')) return 'Empresas'
+  if (pathname.startsWith('/cadastros/departamentos')) return 'Departamentos'
   if (pathname.startsWith('/cadastros')) return 'Cadastros'
+  if (pathname === '/compras/solicitacoes/nova') return 'Nova solicitação'
+  if (pathname.match(/^\/compras\/solicitacoes\/[^/]+\/editar$/)) return 'Editar rascunho'
+  if (pathname.match(/^\/compras\/solicitacoes\/[^/]+$/)) return 'Solicitação de compra'
+  if (pathname.startsWith('/compras/solicitacoes')) return 'Solicitações de compra'
+  if (pathname.startsWith('/compras')) return 'Compras'
   return ''
 }

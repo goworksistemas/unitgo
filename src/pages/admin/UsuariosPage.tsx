@@ -1,38 +1,57 @@
 import { useEffect, useState } from 'react'
-import { Search, Shield, User, Power, Edit2, Lock } from 'lucide-react'
+import { Search, Shield, User, Power, Edit2, Lock, Network } from 'lucide-react'
 import { Button, Card, CardContent } from '@heroui/react'
+import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Profile, UserRole } from '@/types/database'
+import { SelectField } from '@/components/ui/SelectField'
+import type { CoreDepartamento, Profile, UserRole } from '@/types/database'
 
-const ROLE_LABELS: Record<UserRole, string> = { admin: 'Administrador', user: 'Usuário' }
+const ROLE_LABELS: Record<UserRole, string> = {
+  admin:     'Administrador',
+  diretor:   'Diretor',
+  gestor:    'Gestor',
+  comprador: 'Comprador',
+  user:      'Usuário',
+}
 const ROLE_COLORS: Record<UserRole, string> = {
-  admin: 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300',
-  user:  'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
+  admin:     'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300',
+  diretor:   'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300',
+  gestor:    'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+  comprador: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300',
+  user:      'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
+}
+
+type UserComDepto = Profile & {
+  departamento?: Pick<CoreDepartamento, 'id' | 'nome' | 'codigo'> | null
 }
 
 export function UsuariosPage() {
   const { profile: me } = useAuth()
   const isAdmin = me?.role === 'admin'
 
-  const [users, setUsers] = useState<Profile[]>([])
+  const [users, setUsers] = useState<UserComDepto[]>([])
+  const [departamentos, setDepartamentos] = useState<CoreDepartamento[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [editing, setEditing] = useState<Profile | null>(null)
+  const [editing, setEditing] = useState<UserComDepto | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function fetchUsers() {
+  async function fetchData() {
     setLoading(true)
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('nome')
-    setUsers(data ?? [])
+    const [usersResp, deptosResp] = await Promise.all([
+      supabase.from('profiles')
+        .select('*, departamento:core_departamentos!profiles_departamento_id_fkey(id,nome,codigo)')
+        .order('nome'),
+      supabase.from('core_departamentos').select('*').eq('ativo', true).order('nome'),
+    ])
+    setUsers((usersResp.data ?? []) as UserComDepto[])
+    setDepartamentos(deptosResp.data ?? [])
     setLoading(false)
   }
 
-  useEffect(() => { fetchUsers() }, [])
+  useEffect(() => { fetchData() }, [])
 
   const filtered = users.filter(u =>
     u.nome?.toLowerCase().includes(search.toLowerCase()) ||
@@ -45,18 +64,24 @@ export function UsuariosPage() {
     setError(null)
     const { error } = await supabase
       .from('profiles')
-      .update({ nome: editing.nome, role: editing.role })
+      .update({
+        nome: editing.nome,
+        role: editing.role,
+        departamento_id: editing.departamento_id,
+      })
       .eq('id', editing.id)
     setSaving(false)
     if (error) { setError('Erro ao salvar. Tente novamente.'); return }
+    toast.success('Usuário atualizado')
     setEditing(null)
-    fetchUsers()
+    fetchData()
   }
 
-  async function toggleAtivo(user: Profile) {
+  async function toggleAtivo(user: UserComDepto) {
     if (!isAdmin) return
     await supabase.from('profiles').update({ ativo: !user.ativo }).eq('id', user.id)
-    fetchUsers()
+    toast.success(user.ativo ? 'Usuário inativado' : 'Usuário reativado')
+    fetchData()
   }
 
   return (
@@ -123,6 +148,12 @@ export function UsuariosPage() {
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${ROLE_COLORS[user.role]}`}>
                         {ROLE_LABELS[user.role]}
                       </span>
+                      {user.departamento && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:text-gray-300">
+                          <Network size={9} />
+                          {user.departamento.nome}
+                        </span>
+                      )}
                       {!user.ativo && (
                         <span className="inline-flex items-center rounded-full bg-red-100 dark:bg-red-950/40 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
                           Inativo
@@ -185,17 +216,29 @@ export function UsuariosPage() {
                   className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Papel</label>
-                <select
-                  value={editing.role}
-                  onChange={e => setEditing(p => p ? { ...p, role: e.target.value as UserRole } : p)}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option value="user">Usuário</option>
-                  <option value="admin">Administrador</option>
-                </select>
-              </div>
+              <SelectField
+                label="Papel"
+                value={editing.role}
+                onChange={v => setEditing(p => p ? { ...p, role: v as UserRole } : p)}
+                options={[
+                  { value: 'user',      label: 'Usuário' },
+                  { value: 'gestor',    label: 'Gestor' },
+                  { value: 'comprador', label: 'Comprador' },
+                  { value: 'diretor',   label: 'Diretor' },
+                  { value: 'admin',     label: 'Administrador' },
+                ]}
+              />
+              <SelectField
+                label="Departamento"
+                value={editing.departamento_id ?? ''}
+                onChange={v => setEditing(p => p ? { ...p, departamento_id: v || null } : p)}
+                placeholder="— sem departamento —"
+                helper="Define quem aprova as solicitações de compra deste usuário (gestor do departamento)."
+                options={departamentos.map(d => ({
+                  value: d.id,
+                  label: d.codigo ? `${d.codigo} · ${d.nome}` : d.nome,
+                }))}
+              />
               <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
                 Para inativar ou reativar o usuário, use o botão <Power size={10} className="inline" /> na listagem.
               </div>

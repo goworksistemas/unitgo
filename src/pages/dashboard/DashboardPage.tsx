@@ -11,7 +11,7 @@ export function DashboardPage() {
         {saudacao}, {profile?.nome?.split(' ')[0] ?? 'usuário'} 👋
       </h1>
       <p className="mt-2 text-gray-500 dark:text-gray-400">
-        Bem-vindo ao SupplyGo.
+        Oque você precisa hoje?
       </p>
     </div>
   )

@@ -1,0 +1,26 @@
+[
+  {
+    "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-HXV619MDW5&gtm=45je65d0v872374006za200zd872374006&_p=1779113345540&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&are=1&cid=2097209219.1779113333&frm=0&pscdl=noapi&rcb=13&sr=1440x900&uaa=x86&uab=64&uafvl=Not%252FA)Brand%3B99.0.0.0%7CChromium%3B148.0.7778.96&uam=&uamb=0&uap=Windows&uapv=19.0.0&uaw=0&ul=pt-br&_s=5&tag_exp=0~115616986~115938466~115938468&dt=scmListaProdutos.html&dl=https%3A%2F%2Fgowork.e-tetris.com%2FEmpresas%2FGowork%2FModulesTetris%2FSCM&dp=https%3A%2F%2Fgowork.e-tetris.com%2FEmpresas%2FGowork%2FModulesTetris%2FSCM%2FscmListaProdutos.html&sid=1779113333&sct=1&seg=1&en=page_view&_ee=1&ep.COMPANY_ID=Gowork&ep.MODULOATIVO=SCM&ep.USUARIO=LUIS%20CUBA&_et=8768&tfd=21608",
+    "status": 204,
+    "contentType": "text/plain",
+    "method": "POST",
+    "tamanho": 0,
+    "preview": ""
+  },
+  {
+    "url": "https://gowork.e-tetris.com/ESB/ResourceFiles/wsSendUPD.ashx?COMPANY_ID=Gowork&EmpFil=0101&moduloAtivo=SCM",
+    "status": 200,
+    "contentType": "text/html; charset=utf-8",
+    "method": "POST",
+    "tamanho": 5376281,
+    "preview": "{\"errorcode\":\"00\",\"errormsg\":\"OK\",\"content\":\"{\\\"result\\\":{\\\"status\\\":\\\"\\\",\\\"errorcode\\\":\\\"00\\\",\\\"errormsg\\\":\\\"OK\\\",\\\"header\\\":\\\"\\\",\\\"content\\\":{\\\"listofdata\\\":{\\\"data\\\":[{\\\"B1_FILIAL\\\":\\\"01\\\",\\\"B1_COD\\\":\\\"000254         \\\",\\\"B1_DESC\\\":\\\"ORGANIZADOR DE FIO                                             "
+  },
+  {
+    "url": "https://analytics.e-tetris.com/ResourceFiles/wsReportAmbiente.ashx",
+    "status": 200,
+    "contentType": "text/plain",
+    "method": "POST",
+    "tamanho": 0,
+    "preview": ""
+  }
+]

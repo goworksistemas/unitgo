@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   Search, Plus, Power, Edit2, Lock, ChevronRight,
   Package, Tag, X, Check, ChevronDown
@@ -308,6 +308,8 @@ function PainelAtributosProduto({ isAdmin, onAtributoChange }: {
 // Aba: Produtos (com variantes expandíveis e atributos inline)
 // ─────────────────────────────────────────────────────────────
 
+const PAGE_SIZE = 25
+
 function AbaProdutos({ isAdmin, unidades }: {
   isAdmin: boolean
   unidades: PrdUnidadeMedida[]
@@ -315,7 +317,10 @@ function AbaProdutos({ isAdmin, unidades }: {
   const [produtos, setProdutos] = useState<PrdProduto[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filtro, setFiltro] = useState<'ativos' | 'inativos' | 'todos'>('ativos')
+  const [page, setPage] = useState(0)
+  const [total, setTotal] = useState(0)
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set())
   const [abasProduto, setAbasProduto] = useState<Record<string, 'variantes' | 'atributos'>>({})
   const [variantesCache, setVariantesCache] = useState<Record<string, VarianteRica[]>>({})
@@ -324,17 +329,39 @@ function AbaProdutos({ isAdmin, unidades }: {
   const [modalProduto, setModalProduto] = useState<PrdProduto | 'novo' | null>(null)
   const [modalVariante, setModalVariante] = useState<{ produtoId: string; variante?: PrdVariante } | null>(null)
 
-  async function fetchProdutos() {
-    setLoading(true)
-    const { data } = await supabase
-      .from('prd_produtos')
-      .select('*, unidade_medida:prd_unidades_medida(id,nome,sigla,ativo)')
-      .order('nome')
-    setProdutos(data ?? [])
-    setLoading(false)
-  }
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
-  useEffect(() => { fetchProdutos() }, [])
+  // Debounce da busca — evita uma query por tecla
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  // Volta para a primeira página quando o filtro ou a busca mudam
+  useEffect(() => { setPage(0) }, [debouncedSearch, filtro])
+
+  const fetchProdutos = useCallback(async () => {
+    setLoading(true)
+    const from = page * PAGE_SIZE
+    let query = supabase
+      .from('prd_produtos')
+      .select('*, unidade_medida:prd_unidades_medida(id,nome,sigla,ativo)', { count: 'exact' })
+      .order('nome')
+      .range(from, from + PAGE_SIZE - 1)
+
+    if (filtro !== 'todos') query = query.eq('ativo', filtro === 'ativos')
+
+    // Remove caracteres que quebrariam a sintaxe do .or() do PostgREST
+    const q = debouncedSearch.replace(/[,()%]/g, ' ').trim()
+    if (q) query = query.or(`nome.ilike.%${q}%,codigo.ilike.%${q}%`)
+
+    const { data, count } = await query
+    setProdutos(data ?? [])
+    setTotal(count ?? 0)
+    setLoading(false)
+  }, [page, filtro, debouncedSearch])
+
+  useEffect(() => { fetchProdutos() }, [fetchProdutos])
 
   async function carregarVariantes(id: string) {
     setLoadingVar(prev => new Set(prev).add(id))
@@ -372,12 +399,6 @@ function AbaProdutos({ isAdmin, unidades }: {
     await supabase.from('prd_variantes').update({ ativo: !v.ativo }).eq('id', v.id)
     await carregarVariantes(produtoId)
   }
-
-  const filtered = produtos.filter(p => {
-    const s = p.nome.toLowerCase().includes(search.toLowerCase()) || p.codigo.toLowerCase().includes(search.toLowerCase())
-    const a = filtro === 'todos' ? true : filtro === 'ativos' ? p.ativo : !p.ativo
-    return s && a
-  })
 
   return (
     <>
@@ -419,9 +440,9 @@ function AbaProdutos({ isAdmin, unidades }: {
             <div className="flex items-center justify-center py-16">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
             </div>
-          ) : filtered.length === 0 ? (
+          ) : produtos.length === 0 ? (
             <p className="py-14 text-center text-sm text-gray-400 dark:text-gray-500">
-              {search ? 'Nenhum produto encontrado.' : 'Nenhum produto cadastrado.'}
+              {debouncedSearch ? 'Nenhum produto encontrado.' : 'Nenhum produto cadastrado.'}
             </p>
           ) : (
             <div>
@@ -434,7 +455,7 @@ function AbaProdutos({ isAdmin, unidades }: {
                 <span className="text-right">Ações</span>
               </div>
 
-              {filtered.map(produto => {
+              {produtos.map(produto => {
                 const isOpen = expandidos.has(produto.id)
                 const vars = variantesCache[produto.id] ?? []
                 const carregando = loadingVar.has(produto.id)
@@ -604,6 +625,31 @@ function AbaProdutos({ isAdmin, unidades }: {
           )}
         </CardContent>
       </Card>
+
+      {/* Paginação */}
+      {!loading && total > 0 && (
+        <div className="flex items-center justify-between flex-wrap gap-2 mt-3 text-sm">
+          <span className="text-gray-500 dark:text-gray-400">
+            {total} produto{total !== 1 ? 's' : ''} · página {page + 1} de {totalPages}
+          </span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1}
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Próxima
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal produto */}
       {modalProduto !== null && (
