@@ -125,49 +125,6 @@ export function AppMobileDrawer({ open, onClose }: AppMobileDrawerProps) {
                         </Link>
                       )
                     })}
-
-                    {/* Subgroups */}
-                    {group.subgroups?.map(sub => {
-                      const SubIcon = sub.icon
-                      const subHasActive = sub.items.some(i => isActive(i.href))
-                      return (
-                        <div key={sub.subgroup} className="pt-1">
-                          <div className="flex items-center gap-1.5 px-3 pb-0.5">
-                            {SubIcon && <SubIcon className={`h-3 w-3 shrink-0 ${accent.icon}`} />}
-                            <span className={`text-[10px] font-semibold uppercase tracking-wider ${
-                              subHasActive ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500'
-                            }`}>
-                              {sub.subgroup}
-                            </span>
-                          </div>
-                          {sub.items.map((item, idx) => {
-                            const active = isActive(item.href)
-                            const Icon   = item.icon
-                            return (
-                              <Link
-                                key={item.href}
-                                to={item.href}
-                                className={`group/item relative flex min-h-9 animate-flyout-item-enter items-center rounded-lg pl-3 pr-2 py-1.5 text-sm font-medium transition-all active:scale-[0.98] ${
-                                  active
-                                    ? `${accent.activeBg} ${accent.activeText}`
-                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                }`}
-                                style={{ animationDelay: `${Math.min(idx, 12) * 22}ms` }}
-                              >
-                                {active && (
-                                  <span
-                                    className={`pointer-events-none absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full ${accent.activeBar}`}
-                                    aria-hidden
-                                  />
-                                )}
-                                <Icon className="w-4 h-4 mr-2 shrink-0" />
-                                <span className="flex-1 truncate">{item.name}</span>
-                              </Link>
-                            )
-                          })}
-                        </div>
-                      )
-                    })}
                   </div>
                 )}
               </div>

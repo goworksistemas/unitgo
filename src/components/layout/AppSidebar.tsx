@@ -171,49 +171,6 @@ export function AppSidebar({ onExpandedChange }: AppSidebarProps) {
                           </Link>
                         )
                       })}
-
-                      {/* Subgroups */}
-                      {group.subgroups?.map(sub => {
-                        const SubIcon = sub.icon
-                        const subHasActive = sub.items.some(i => isActive(i.href))
-                        return (
-                          <div key={sub.subgroup} className="pt-1">
-                            <div className="flex items-center gap-1.5 px-3 pb-0.5">
-                              {SubIcon && <SubIcon className={`h-3 w-3 shrink-0 ${accent.icon}`} />}
-                              <span className={`text-[10px] font-semibold uppercase tracking-wider ${
-                                subHasActive ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500'
-                              }`}>
-                                {sub.subgroup}
-                              </span>
-                            </div>
-                            {sub.items.map((item, idx) => {
-                              const active = isActive(item.href)
-                              const Icon   = item.icon
-                              return (
-                                <Link
-                                  key={item.href}
-                                  to={item.href}
-                                  className={`group/item relative flex min-h-9 animate-flyout-item-enter items-center rounded-lg pl-3 pr-2 py-1.5 text-sm font-medium transition-all hover:translate-x-0.5 ${
-                                    active
-                                      ? `${accent.activeBg} ${accent.activeText}`
-                                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                  }`}
-                                  style={{ animationDelay: `${Math.min(idx, 12) * 22}ms` }}
-                                >
-                                  {active && (
-                                    <span
-                                      className={`pointer-events-none absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full ${accent.activeBar}`}
-                                      aria-hidden
-                                    />
-                                  )}
-                                  <Icon className="w-4 h-4 mr-2 shrink-0" />
-                                  <span className="flex-1 truncate">{item.name}</span>
-                                </Link>
-                              )
-                            })}
-                          </div>
-                        )
-                      })}
                     </div>
                   )}
                 </div>
@@ -324,39 +281,6 @@ export function AppSidebar({ onExpandedChange }: AppSidebarProps) {
                   <FIcon className="w-4 h-4 shrink-0" />
                   {fi.name}
                 </Link>
-              )
-            })}
-            {flyoutGroup.subgroups?.map(sub => {
-              const fa      = ACCENTS[flyoutGroup.accent]
-              const SubIcon = sub.icon
-              return (
-                <div key={sub.subgroup}>
-                  <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
-                    {SubIcon && <SubIcon className={`h-3 w-3 ${fa.icon}`} />}
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
-                      {sub.subgroup}
-                    </span>
-                  </div>
-                  {sub.items.map(fi => {
-                    const FIcon   = fi.icon
-                    const fActive = isActive(fi.href)
-                    return (
-                      <Link
-                        key={fi.href}
-                        to={fi.href}
-                        className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
-                          fActive
-                            ? `${fa.activeBg} ${fa.activeText}`
-                            : `text-gray-700 dark:text-gray-300 ${fa.hover} dark:hover:bg-gray-800`
-                        }`}
-                        onClick={() => setFlyout(null)}
-                      >
-                        <FIcon className="w-4 h-4 shrink-0" />
-                        {fi.name}
-                      </Link>
-                    )
-                  })}
-                </div>
               )
             })}
           </div>

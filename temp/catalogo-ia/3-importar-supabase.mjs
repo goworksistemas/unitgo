@@ -67,6 +67,27 @@ function siglaCanonica(unidadeCsv) {
 }
 
 // -------------------------------------------------------------------
+// Normaliza nome de atributo: remove acento e faz casefold para
+// consolidar variacoes que a IA gerou ("Dimensao"/"Dimensão",
+// "Potencia"/"Potência", etc.)
+// -------------------------------------------------------------------
+function chaveAtributo(nome) {
+  return (nome || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+// Mapeia chave normalizada -> nome canonico (o primeiro encontrado).
+// Decisao: usa SEMPRE a versao com acento (mais natural em pt-BR) quando
+// existir, senao a forma sem acento.
+function escolherNomeCanonicoAtributo(nomes) {
+  const comAcento = nomes.find((n) => /[\u00C0-\u024F]/.test(n));
+  if (comAcento) return comAcento;
+  return nomes[0];
+}
+
+// -------------------------------------------------------------------
 // Helpers Supabase
 // -------------------------------------------------------------------
 async function carregarUnidades() {
@@ -181,13 +202,37 @@ async function buscarProdutoPorCanonicoIdInterno(idMap, canonicoId) {
   }
 
   // 2) Carrega/garante atributos descobertos pela IA (nivel global)
+  // Antes consolida nomes equivalentes (Dimensao == Dimensão, Potencia == Potência, etc.)
+  log('Consolidando atributos com acentos diferentes...');
+  const variacoesPorChave = new Map(); // chaveNormalizada -> Set(nomesUsados)
+  for (const p of catalogo.produtos) {
+    for (const nome of Object.keys(p.atributos || {})) {
+      const k = chaveAtributo(nome);
+      if (!variacoesPorChave.has(k)) variacoesPorChave.set(k, new Set());
+      variacoesPorChave.get(k).add(nome);
+    }
+  }
+  const renomearAtributo = new Map(); // nomeUsado -> nomeCanonico
+  for (const [, variacoes] of variacoesPorChave) {
+    if (variacoes.size <= 1) continue;
+    const canonico = escolherNomeCanonicoAtributo([...variacoes]);
+    for (const v of variacoes) {
+      if (v !== canonico) {
+        renomearAtributo.set(v, canonico);
+        log(`  '${v}' -> '${canonico}'`);
+      }
+    }
+  }
+  log(`Atributos consolidados: ${renomearAtributo.size} duplicatas removidas.`);
+
   log('Garantindo atributos e valores no banco...');
   const atributosMap = await carregarAtributos();
-  const valoresPorAtributo = new Map(); // nome -> Set(valor)
+  const valoresPorAtributo = new Map(); // nome canonico -> Set(valor)
   for (const p of catalogo.produtos) {
     for (const [nome, valores] of Object.entries(p.atributos || {})) {
-      if (!valoresPorAtributo.has(nome)) valoresPorAtributo.set(nome, new Set());
-      for (const val of valores) valoresPorAtributo.get(nome).add(val);
+      const nomeFinal = renomearAtributo.get(nome) || nome;
+      if (!valoresPorAtributo.has(nomeFinal)) valoresPorAtributo.set(nomeFinal, new Set());
+      for (const val of valores) valoresPorAtributo.get(nomeFinal).add(val);
     }
   }
   for (const [nome, valores] of valoresPorAtributo) {
@@ -306,13 +351,16 @@ async function buscarProdutoPorCanonicoIdInterno(idMap, canonicoId) {
       varCriadas += 1;
     }
 
-    // Vincula atributos
+    // Vincula atributos (aplicando consolidacao de acento)
     if (v.atributos?.length && !DRY_RUN) {
-      // Apaga vinculos existentes para garantir idempotencia
       await sb.from('prd_variante_atributos').delete().eq('variante_id', varianteId);
       const linhas = [];
+      const vistos = new Set(); // evita duplicidade do mesmo atributo apos rename
       for (const a of v.atributos) {
-        const at = atributosMap.get(a.nome);
+        const nomeFinal = renomearAtributo.get(a.nome) || a.nome;
+        if (vistos.has(nomeFinal)) continue;
+        vistos.add(nomeFinal);
+        const at = atributosMap.get(nomeFinal);
         if (!at) continue;
         const valId = at.valores.get(a.valor);
         if (!valId) continue;

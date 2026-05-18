@@ -1,6 +1,6 @@
 import {
-  LayoutDashboard, Users, ShieldCheck, BookOpen, Package, Scale,
-  ShoppingCart, FileText, Building2, Network,
+  LayoutDashboard, Users, ShieldCheck, Package, Scale,
+  ShoppingCart, FileText, Building2, Network, FileSearch, Truck, Receipt, Gavel,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -10,18 +10,11 @@ export interface NavItem {
   icon: LucideIcon
 }
 
-export interface NavSubgroup {
-  subgroup: string
-  icon?: LucideIcon
-  items: NavItem[]
-}
-
 export interface NavGroup {
   group: string
   accent: AccentKey
   icon?: LucideIcon
   items: NavItem[]
-  subgroups?: NavSubgroup[]
 }
 
 export type AccentKey = 'blue' | 'slate' | 'emerald'
@@ -75,6 +68,10 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: ShoppingCart,
     items: [
       { name: 'Solicitações', href: '/compras/solicitacoes', icon: FileText },
+      { name: 'Cotações',     href: '/compras/cotacoes',     icon: FileSearch },
+      { name: 'Pedidos',      href: '/compras/pedidos',      icon: ShoppingCart },
+      { name: 'Recebimentos', href: '/compras/recebimentos', icon: Receipt },
+      { name: 'Fornecedores', href: '/compras/fornecedores', icon: Truck },
     ],
   },
   {
@@ -82,25 +79,12 @@ export const NAV_GROUPS: NavGroup[] = [
     accent: 'slate',
     icon: ShieldCheck,
     items: [
-      { name: 'Usuários', href: '/admin/usuarios', icon: Users },
-    ],
-    subgroups: [
-      {
-        subgroup: 'Organização',
-        icon: Network,
-        items: [
-          { name: 'Empresas',      href: '/cadastros/empresas',      icon: Building2 },
-          { name: 'Departamentos', href: '/cadastros/departamentos', icon: Network   },
-        ],
-      },
-      {
-        subgroup: 'Cadastros',
-        icon: BookOpen,
-        items: [
-          { name: 'Produtos',           href: '/cadastros/produtos',         icon: Package },
-          { name: 'Unidades de medida', href: '/cadastros/unidades-medida',  icon: Scale   },
-        ],
-      },
+      { name: 'Usuários',            href: '/admin/usuarios',                icon: Users     },
+      { name: 'Empresas',            href: '/cadastros/empresas',            icon: Building2 },
+      { name: 'Departamentos',       href: '/cadastros/departamentos',       icon: Network   },
+      { name: 'Alçadas de aprovação',href: '/cadastros/alcadas-aprovacao',   icon: Gavel     },
+      { name: 'Produtos',            href: '/cadastros/produtos',            icon: Package   },
+      { name: 'Unidades de medida',  href: '/cadastros/unidades-medida',     icon: Scale     },
     ],
   },
 ]

@@ -165,7 +165,7 @@ export type CmpSolicitacaoItem = {
   unidade_medida?: PrdUnidadeMedida
 }
 
-export type CmpAprovacaoTipo = 'solicitacao' | 'pedido'
+export type CmpAprovacaoTipo = 'solicitacao' | 'cotacao' | 'pedido'
 export type CmpAprovacaoAcao = 'enviou' | 'aprovou' | 'reprovou' | 'cancelou' | 'encaminhou'
 
 export type CmpAprovacao = {
@@ -178,6 +178,219 @@ export type CmpAprovacao = {
   comentario: string | null
   created_at: string
   aprovador?: Profile
+}
+
+// ── Módulo de Compras — Fornecedor ────────────────────────────
+
+export type CmpFornecedor = {
+  id: string
+  cnpj_cpf: string | null
+  razao_social: string
+  nome_fantasia: string | null
+  email: string | null
+  telefone: string | null
+  observacoes: string | null
+  ativo: boolean
+  created_at: string
+  updated_at: string
+}
+
+// ── Módulo de Compras — Cotação ───────────────────────────────
+
+export type CmpCotacaoStatus =
+  | 'aberta'
+  | 'respondida'
+  | 'vencedor_escolhido'
+  | 'encerrada'
+  | 'cancelada'
+
+export type CmpCotacao = {
+  id: string
+  numero: string
+  empresa_id: string
+  comprador_id: string
+  titulo: string
+  observacoes: string | null
+  prazo_resposta: string | null
+  status: CmpCotacaoStatus
+  aprovador_id: string | null
+  aprovado_em: string | null
+  motivo_reprovacao: string | null
+  cancelada_em: string | null
+  created_at: string
+  updated_at: string
+  empresa?: CoreEmpresa
+  comprador?: Profile
+  aprovador?: Profile
+  solicitacoes?: CmpSolicitacao[]
+  itens?: CmpCotacaoItem[]
+  fornecedores?: CmpCotacaoFornecedor[]
+  escolhas?: CmpCotacaoEscolha[]
+}
+
+export type CmpCotacaoSolicitacao = {
+  cotacao_id: string
+  solicitacao_id: string
+}
+
+export type CmpCotacaoItem = {
+  id: string
+  cotacao_id: string
+  linha: number
+  solicitacao_item_id: string | null
+  produto_id: string
+  variante_id: string | null
+  unidade_medida_id: string
+  quantidade: number
+  observacao: string | null
+  created_at: string
+  produto?: PrdProduto
+  variante?: PrdVariante
+  unidade_medida?: PrdUnidadeMedida
+}
+
+export type CmpCotacaoFornecedorStatus = 'convidado' | 'respondido' | 'recusado'
+
+export type CmpCotacaoFornecedor = {
+  id: string
+  cotacao_id: string
+  fornecedor_id: string
+  status_convite: CmpCotacaoFornecedorStatus
+  prazo_entrega_dias: number | null
+  condicao_pagamento: string | null
+  observacao: string | null
+  respondido_em: string | null
+  created_at: string
+  fornecedor?: CmpFornecedor
+  respostas?: CmpCotacaoRespostaItem[]
+}
+
+export type CmpCotacaoRespostaItem = {
+  id: string
+  cotacao_fornecedor_id: string
+  cotacao_item_id: string
+  preco_unitario: number
+  observacao: string | null
+  created_at: string
+}
+
+export type CmpCotacaoEscolha = {
+  id: string
+  cotacao_id: string
+  cotacao_item_id: string
+  cotacao_fornecedor_id: string
+  preco_final_unitario: number
+  observacao: string | null
+  created_at: string
+}
+
+// ── Módulo de Compras — Pedido de Compra ─────────────────────
+
+export type CmpPedidoStatus =
+  | 'rascunho'
+  | 'aguardando_aprovacao'
+  | 'aprovado'
+  | 'enviado'
+  | 'parcialmente_recebido'
+  | 'recebido'
+  | 'cancelado'
+
+export type CmpPedidoItemStatus =
+  | 'pendente'
+  | 'parcialmente_recebido'
+  | 'recebido'
+  | 'cancelado'
+
+export type CmpPedido = {
+  id: string
+  numero: string
+  empresa_id: string
+  fornecedor_id: string
+  cotacao_id: string | null
+  comprador_id: string
+  prazo_entrega_dias: number | null
+  condicao_pagamento: string | null
+  observacoes: string | null
+  status: CmpPedidoStatus
+  aprovador_id: string | null
+  aprovado_em: string | null
+  enviado_em: string | null
+  cancelada_em: string | null
+  motivo_cancelamento: string | null
+  created_at: string
+  updated_at: string
+  empresa?: CoreEmpresa
+  fornecedor?: CmpFornecedor
+  cotacao?: CmpCotacao
+  comprador?: Profile
+  aprovador?: Profile
+  itens?: CmpPedidoItem[]
+}
+
+export type CmpPedidoItem = {
+  id: string
+  pedido_id: string
+  linha: number
+  cotacao_item_id: string | null
+  solicitacao_item_id: string | null
+  produto_id: string
+  variante_id: string | null
+  unidade_medida_id: string
+  quantidade: number
+  preco_unitario: number
+  quantidade_recebida: number
+  observacao: string | null
+  status_item: CmpPedidoItemStatus
+  created_at: string
+  updated_at: string
+  produto?: PrdProduto
+  variante?: PrdVariante
+  unidade_medida?: PrdUnidadeMedida
+}
+
+// ── Módulo de Compras — Recebimento + NF ─────────────────────
+
+export type CmpRecebimento = {
+  id: string
+  numero: string
+  pedido_id: string
+  recebedor_id: string
+  data_recebimento: string
+  observacoes: string | null
+  nf_id: string | null
+  created_at: string
+  updated_at: string
+  pedido?: CmpPedido
+  recebedor?: Profile
+  nf?: CmpNotaFiscal
+  itens?: CmpRecebimentoItem[]
+}
+
+export type CmpRecebimentoItem = {
+  id: string
+  recebimento_id: string
+  pedido_item_id: string
+  quantidade_recebida: number
+  divergencia: string | null
+  observacao: string | null
+  created_at: string
+  pedido_item?: CmpPedidoItem
+}
+
+export type CmpNotaFiscal = {
+  id: string
+  cnpj_emitente: string
+  fornecedor_id: string | null
+  numero: string
+  serie: string | null
+  data_emissao: string
+  valor_total: number
+  chave_acesso: string | null
+  observacoes: string | null
+  created_at: string
+  updated_at: string
+  fornecedor?: CmpFornecedor
+  pedidos?: CmpPedido[]
 }
 
 // ── Tipagem do cliente Supabase ───────────────────────────────
@@ -206,6 +419,19 @@ type CmpSolicitacaoItemRow =
   Omit<CmpSolicitacaoItem, 'produto' | 'variante' | 'unidade_medida'>
 
 type CmpAprovacaoRow = Omit<CmpAprovacao, 'aprovador'>
+
+type CmpFornecedorRow            = CmpFornecedor
+type CmpCotacaoRow               = Omit<CmpCotacao, 'empresa' | 'comprador' | 'aprovador' | 'solicitacoes' | 'itens' | 'fornecedores' | 'escolhas'>
+type CmpCotacaoSolicitacaoRow    = CmpCotacaoSolicitacao
+type CmpCotacaoItemRow           = Omit<CmpCotacaoItem, 'produto' | 'variante' | 'unidade_medida'>
+type CmpCotacaoFornecedorRow     = Omit<CmpCotacaoFornecedor, 'fornecedor' | 'respostas'>
+type CmpCotacaoRespostaItemRow   = CmpCotacaoRespostaItem
+type CmpCotacaoEscolhaRow        = CmpCotacaoEscolha
+type CmpPedidoRow                = Omit<CmpPedido, 'empresa' | 'fornecedor' | 'cotacao' | 'comprador' | 'aprovador' | 'itens'>
+type CmpPedidoItemRow            = Omit<CmpPedidoItem, 'produto' | 'variante' | 'unidade_medida'>
+type CmpRecebimentoRow           = Omit<CmpRecebimento, 'pedido' | 'recebedor' | 'nf' | 'itens'>
+type CmpRecebimentoItemRow       = Omit<CmpRecebimentoItem, 'pedido_item'>
+type CmpNotaFiscalRow            = Omit<CmpNotaFiscal, 'fornecedor' | 'pedidos'>
 
 // Torna opcionais as chaves cujo valor admite null (colunas com default no banco).
 type NullableKeys<T> = { [K in keyof T]-?: null extends T[K] ? K : never }[keyof T]
@@ -430,6 +656,100 @@ export type Database = {
             referencedColumns: ['id']
           },
         ]
+      >
+      cmp_fornecedores: TableDef<
+        CmpFornecedorRow,
+        Omit<CmpFornecedorRow, 'id' | 'ativo' | 'created_at' | 'updated_at'> &
+          Partial<Pick<CmpFornecedorRow, 'id' | 'ativo' | 'created_at' | 'updated_at'>>,
+        Partial<Omit<CmpFornecedorRow, 'id' | 'created_at' | 'updated_at'>>
+      >
+      cmp_cotacoes: TableDef<
+        CmpCotacaoRow,
+        Omit<CmpCotacaoRow,
+          'id' | 'numero' | 'status' |
+          'aprovador_id' | 'aprovado_em' | 'motivo_reprovacao' | 'cancelada_em' |
+          'created_at' | 'updated_at'> &
+          Partial<Pick<CmpCotacaoRow,
+            'id' | 'numero' | 'status' |
+            'aprovador_id' | 'aprovado_em' | 'motivo_reprovacao' | 'cancelada_em' |
+            'created_at' | 'updated_at'>>,
+        Partial<Omit<CmpCotacaoRow, 'id' | 'numero' | 'created_at' | 'updated_at'>>
+      >
+      cmp_cotacoes_solicitacoes: TableDef<
+        CmpCotacaoSolicitacaoRow,
+        CmpCotacaoSolicitacaoRow,
+        Partial<CmpCotacaoSolicitacaoRow>
+      >
+      cmp_cotacoes_itens: TableDef<
+        CmpCotacaoItemRow,
+        Omit<CmpCotacaoItemRow, 'id' | 'created_at'> &
+          Partial<Pick<CmpCotacaoItemRow, 'id' | 'created_at'>>,
+        Partial<Omit<CmpCotacaoItemRow, 'id' | 'created_at'>>
+      >
+      cmp_cotacoes_fornecedores: TableDef<
+        CmpCotacaoFornecedorRow,
+        Omit<CmpCotacaoFornecedorRow, 'id' | 'status_convite' | 'created_at'> &
+          Partial<Pick<CmpCotacaoFornecedorRow, 'id' | 'status_convite' | 'created_at'>>,
+        Partial<Omit<CmpCotacaoFornecedorRow, 'id' | 'created_at'>>
+      >
+      cmp_cotacoes_respostas_itens: TableDef<
+        CmpCotacaoRespostaItemRow,
+        Omit<CmpCotacaoRespostaItemRow, 'id' | 'created_at'> &
+          Partial<Pick<CmpCotacaoRespostaItemRow, 'id' | 'created_at'>>,
+        Partial<Omit<CmpCotacaoRespostaItemRow, 'id' | 'created_at'>>
+      >
+      cmp_cotacoes_escolhas: TableDef<
+        CmpCotacaoEscolhaRow,
+        Omit<CmpCotacaoEscolhaRow, 'id' | 'created_at'> &
+          Partial<Pick<CmpCotacaoEscolhaRow, 'id' | 'created_at'>>,
+        Partial<Omit<CmpCotacaoEscolhaRow, 'id' | 'created_at'>>
+      >
+      cmp_pedidos_compra: TableDef<
+        CmpPedidoRow,
+        Omit<CmpPedidoRow,
+          'id' | 'numero' | 'status' |
+          'aprovador_id' | 'aprovado_em' | 'enviado_em' | 'cancelada_em' | 'motivo_cancelamento' |
+          'created_at' | 'updated_at'> &
+          Partial<Pick<CmpPedidoRow,
+            'id' | 'numero' | 'status' |
+            'aprovador_id' | 'aprovado_em' | 'enviado_em' | 'cancelada_em' | 'motivo_cancelamento' |
+            'created_at' | 'updated_at'>>,
+        Partial<Omit<CmpPedidoRow, 'id' | 'numero' | 'created_at' | 'updated_at'>>
+      >
+      cmp_pedidos_compra_itens: TableDef<
+        CmpPedidoItemRow,
+        Omit<CmpPedidoItemRow,
+          'id' | 'status_item' | 'quantidade_recebida' |
+          'created_at' | 'updated_at'> &
+          Partial<Pick<CmpPedidoItemRow,
+            'id' | 'status_item' | 'quantidade_recebida' |
+            'created_at' | 'updated_at'>>,
+        Partial<Omit<CmpPedidoItemRow, 'id' | 'created_at' | 'updated_at'>>
+      >
+      cmp_recebimentos: TableDef<
+        CmpRecebimentoRow,
+        Omit<CmpRecebimentoRow,
+          'id' | 'numero' | 'data_recebimento' | 'created_at' | 'updated_at'> &
+          Partial<Pick<CmpRecebimentoRow,
+            'id' | 'numero' | 'data_recebimento' | 'created_at' | 'updated_at'>>,
+        Partial<Omit<CmpRecebimentoRow, 'id' | 'numero' | 'created_at' | 'updated_at'>>
+      >
+      cmp_recebimentos_itens: TableDef<
+        CmpRecebimentoItemRow,
+        Omit<CmpRecebimentoItemRow, 'id' | 'created_at'> &
+          Partial<Pick<CmpRecebimentoItemRow, 'id' | 'created_at'>>,
+        Partial<Omit<CmpRecebimentoItemRow, 'id' | 'created_at'>>
+      >
+      cmp_notas_fiscais: TableDef<
+        CmpNotaFiscalRow,
+        Omit<CmpNotaFiscalRow, 'id' | 'created_at' | 'updated_at'> &
+          Partial<Pick<CmpNotaFiscalRow, 'id' | 'created_at' | 'updated_at'>>,
+        Partial<Omit<CmpNotaFiscalRow, 'id' | 'created_at' | 'updated_at'>>
+      >
+      cmp_notas_fiscais_pedidos: TableDef<
+        { nf_id: string; pedido_id: string },
+        { nf_id: string; pedido_id: string },
+        Partial<{ nf_id: string; pedido_id: string }>
       >
     }
     Views: Record<string, never>
