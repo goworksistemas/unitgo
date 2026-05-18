@@ -18,7 +18,6 @@ export function DepartamentosPage() {
   const [perfis, setPerfis] = useState<Profile[]>([])
   const [departamentos, setDepartamentos] = useState<DeptoFull[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   const [editando, setEditando] = useState<DeptoFull | 'novo' | null>(null)
 
@@ -69,12 +68,6 @@ export function DepartamentosPage() {
           )}
         </div>
       </div>
-
-      {error && (
-        <div className="flex items-start gap-2 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-3 py-2 text-sm text-red-700 dark:text-red-400">
-          <AlertCircle size={14} className="mt-0.5 shrink-0" /> {error}
-        </div>
-      )}
 
       <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-gray-900">
         <CardContent className="p-0">

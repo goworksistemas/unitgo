@@ -702,10 +702,14 @@ function ModalProduto({ produto, unidades, onSalvar, onFechar }: {
     if (!nome.trim()) { setError('Nome é obrigatório.'); return }
     if (!unidadeId) { setError('Selecione uma unidade.'); return }
     setSaving(true); setError(null)
-    const payload = { nome: nome.trim(), descricao: descricao.trim() || null, unidade_medida_id: unidadeId }
     const { error } = isEditing
-      ? await supabase.from('prd_produtos').update(payload).eq('id', produto!.id)
-      : await supabase.from('prd_produtos').insert(payload)
+      ? await supabase
+          .from('prd_produtos')
+          .update({ nome: nome.trim(), descricao: descricao.trim() || null, unidade_medida_id: unidadeId })
+          .eq('id', produto!.id)
+      : await supabase
+          .from('prd_produtos')
+          .insert({ nome: nome.trim(), descricao: descricao.trim() || null, unidade_medida_id: unidadeId, tipo: 'produto' })
     setSaving(false)
     if (error) { setError('Erro ao salvar. Tente novamente.'); return }
     onSalvar()
