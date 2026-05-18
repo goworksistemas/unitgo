@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import {
-  ChevronLeft, Save, Send, Plus, Trash2, Search, Package, X, AlertCircle, Network,
+  ChevronLeft, Send, Plus, Trash2, Search, Package, X, AlertCircle, Network,
 } from 'lucide-react'
 import { Button } from '@heroui/react'
 import { toast } from 'sonner'
@@ -9,13 +9,12 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { ChoiceField } from '@/components/ui/ChoiceField'
 import type {
-  CmpPrioridade, CmpSolicitacao,
+  CmpPrioridade,
   CoreDepartamento, CoreEmpresa,
   PrdProduto, PrdUnidadeMedida,
 } from '@/types/database'
 
 interface ItemForm {
-  id?: string
   linha: number
   produto_id: string
   produto?: PrdProduto
@@ -27,18 +26,14 @@ interface ItemForm {
 }
 
 export function SolicitacaoFormPage() {
-  const { id } = useParams<{ id: string }>()
-  const isEdit = !!id
   const navigate = useNavigate()
   const { profile } = useAuth()
 
   const [empresas, setEmpresas] = useState<CoreEmpresa[]>([])
   const [departamento, setDepartamento] = useState<CoreDepartamento | null>(null)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [scAtual, setScAtual] = useState<CmpSolicitacao | null>(null)
 
   // Cabeçalho
   const [empresaId, setEmpresaId] = useState('')
@@ -52,14 +47,13 @@ export function SolicitacaoFormPage() {
 
   const empresasAtivas = useMemo(() => empresas.filter(e => e.ativo), [empresas])
 
-  // Carrega master data + (se for edit) a SC e itens
+  // Carrega master data
   useEffect(() => {
     let cancelled = false
     async function carregar() {
       setLoading(true)
       const empResp = await supabase.from('core_empresas').select('*').eq('ativo', true).order('razao_social')
 
-      // Carrega o departamento do solicitante (vem do profile)
       let depto: CoreDepartamento | null = null
       if (profile?.departamento_id) {
         const { data } = await supabase
@@ -74,51 +68,13 @@ export function SolicitacaoFormPage() {
       setEmpresas(empResp.data ?? [])
       setDepartamento(depto)
 
-      if (isEdit && id) {
-        const { data: sc } = await supabase
-          .from('cmp_solicitacoes_compra').select('*').eq('id', id).single()
-        if (cancelled) return
-        if (!sc) {
-          setError('Solicitação não encontrada.')
-          setLoading(false); return
-        }
-        if (sc.status !== 'rascunho') {
-          navigate(`/compras/solicitacoes/${id}`, { replace: true })
-          return
-        }
-        setScAtual(sc as CmpSolicitacao)
-        setEmpresaId(sc.empresa_id)
-        setPrioridade(sc.prioridade)
-        setDataNecessaria(sc.data_necessaria ?? '')
-        setJustificativa(sc.justificativa ?? '')
-        setObservacoes(sc.observacoes ?? '')
-
-        const { data: itensDb } = await supabase
-          .from('cmp_solicitacoes_compra_itens')
-          .select('*, produto:prd_produtos(id,codigo,nome,unidade_medida_id,tipo)')
-          .eq('solicitacao_id', id)
-          .order('linha')
-        if (cancelled) return
-        setItens((itensDb ?? []).map(it => ({
-          id: it.id,
-          linha: it.linha,
-          produto_id: it.produto_id,
-          produto: it.produto as PrdProduto | undefined,
-          variante_id: it.variante_id,
-          unidade_medida_id: it.unidade_medida_id,
-          quantidade: Number(it.quantidade),
-          preco_estimado: it.preco_estimado != null ? Number(it.preco_estimado) : null,
-          observacao: it.observacao ?? '',
-        })))
-      } else {
-        const emp = (empResp.data ?? []).find(e => e.ativo)
-        if (emp) setEmpresaId(emp.id)
-      }
+      const emp = (empResp.data ?? []).find(e => e.ativo)
+      if (emp) setEmpresaId(emp.id)
       setLoading(false)
     }
     carregar()
     return () => { cancelled = true }
-  }, [id, isEdit, navigate, profile?.departamento_id])
+  }, [profile?.departamento_id])
 
   function adicionarItemVazio() {
     setItens(prev => [
@@ -166,14 +122,14 @@ export function SolicitacaoFormPage() {
     return null
   }
 
-  async function salvarRascunho(): Promise<string | null> {
+  async function criarEEnviar() {
     const erro = validar()
-    if (erro) { setError(erro); toast.error(erro); return null }
-    setError(null); setSaving(true)
+    if (erro) { setError(erro); toast.error(erro); return }
+    setError(null); setSending(true)
     try {
-      let scId = scAtual?.id
+      const agora = new Date().toISOString()
 
-      const payloadSc = {
+      const { data: sc, error: scErr } = await supabase.from('cmp_solicitacoes_compra').insert({
         empresa_id: empresaId,
         departamento_id: profile!.departamento_id!,
         solicitante_id: profile!.id,
@@ -181,26 +137,13 @@ export function SolicitacaoFormPage() {
         data_necessaria: dataNecessaria || null,
         justificativa: justificativa.trim() || null,
         observacoes: observacoes.trim() || null,
-      }
-
-      if (scId) {
-        const { error } = await supabase.from('cmp_solicitacoes_compra').update(payloadSc).eq('id', scId)
-        if (error) throw error
-      } else {
-        const { data, error } = await supabase
-          .from('cmp_solicitacoes_compra')
-          .insert({ ...payloadSc, status: 'rascunho' })
-          .select('id')
-          .single()
-        if (error || !data) throw error ?? new Error('Falha ao criar')
-        scId = data.id
-      }
-
-      // Sincroniza itens (apaga e reinsere)
-      await supabase.from('cmp_solicitacoes_compra_itens').delete().eq('solicitacao_id', scId)
+        status: 'aguardando_aprovacao',
+        enviada_em: agora,
+      }).select('id').single()
+      if (scErr || !sc) throw scErr ?? new Error('Falha ao criar')
 
       const payloadItens = itens.map(it => ({
-        solicitacao_id: scId!,
+        solicitacao_id: sc.id,
         linha: it.linha,
         produto_id: it.produto_id,
         variante_id: it.variante_id,
@@ -212,48 +155,21 @@ export function SolicitacaoFormPage() {
       const { error: itensError } = await supabase.from('cmp_solicitacoes_compra_itens').insert(payloadItens)
       if (itensError) throw itensError
 
-      toast.success('Rascunho salvo')
-      return scId!
-    } catch (err) {
-      console.error(err)
-      const msg = err instanceof Error ? err.message : 'Erro ao salvar.'
-      setError(msg)
-      toast.error('Erro ao salvar a solicitação.')
-      return null
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  async function salvarERedirecionar() {
-    const scId = await salvarRascunho()
-    if (scId) navigate(`/compras/solicitacoes/${scId}`)
-  }
-
-  async function enviarParaAprovacao() {
-    const scId = await salvarRascunho()
-    if (!scId) return
-    setSending(true)
-    try {
-      const agora = new Date().toISOString()
-      const { error: upErr } = await supabase
-        .from('cmp_solicitacoes_compra')
-        .update({ status: 'aguardando_aprovacao', enviada_em: agora })
-        .eq('id', scId)
-      if (upErr) throw upErr
-
       await supabase.from('cmp_aprovacoes').insert({
         documento_tipo: 'solicitacao',
-        documento_id: scId,
+        documento_id: sc.id,
         aprovador_id: profile!.id,
         acao: 'enviou',
         comentario: null,
       })
+
       toast.success('Solicitação enviada para aprovação')
-      navigate(`/compras/solicitacoes/${scId}`)
+      navigate(`/compras/solicitacoes/${sc.id}`)
     } catch (err) {
       console.error(err)
-      toast.error('Erro ao enviar para aprovação.')
+      const msg = err instanceof Error ? err.message : 'Erro ao criar.'
+      setError(msg)
+      toast.error('Erro ao enviar solicitação.')
     } finally {
       setSending(false)
     }
@@ -279,30 +195,19 @@ export function SolicitacaoFormPage() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              {isEdit ? `Editar rascunho` : 'Nova solicitação de compra'}
+              Nova solicitação de compra
             </h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {isEdit && scAtual?.numero
-                ? <span className="font-mono">{scAtual.numero}</span>
-                : 'Preencha os dados, adicione itens e envie para aprovação do gestor do seu departamento.'}
+              Preencha os dados, adicione itens e envie para aprovação do gestor do seu departamento.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              isDisabled={saving || sending}
-              onPress={salvarERedirecionar}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2 text-sm font-medium flex items-center gap-1.5"
-            >
-              <Save size={14} /> {saving ? 'Salvando…' : 'Salvar rascunho'}
-            </Button>
-            <Button
-              isDisabled={saving || sending}
-              onPress={enviarParaAprovacao}
-              className="bg-emerald-600 text-white hover:bg-emerald-700 aria-disabled:opacity-60 px-3 py-2 text-sm font-medium flex items-center gap-1.5"
-            >
-              <Send size={14} /> {sending ? 'Enviando…' : 'Enviar para aprovação'}
-            </Button>
-          </div>
+          <Button
+            isDisabled={sending}
+            onPress={criarEEnviar}
+            className="bg-emerald-600 text-white hover:bg-emerald-700 aria-disabled:opacity-60 px-3 py-2 text-sm font-medium flex items-center gap-1.5"
+          >
+            <Send size={14} /> {sending ? 'Enviando…' : 'Enviar para aprovação'}
+          </Button>
         </div>
       </div>
 
@@ -567,7 +472,7 @@ function LookupProdutos({ onSelecionar, onFechar }: {
     const term = debounced.replace(/[,()%]/g, ' ').trim()
     if (term) q = q.or(`nome.ilike.%${term}%,codigo.ilike.%${term}%`)
     const { data } = await q
-    setResultados((data ?? []) as (PrdProduto & { unidade_medida?: PrdUnidadeMedida })[])
+    setResultados((data ?? []) as unknown as (PrdProduto & { unidade_medida?: PrdUnidadeMedida })[])
     setLoading(false)
   }, [debounced])
 

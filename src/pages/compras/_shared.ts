@@ -10,11 +10,6 @@ export interface StatusMeta {
 }
 
 export const STATUS_META: Record<CmpSolicitacaoStatus, StatusMeta> = {
-  rascunho: {
-    label: 'Rascunho',
-    badge: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700',
-    dot:   'bg-gray-400',
-  },
   aguardando_aprovacao: {
     label: 'Aguardando aprovação',
     badge: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800',
@@ -148,11 +143,6 @@ export const COTACAO_STATUS_META: Record<CmpCotacaoStatus, StatusMeta> = {
 }
 
 export const PEDIDO_STATUS_META: Record<CmpPedidoStatus, StatusMeta> = {
-  rascunho: {
-    label: 'Rascunho',
-    badge: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700',
-    dot:   'bg-gray-400',
-  },
   aguardando_aprovacao: {
     label: 'Aguardando aprovação',
     badge: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800',

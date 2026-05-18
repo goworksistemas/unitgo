@@ -13,7 +13,6 @@ const PAGE_SIZE = 25
 
 const FILTROS_STATUS: { key: CmpSolicitacaoStatus | 'todas'; label: string }[] = [
   { key: 'todas',                label: 'Todas'        },
-  { key: 'rascunho',             label: 'Rascunho'     },
   { key: 'aguardando_aprovacao', label: 'Aguardando'   },
   { key: 'aprovada',             label: 'Aprovada'     },
   { key: 'reprovada',            label: 'Reprovada'    },
@@ -107,7 +106,7 @@ export function SolicitacoesPage() {
       {/* Resumo rápido (chevron) */}
       <div className="flex items-stretch overflow-x-auto py-1">
         {FILTROS_STATUS
-          .filter(f => f.key !== 'todas' && f.key !== 'rascunho' && f.key !== 'cancelada')
+          .filter(f => f.key !== 'todas' && f.key !== 'cancelada')
           .map((f, idx, arr) => {
             const meta    = STATUS_META[f.key as CmpSolicitacaoStatus]
             const count   = resumo[f.key] ?? 0

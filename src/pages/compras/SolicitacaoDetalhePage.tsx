@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  ChevronLeft, Edit3, Send, CheckCircle2, XCircle, Ban, FileText, Package,
+  ChevronLeft, Send, CheckCircle2, XCircle, Ban, FileText, Package,
   Building2, Calendar, User as UserIcon, MessageSquare, History, AlertCircle, Network,
   FileSearch, ShoppingCart, Truck, Receipt, ChevronRight, Trophy, Crown,
 } from 'lucide-react'
@@ -109,19 +109,21 @@ export function SolicitacaoDetalhePage() {
 
     let cotacoesCarregadas: CotacaoVinculada[] = []
     if (cotIds.length > 0) {
-      const { data: cots } = await supabase.from('cmp_cotacoes').select(`
+      const cotsResp = await supabase.from('cmp_cotacoes').select(`
         *,
         comprador:profiles!cmp_cotacoes_comprador_id_fkey(id,nome,email),
         fornecedores:cmp_cotacoes_fornecedores(id,fornecedor_id,status_convite),
         escolhas:cmp_cotacoes_escolhas(*)
       `).in('id', cotIds).order('created_at', { ascending: false })
+      const cots = (cotsResp.data ?? []) as unknown as (CotacaoVinculada & { escolhas?: CmpCotacaoEscolha[] })[]
 
       const { data: itensCot } = await supabase
         .from('cmp_cotacoes_itens').select('id, cotacao_id, quantidade')
         .in('cotacao_id', cotIds)
+      const itensCotArr = (itensCot ?? []) as { id: string; cotacao_id: string; quantidade: number }[]
 
-      cotacoesCarregadas = (cots ?? []).map(c => {
-        const itensCotEssa = (itensCot ?? []).filter(i => i.cotacao_id === c.id)
+      cotacoesCarregadas = cots.map(c => {
+        const itensCotEssa = itensCotArr.filter(i => i.cotacao_id === c.id)
         const escolhas = (c.escolhas ?? []) as CmpCotacaoEscolha[]
         const total = escolhas.reduce((s, e) => {
           const it = itensCotEssa.find(i => i.id === e.cotacao_item_id)
@@ -146,7 +148,7 @@ export function SolicitacaoDetalhePage() {
         fornecedor:cmp_fornecedores(*),
         itens:cmp_pedidos_compra_itens(quantidade, preco_unitario, quantidade_recebida)
       `).in('cotacao_id', cotIds).order('created_at', { ascending: false })
-      pedidosTodos.push(...((peds ?? []) as PedidoVinculado[]))
+      pedidosTodos.push(...((peds ?? []) as unknown as PedidoVinculado[]))
     }
     if (scItemIds.length > 0) {
       const { data: itensDeDireto } = await supabase
@@ -160,7 +162,7 @@ export function SolicitacaoDetalhePage() {
           fornecedor:cmp_fornecedores(*),
           itens:cmp_pedidos_compra_itens(quantidade, preco_unitario, quantidade_recebida)
         `).in('id', pedDiretosIds).order('created_at', { ascending: false })
-        pedidosTodos.push(...((peds ?? []) as PedidoVinculado[]))
+        pedidosTodos.push(...((peds ?? []) as unknown as PedidoVinculado[]))
       }
     }
     // Calcula totais por pedido
@@ -200,8 +202,6 @@ export function SolicitacaoDetalhePage() {
   const ehGestor    = !!sc?.departamento?.gestor_id && sc.departamento.gestor_id === eu
   const ehDono      = sc?.solicitante_id === eu
   const podeAprovar = (ehAdmin || ehGestor) && sc?.status === 'aguardando_aprovacao'
-  const podeEditar  = ehDono && sc?.status === 'rascunho'
-  const podeEnviar  = ehDono && sc?.status === 'rascunho' && itens.length > 0
   const podeCancelar = (ehDono || ehAdmin) && sc?.status && !['atendida', 'cancelada', 'reprovada'].includes(sc.status)
   const ehComprador = profile?.role === 'admin' || profile?.role === 'comprador'
   // Só faz sentido iniciar cotação/pedido se ainda houver itens PENDENTES (não cotados/pedidos)
@@ -221,20 +221,6 @@ export function SolicitacaoDetalhePage() {
       acao,
       comentario: comentario ?? null,
     })
-  }
-
-  async function enviarParaAprovacao() {
-    if (!sc) return
-    setActionLoading('enviar')
-    const { error } = await supabase
-      .from('cmp_solicitacoes_compra')
-      .update({ status: 'aguardando_aprovacao', enviada_em: new Date().toISOString() })
-      .eq('id', sc.id)
-    if (error) { toast.error('Erro ao enviar.'); setActionLoading(null); return }
-    await logAcao('enviou')
-    toast.success('Enviada para aprovação')
-    await fetchData()
-    setActionLoading(null)
   }
 
   async function aprovar() {
@@ -350,23 +336,6 @@ export function SolicitacaoDetalhePage() {
 
           {/* Ações contextuais */}
           <div className="flex items-center gap-2 flex-wrap">
-            {podeEditar && (
-              <Button
-                onPress={() => navigate(`/compras/solicitacoes/${sc.id}/editar`)}
-                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-2 text-sm font-medium flex items-center gap-1.5"
-              >
-                <Edit3 size={14} /> Editar
-              </Button>
-            )}
-            {podeEnviar && (
-              <Button
-                isDisabled={actionLoading === 'enviar'}
-                onPress={enviarParaAprovacao}
-                className="bg-emerald-600 text-white hover:bg-emerald-700 aria-disabled:opacity-60 px-3 py-2 text-sm font-medium flex items-center gap-1.5"
-              >
-                <Send size={14} /> {actionLoading === 'enviar' ? 'Enviando…' : 'Enviar para aprovação'}
-              </Button>
-            )}
             {podeAprovar && (
               <>
                 <Button
@@ -646,16 +615,6 @@ function Timeline({ sc, eventos }: { sc: SolicitacaoFull; eventos: EventoTimelin
     })
   })
 
-  if (sc.status === 'rascunho' && !eventos.some(e => e.acao === 'enviou')) {
-    itensTl.push({
-      tom: 'gray',
-      icone: Send,
-      verbo: 'aguardando envio para aprovação',
-      quem: null,
-      quando: '',
-      pendente: true,
-    })
-  }
 
   return (
     <ol className="relative px-5 py-5 space-y-5">

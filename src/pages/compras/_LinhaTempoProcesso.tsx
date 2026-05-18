@@ -88,14 +88,14 @@ export function LinhaTempoProcesso({
           const { data: cots } = await supabase.from('cmp_cotacoes')
             .select(`id,numero,status,aprovado_em,aprovador:profiles!cmp_cotacoes_aprovador_id_fkey(id,nome,email)`)
             .in('id', cotIds).order('created_at')
-          d.cotacoes = (cots ?? []) as CotMin[]
+          d.cotacoes = (cots ?? []) as unknown as CotMin[]
         }
       } else if (cotacaoId) {
         // Cotação avulsa (sem SC)
         const { data: cot } = await supabase.from('cmp_cotacoes')
           .select(`id,numero,status,aprovado_em,aprovador:profiles!cmp_cotacoes_aprovador_id_fkey(id,nome,email)`)
           .eq('id', cotacaoId).maybeSingle()
-        if (cot) d.cotacoes = [cot as CotMin]
+        if (cot) d.cotacoes = [cot as unknown as CotMin]
       }
 
       // Pedidos: via cotações OU via solicitacao_item_id (pedido direto)
@@ -104,7 +104,7 @@ export function LinhaTempoProcesso({
         const { data: peds } = await supabase.from('cmp_pedidos_compra')
           .select(`id,numero,status,cotacao_id,aprovado_em,enviado_em,fornecedor:cmp_fornecedores(id,razao_social,nome_fantasia)`)
           .in('cotacao_id', d.cotacoes.map(c => c.id)).order('created_at')
-        pedidosTodos.push(...((peds ?? []) as PedMin[]))
+        pedidosTodos.push(...((peds ?? []) as unknown as PedMin[]))
       }
       if (resolvedScId) {
         // Pedidos diretos
@@ -120,7 +120,7 @@ export function LinhaTempoProcesso({
             const { data: peds } = await supabase.from('cmp_pedidos_compra')
               .select(`id,numero,status,cotacao_id,aprovado_em,enviado_em,fornecedor:cmp_fornecedores(id,razao_social,nome_fantasia)`)
               .in('id', pedIdsDiretos).order('created_at')
-            pedidosTodos.push(...((peds ?? []) as PedMin[]))
+            pedidosTodos.push(...((peds ?? []) as unknown as PedMin[]))
           }
         }
       }
@@ -290,7 +290,7 @@ function buildSteps(d: ProcessoData | null): Step[] {
   const stepSC: Step = sc
     ? {
         key: 'sc', label: 'Solicitação', icon: FileText,
-        status: sc.status === 'rascunho' ? 'atual' : 'concluido',
+        status: 'concluido',
         detalhe: sc.numero,
         subdetalhe: sc.solicitante?.nome ?? sc.solicitante?.email,
         subdetalheIcon: 'user',

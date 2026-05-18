@@ -21,7 +21,6 @@ export function AlcadasAprovacaoPage() {
   const [empresas, setEmpresas] = useState<CoreEmpresa[]>([])
   const [perfis, setPerfis] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [filtroEmpresa, setFiltroEmpresa] = useState('')
   const [editando, setEditando] = useState<AlcadaFull | 'novo' | null>(null)
 
@@ -100,12 +99,6 @@ export function AlcadasAprovacaoPage() {
           ))}
         </select>
       </div>
-
-      {error && (
-        <div className="flex items-start gap-2 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-3 py-2 text-sm text-red-700 dark:text-red-400">
-          <AlertCircle size={14} className="mt-0.5 shrink-0" /> {error}
-        </div>
-      )}
 
       {loading ? (
         <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-gray-900">

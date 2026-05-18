@@ -85,7 +85,6 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/cadastros/alcadas-aprovacao')) return 'Alçadas de aprovação'
   if (pathname.startsWith('/cadastros')) return 'Cadastros'
   if (pathname === '/compras/solicitacoes/nova') return 'Nova solicitação'
-  if (pathname.match(/^\/compras\/solicitacoes\/[^/]+\/editar$/)) return 'Editar rascunho'
   if (pathname.match(/^\/compras\/solicitacoes\/[^/]+$/)) return 'Solicitação de compra'
   if (pathname.startsWith('/compras/solicitacoes')) return 'Solicitações de compra'
   if (pathname.startsWith('/compras/fornecedores')) return 'Fornecedores'

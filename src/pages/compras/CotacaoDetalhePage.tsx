@@ -43,7 +43,7 @@ export function CotacaoDetalhePage() {
   // Cotação pode ser editada enquanto NENHUM pedido foi aprovado/enviado/recebido.
   // Quando isso acontecer, ela fica travada (não é mais possível alterar).
   const temPedidoAprovado = pedidosVinc.some(p =>
-    !['aguardando_aprovacao', 'cancelado', 'rascunho'].includes(p.status)
+    !['aguardando_aprovacao', 'cancelado'].includes(p.status)
   )
   const pedidosPendentes = pedidosVinc.filter(p => p.status === 'aguardando_aprovacao')
 
@@ -72,10 +72,10 @@ export function CotacaoDetalhePage() {
       supabase.from('cmp_cotacoes_escolhas').select('*').eq('cotacao_id', id),
       supabase.from('cmp_cotacoes_solicitacoes').select('solicitacao_id, sc:cmp_solicitacoes_compra(id,numero)').eq('cotacao_id', id),
     ])
-    setCot(cotResp.data as CotacaoFull)
-    setItens((itensResp.data ?? []) as ItemFull[])
+    setCot(cotResp.data as unknown as CotacaoFull)
+    setItens((itensResp.data ?? []) as unknown as ItemFull[])
 
-    const fornsData = (fornResp.data ?? []) as FornecedorFull[]
+    const fornsData = (fornResp.data ?? []) as unknown as FornecedorFull[]
     setFornecedores(fornsData)
 
     // Filtra respostas dos fornecedores desta cotação

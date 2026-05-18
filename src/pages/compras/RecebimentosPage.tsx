@@ -42,7 +42,7 @@ export function RecebimentosPage() {
     if (term) q = q.or(`numero.ilike.%${term}%`)
 
     const { data } = await q
-    setRecebimentos((data ?? []) as RecebimentoFull[])
+    setRecebimentos((data ?? []) as unknown as RecebimentoFull[])
 
     // Bandeja: pedidos enviados aguardando recebimento (ou parcialmente recebidos)
     const { data: pendData } = await supabase
@@ -51,7 +51,7 @@ export function RecebimentosPage() {
       .in('status', ['enviado', 'parcialmente_recebido'])
       .order('created_at', { ascending: false })
 
-    setPendentes((pendData ?? []) as PedidoPendenteRec[])
+    setPendentes((pendData ?? []) as unknown as PedidoPendenteRec[])
     setLoading(false)
   }, [search])
 

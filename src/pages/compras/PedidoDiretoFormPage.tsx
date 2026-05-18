@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import {
   ChevronLeft, Save, Search, X, AlertCircle, ShoppingCart, Package, Truck,
@@ -9,10 +9,10 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { SelectField } from '@/components/ui/SelectField'
 import type {
-  CmpFornecedor, CmpSolicitacao, CmpSolicitacaoItem,
+  CmpFornecedor, CmpSolicitacao,
   PrdProduto, PrdUnidadeMedida,
 } from '@/types/database'
-import { formatMoney, formatQty } from './_shared'
+import { formatMoney } from './_shared'
 
 interface ItemForm {
   solicitacao_item_id: string | null

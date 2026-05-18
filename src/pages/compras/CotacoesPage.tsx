@@ -69,7 +69,7 @@ export function CotacoesPage() {
     if (term) q = q.or(`numero.ilike.%${term}%,titulo.ilike.%${term}%`)
 
     const { data, count } = await q
-    setCotacoes((data ?? []) as CotacaoEnriquecida[])
+    setCotacoes((data ?? []) as unknown as CotacaoEnriquecida[])
     setTotal(count ?? 0)
 
     // Bandeja: SCs aprovadas com itens ainda pendentes (não viraram cotação)

@@ -16,7 +16,7 @@ import type {
 } from '@/types/database'
 import {
   PEDIDO_STATUS_META, PEDIDO_ITEM_STATUS_META,
-  formatDate, formatDateTime, formatMoney, formatQty,
+  formatDateTime, formatMoney, formatQty,
 } from './_shared'
 import { LinhaTempoProcesso } from './_LinhaTempoProcesso'
 
@@ -63,9 +63,9 @@ export function PedidoDetalhePage() {
       `).eq('pedido_id', id).order('linha'),
       supabase.from('cmp_recebimentos').select('*').eq('pedido_id', id).order('data_recebimento'),
     ])
-    setPed(pedResp.data as PedidoFull)
-    setItens((itensResp.data ?? []) as ItemFull[])
-    setRecebimentos((recResp.data ?? []) as CmpRecebimento[])
+    setPed(pedResp.data as unknown as PedidoFull)
+    setItens((itensResp.data ?? []) as unknown as ItemFull[])
+    setRecebimentos((recResp.data ?? []) as unknown as CmpRecebimento[])
     setLoading(false)
   }, [id])
 
@@ -458,8 +458,8 @@ function ComparativoCotacoesDoPedido({ pedido, itens, onRefresh }: {
       ])
 
       const cots = cotsR.data ?? []
-      const cotItens = (itensR.data ?? []) as (CmpCotacaoItem & { produto?: PrdProduto; unidade_medida?: PrdUnidadeMedida })[]
-      const cotForns = (fornsR.data ?? []) as (CmpCotacaoFornecedor & { fornecedor?: CmpFornecedor })[]
+      const cotItens = (itensR.data ?? []) as unknown as (CmpCotacaoItem & { produto?: PrdProduto; unidade_medida?: PrdUnidadeMedida })[]
+      const cotForns = (fornsR.data ?? []) as unknown as (CmpCotacaoFornecedor & { fornecedor?: CmpFornecedor })[]
       const respostas = (respsR.data ?? []) as CmpCotacaoRespostaItem[]
 
       // 4. Pra cada combinação (cotacao, fornecedor), monta uma alternativa

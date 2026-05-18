@@ -46,7 +46,7 @@ export function UsuariosPage() {
         .order('nome'),
       supabase.from('core_departamentos').select('*').eq('ativo', true).order('nome'),
     ])
-    setUsers((usersResp.data ?? []) as UserComDepto[])
+    setUsers((usersResp.data ?? []) as unknown as UserComDepto[])
     setDepartamentos(deptosResp.data ?? [])
     setLoading(false)
   }

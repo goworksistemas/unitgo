@@ -8,14 +8,14 @@ import { supabase } from '@/lib/supabase'
 
 interface PipelineCounts {
   // SC
-  sc_rascunho: number
   sc_aguardando_aprovacao: number
   sc_aprovada_sem_cotacao: number
   // Cotação
   cot_aberta: number
   cot_respondida: number
-  cot_aguardando_diretoria: number
-  // Pedido
+  cot_vencedor_escolhido: number
+  // Pedido aguardando aprovação (alçada)
+  ped_aguardando_aprovacao: number
   ped_aguardando_envio: number
   ped_enviado: number
   ped_parcial: number
@@ -24,9 +24,9 @@ interface PipelineCounts {
 }
 
 const ZERO: PipelineCounts = {
-  sc_rascunho: 0, sc_aguardando_aprovacao: 0, sc_aprovada_sem_cotacao: 0,
-  cot_aberta: 0, cot_respondida: 0, cot_aguardando_diretoria: 0,
-  ped_aguardando_envio: 0, ped_enviado: 0, ped_parcial: 0,
+  sc_aguardando_aprovacao: 0, sc_aprovada_sem_cotacao: 0,
+  cot_aberta: 0, cot_respondida: 0, cot_vencedor_escolhido: 0,
+  ped_aguardando_aprovacao: 0, ped_aguardando_envio: 0, ped_enviado: 0, ped_parcial: 0,
   rec_hoje: 0,
 }
 
@@ -43,23 +43,22 @@ export function DashboardPage() {
       setLoading(true)
       const c = { ...ZERO }
 
-      // Conta por status nas tabelas-chave (usa head:true + count exato para ser leve)
       const consultas = await Promise.all([
-        supabase.from('cmp_solicitacoes_compra').select('*', { count: 'exact', head: true }).eq('status', 'rascunho').eq('solicitante_id', profile?.id ?? ''),
         supabase.from('cmp_solicitacoes_compra').select('*', { count: 'exact', head: true }).eq('status', 'aguardando_aprovacao'),
         supabase.from('cmp_cotacoes').select('*', { count: 'exact', head: true }).eq('status', 'aberta'),
         supabase.from('cmp_cotacoes').select('*', { count: 'exact', head: true }).eq('status', 'respondida'),
-        supabase.from('cmp_cotacoes').select('*', { count: 'exact', head: true }).eq('status', 'aguardando_aprovacao_orcamento'),
+        supabase.from('cmp_cotacoes').select('*', { count: 'exact', head: true }).eq('status', 'vencedor_escolhido'),
+        supabase.from('cmp_pedidos_compra').select('*', { count: 'exact', head: true }).eq('status', 'aguardando_aprovacao'),
         supabase.from('cmp_pedidos_compra').select('*', { count: 'exact', head: true }).eq('status', 'aprovado').is('enviado_em', null),
         supabase.from('cmp_pedidos_compra').select('*', { count: 'exact', head: true }).eq('status', 'enviado'),
         supabase.from('cmp_pedidos_compra').select('*', { count: 'exact', head: true }).eq('status', 'parcialmente_recebido'),
       ])
 
-      c.sc_rascunho             = consultas[0].count ?? 0
-      c.sc_aguardando_aprovacao = consultas[1].count ?? 0
-      c.cot_aberta              = consultas[2].count ?? 0
-      c.cot_respondida          = consultas[3].count ?? 0
-      c.cot_aguardando_diretoria= consultas[4].count ?? 0
+      c.sc_aguardando_aprovacao = consultas[0].count ?? 0
+      c.cot_aberta              = consultas[1].count ?? 0
+      c.cot_respondida          = consultas[2].count ?? 0
+      c.cot_vencedor_escolhido  = consultas[3].count ?? 0
+      c.ped_aguardando_aprovacao= consultas[4].count ?? 0
       c.ped_aguardando_envio    = consultas[5].count ?? 0
       c.ped_enviado             = consultas[6].count ?? 0
       c.ped_parcial             = consultas[7].count ?? 0
@@ -118,26 +117,26 @@ export function DashboardPage() {
                 href="/compras/solicitacoes"
                 primario={counts.sc_aguardando_aprovacao}
                 primarioLabel="aguardando aprovação"
-                secundario={counts.sc_rascunho}
-                secundarioLabel={`${counts.sc_rascunho} rascunho${counts.sc_rascunho !== 1 ? 's' : ''} seu${counts.sc_rascunho !== 1 ? 's' : ''}`}
+                secundario={counts.sc_aprovada_sem_cotacao}
+                secundarioLabel={`${counts.sc_aprovada_sem_cotacao} aprovada(s) aguardando cotação`}
               />
               <EtapaPipeline
                 titulo="Cotação"
                 icone={<FileSearch size={18} />}
                 tone="violet"
                 href="/compras/cotacoes"
-                primario={counts.sc_aprovada_sem_cotacao}
-                primarioLabel="SCs aguardando cotação"
-                secundario={counts.cot_aberta + counts.cot_respondida + counts.cot_aguardando_diretoria}
-                secundarioLabel={`${counts.cot_aberta + counts.cot_respondida + counts.cot_aguardando_diretoria} cotação(ões) em andamento`}
+                primario={counts.cot_aberta + counts.cot_respondida}
+                primarioLabel="em andamento"
+                secundario={counts.cot_vencedor_escolhido}
+                secundarioLabel={`${counts.cot_vencedor_escolhido} com vencedor escolhido`}
               />
               <EtapaPipeline
                 titulo="Pedido"
                 icone={<ShoppingCart size={18} />}
                 tone="indigo"
                 href="/compras/pedidos"
-                primario={counts.ped_aguardando_envio}
-                primarioLabel="aguardando envio"
+                primario={counts.ped_aguardando_aprovacao}
+                primarioLabel="aguardando aprovação"
                 secundario={counts.ped_enviado + counts.ped_parcial}
                 secundarioLabel={`${counts.ped_enviado + counts.ped_parcial} em trânsito`}
               />
@@ -170,7 +169,7 @@ export function DashboardPage() {
 // ────────────────────────────────────────────────────────────────
 
 function EtapaPipeline({
-  titulo, icone, tone, href, primario, primarioLabel, secundario, secundarioLabel,
+  titulo, icone, tone, href, primario, primarioLabel, secundarioLabel,
 }: {
   titulo: string
   icone: React.ReactNode
@@ -178,7 +177,7 @@ function EtapaPipeline({
   href: string
   primario: number
   primarioLabel: string
-  secundario: number
+  secundario?: number
   secundarioLabel: string
 }) {
   const toneCls = {

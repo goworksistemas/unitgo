@@ -15,7 +15,6 @@ const PAGE_SIZE = 25
 
 const FILTROS: { key: CmpPedidoStatus | 'todos'; label: string }[] = [
   { key: 'todos',                 label: 'Todos' },
-  { key: 'rascunho',              label: 'Rascunho' },
   { key: 'aguardando_aprovacao',  label: 'Aguardando' },
   { key: 'aprovado',              label: 'Aprovado' },
   { key: 'enviado',               label: 'Enviado' },
@@ -65,7 +64,7 @@ export function PedidosPage() {
     if (term) q = q.or(`numero.ilike.%${term}%`)
 
     const { data, count } = await q
-    const pedidosBase = (data ?? []) as PedidoEnriquecido[]
+ l    const pedidosBase = (data ?? []) as unknown as PedidoEnriquecido[]
 
     // Pega totais via agregação simples (em memória — economiza viagens)
     if (pedidosBase.length > 0) {
@@ -96,7 +95,7 @@ export function PedidosPage() {
       .is('enviado_em', null)
       .order('created_at', { ascending: false })
 
-    setPendentesEnvio((pendData ?? []) as PedidoEnriquecido[])
+    setPendentesEnvio((pendData ?? []) as unknown as PedidoEnriquecido[])
     setLoading(false)
   }, [page, filtro, debounced])
 

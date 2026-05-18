@@ -77,7 +77,6 @@ export function AppRoutes() {
         <Route path="/compras/solicitacoes"             element={<SolicitacoesPage />} />
         <Route path="/compras/solicitacoes/nova"        element={<SolicitacaoFormPage />} />
         <Route path="/compras/solicitacoes/:id"         element={<SolicitacaoDetalhePage />} />
-        <Route path="/compras/solicitacoes/:id/editar"  element={<SolicitacaoFormPage />} />
 
         <Route path="/compras/fornecedores"             element={<FornecedoresPage />} />
 

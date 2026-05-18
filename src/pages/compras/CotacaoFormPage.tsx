@@ -498,7 +498,7 @@ function LookupProdutos({ onSelecionar, onFechar }: {
     const term = debounced.replace(/[,()%]/g, ' ').trim()
     if (term) q = q.or(`nome.ilike.%${term}%,codigo.ilike.%${term}%`)
     const { data } = await q
-    setResultados((data ?? []) as (PrdProduto & { unidade_medida?: PrdUnidadeMedida })[])
+    setResultados((data ?? []) as unknown as (PrdProduto & { unidade_medida?: PrdUnidadeMedida })[])
     setLoading(false)
   }, [debounced])
 

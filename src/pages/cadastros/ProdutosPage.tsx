@@ -356,7 +356,7 @@ function AbaProdutos({ isAdmin, unidades }: {
     if (q) query = query.or(`nome.ilike.%${q}%,codigo.ilike.%${q}%`)
 
     const { data, count } = await query
-    setProdutos(data ?? [])
+    setProdutos((data ?? []) as unknown as PrdProduto[])
     setTotal(count ?? 0)
     setLoading(false)
   }, [page, filtro, debouncedSearch])

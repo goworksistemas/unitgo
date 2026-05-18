@@ -73,13 +73,14 @@ export function RecebimentoFormPage() {
         unidade_medida:prd_unidades_medida(id,nome,sigla,ativo)
       `).eq('pedido_id', pid).order('linha'),
     ])
-    if (!pedResp.data) {
+    const pedData = pedResp.data as unknown as PedidoFull | null
+    if (!pedData) {
       toast.error('Pedido não encontrado')
       setLoading(false)
       return
     }
-    setPedido(pedResp.data as PedidoFull)
-    const its = (itensResp.data ?? []) as ItemFull[]
+    setPedido(pedData)
+    const its = (itensResp.data ?? []) as unknown as ItemFull[]
     setItens(its)
 
     // Pré-preenche linhas com qty pendente sugerida
@@ -98,8 +99,8 @@ export function RecebimentoFormPage() {
       })))
 
     // Pré-preenche o CNPJ da NF com o do fornecedor
-    if (pedResp.data.fornecedor?.cnpj_cpf) {
-      setNfCnpj(pedResp.data.fornecedor.cnpj_cpf)
+    if (pedData.fornecedor?.cnpj_cpf) {
+      setNfCnpj(pedData.fornecedor.cnpj_cpf)
     }
     setLoading(false)
   }
@@ -431,7 +432,7 @@ function LookupPedidos({ onSelecionar, onFechar }: {
     const term = debounced.replace(/[,()%]/g, ' ').trim()
     if (term) q = q.or(`numero.ilike.%${term}%`)
     const { data } = await q
-    setResultados((data ?? []) as PedidoFull[])
+    setResultados((data ?? []) as unknown as PedidoFull[])
     setLoading(false)
   }, [debounced])
 

@@ -106,7 +106,6 @@ export type CoreDepartamento = {
 // ── Módulo de Compras — Solicitação de Compra ────────────────
 
 export type CmpSolicitacaoStatus =
-  | 'rascunho'
   | 'aguardando_aprovacao'
   | 'aprovada'
   | 'reprovada'
@@ -284,10 +283,25 @@ export type CmpCotacaoEscolha = {
   created_at: string
 }
 
+// ── Módulo de Compras — Alçada de Aprovação ──────────────────
+
+export type CmpAlcadaAprovacao = {
+  id: string
+  empresa_id: string
+  valor_min: number
+  valor_max: number | null
+  aprovador_id: string
+  ordem: number
+  ativo: boolean
+  created_at: string
+  updated_at: string
+  empresa?: CoreEmpresa
+  aprovador?: Profile
+}
+
 // ── Módulo de Compras — Pedido de Compra ─────────────────────
 
 export type CmpPedidoStatus =
-  | 'rascunho'
   | 'aguardando_aprovacao'
   | 'aprovado'
   | 'enviado'
@@ -313,6 +327,7 @@ export type CmpPedido = {
   observacoes: string | null
   status: CmpPedidoStatus
   aprovador_id: string | null
+  alcada_id: string | null
   aprovado_em: string | null
   enviado_em: string | null
   cancelada_em: string | null
@@ -324,6 +339,7 @@ export type CmpPedido = {
   cotacao?: CmpCotacao
   comprador?: Profile
   aprovador?: Profile
+  alcada?: CmpAlcadaAprovacao
   itens?: CmpPedidoItem[]
 }
 
@@ -427,7 +443,8 @@ type CmpCotacaoItemRow           = Omit<CmpCotacaoItem, 'produto' | 'variante' |
 type CmpCotacaoFornecedorRow     = Omit<CmpCotacaoFornecedor, 'fornecedor' | 'respostas'>
 type CmpCotacaoRespostaItemRow   = CmpCotacaoRespostaItem
 type CmpCotacaoEscolhaRow        = CmpCotacaoEscolha
-type CmpPedidoRow                = Omit<CmpPedido, 'empresa' | 'fornecedor' | 'cotacao' | 'comprador' | 'aprovador' | 'itens'>
+type CmpPedidoRow                = Omit<CmpPedido, 'empresa' | 'fornecedor' | 'cotacao' | 'comprador' | 'aprovador' | 'alcada' | 'itens'>
+type CmpAlcadaAprovacaoRow       = Omit<CmpAlcadaAprovacao, 'empresa' | 'aprovador'>
 type CmpPedidoItemRow            = Omit<CmpPedidoItem, 'produto' | 'variante' | 'unidade_medida'>
 type CmpRecebimentoRow           = Omit<CmpRecebimento, 'pedido' | 'recebedor' | 'nf' | 'itens'>
 type CmpRecebimentoItemRow       = Omit<CmpRecebimentoItem, 'pedido_item'>
@@ -708,13 +725,35 @@ export type Database = {
         CmpPedidoRow,
         Omit<CmpPedidoRow,
           'id' | 'numero' | 'status' |
-          'aprovador_id' | 'aprovado_em' | 'enviado_em' | 'cancelada_em' | 'motivo_cancelamento' |
+          'aprovador_id' | 'alcada_id' | 'aprovado_em' | 'enviado_em' | 'cancelada_em' | 'motivo_cancelamento' |
           'created_at' | 'updated_at'> &
           Partial<Pick<CmpPedidoRow,
             'id' | 'numero' | 'status' |
-            'aprovador_id' | 'aprovado_em' | 'enviado_em' | 'cancelada_em' | 'motivo_cancelamento' |
+            'aprovador_id' | 'alcada_id' | 'aprovado_em' | 'enviado_em' | 'cancelada_em' | 'motivo_cancelamento' |
             'created_at' | 'updated_at'>>,
         Partial<Omit<CmpPedidoRow, 'id' | 'numero' | 'created_at' | 'updated_at'>>
+      >
+      cmp_alcadas_aprovacao: TableDef<
+        CmpAlcadaAprovacaoRow,
+        Omit<CmpAlcadaAprovacaoRow, 'id' | 'valor_min' | 'ordem' | 'ativo' | 'created_at' | 'updated_at'> &
+          Partial<Pick<CmpAlcadaAprovacaoRow, 'id' | 'valor_min' | 'ordem' | 'ativo' | 'created_at' | 'updated_at'>>,
+        Partial<Omit<CmpAlcadaAprovacaoRow, 'id' | 'created_at' | 'updated_at'>>,
+        [
+          {
+            foreignKeyName: 'cmp_alcadas_aprovacao_empresa_id_fkey'
+            columns: ['empresa_id']
+            isOneToOne: false
+            referencedRelation: 'core_empresas'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'cmp_alcadas_aprovacao_aprovador_id_fkey'
+            columns: ['aprovador_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
       >
       cmp_pedidos_compra_itens: TableDef<
         CmpPedidoItemRow,
@@ -753,7 +792,16 @@ export type Database = {
       >
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      get_aprovador_alcada: {
+        Args: { p_empresa_id: string; p_valor: number }
+        Returns: string | null
+      }
+      get_my_role: {
+        Args: Record<string, never>
+        Returns: UserRole
+      }
+    }
     Enums: {
       user_role: UserRole
     }
