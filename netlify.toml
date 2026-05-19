@@ -1,0 +1,7 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Documentação usa placeholders; não deve bloquear deploy por coincidir com VITE_SUPABASE_URL
+  SECRETS_SCAN_OMIT_PATHS = "DOCs/**,supabase/.temp/**"

@@ -9,8 +9,8 @@ A implementação está em três camadas:
 
 URLs do projeto (referência):
 
-- Project URL: `https://dtcklkhvrsyxjjjmuquw.supabase.co`
-- Edge Function base: `https://dtcklkhvrsyxjjjmuquw.supabase.co/functions/v1/`
+- Project URL: `https://<SEU_PROJECT_REF>.supabase.co`
+- Edge Function base: `https://<SEU_PROJECT_REF>.supabase.co/functions/v1/`
 
 ---
 
@@ -26,7 +26,7 @@ Logado **na conta ML que vai ser monitorada** (a conta de comprador da empresa):
    - **Descrição**: "Acompanhamento de pedidos de compra realizados no Mercado Livre"
    - **URI de redirect (Redirect URI)**:
      ```
-     https://dtcklkhvrsyxjjjmuquw.supabase.co/functions/v1/ml-oauth-callback
+     https://<SEU_PROJECT_REF>.supabase.co/functions/v1/ml-oauth-callback
      ```
    - **Tópicos de notificação**: marque
      - `orders_v2`
@@ -35,7 +35,7 @@ Logado **na conta ML que vai ser monitorada** (a conta de comprador da empresa):
      - `messages` (opcional, para mensagens com vendedor)
    - **Notifications callback URL (Webhook)**:
      ```
-     https://dtcklkhvrsyxjjjmuquw.supabase.co/functions/v1/ml-webhook
+     https://<SEU_PROJECT_REF>.supabase.co/functions/v1/ml-webhook
      ```
    - **Escopos**: marque `read`, `write`, `offline_access` (esse último é
      obrigatório para receber `refresh_token`).
@@ -74,7 +74,7 @@ adicione **exatamente estas chaves**:
 |---|---|
 | `ML_CLIENT_ID` | App ID copiado do DevCenter |
 | `ML_CLIENT_SECRET` | Secret Key do DevCenter |
-| `ML_REDIRECT_URI` | `https://dtcklkhvrsyxjjjmuquw.supabase.co/functions/v1/ml-oauth-callback` |
+| `ML_REDIRECT_URI` | `https://<SEU_PROJECT_REF>.supabase.co/functions/v1/ml-oauth-callback` |
 | `FRONTEND_URL` | URL pública do seu app (ex: `https://supplygo.seudominio.com` ou `http://localhost:5173` em dev) |
 
 > `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já são fornecidos automaticamente
@@ -134,7 +134,7 @@ select cron.schedule(
   '0 * * * *',  -- a cada hora cheia
   $$
     select net.http_post(
-      url     := 'https://dtcklkhvrsyxjjjmuquw.supabase.co/functions/v1/ml-refresh-tokens',
+      url     := 'https://<SEU_PROJECT_REF>.supabase.co/functions/v1/ml-refresh-tokens',
       headers := jsonb_build_object('Authorization', 'Bearer ' || current_setting('app.settings.service_role_key'))
     );
   $$
@@ -149,7 +149,7 @@ select cron.schedule(
 Opção B — **serviço externo** (cron-job.org, GitHub Actions etc.) chamando:
 
 ```
-POST https://dtcklkhvrsyxjjjmuquw.supabase.co/functions/v1/ml-refresh-tokens
+POST https://<SEU_PROJECT_REF>.supabase.co/functions/v1/ml-refresh-tokens
 Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>
 ```
 
