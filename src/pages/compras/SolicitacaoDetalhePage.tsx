@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  CheckCircle2, XCircle, Ban,
-  Building2, Calendar, User as UserIcon, Network,
-  FileSearch, ShoppingCart,
+  CheckCircle2, XCircle,
+  Calendar, FileSearch, ShoppingCart,
+  Info, History, Network, MoreHorizontal,
 } from 'lucide-react'
 import { BotaoVoltar } from '@/components/shared/BotaoVoltar'
 import { Button } from '@heroui/react'
@@ -18,18 +18,23 @@ import {
   formatDate, formatDateTime, formatMoney, formatQty,
 } from './_shared'
 import {
-  ETAPAS_PROCESSO_SC, metaEtapaProcessoSC, metaItem, metaSolicitacao, resumoEtapaItem,
+  ETAPAS_PROCESSO_SC, metaEtapaProcessoSC, metaSolicitacao, resumoEtapaItem,
+  toneItem, toneEtapaProcessoSC,
 } from './_fluxoEtapas'
 import { contagensDetalheProcessoSC, etapaAtualProcessoSC } from './_processoSC'
 import { FaixaEtapasToolbar } from './_FaixaEtapasToolbar'
 import { PropLinha } from './_LayoutDetalhe'
 import {
-  LayoutDetalheFocado, MetaChip, MetaSep, AlertaLinha, type PainelSecao,
+  LayoutDetalheFocado, AlertaLinha, type PainelSecao,
 } from './_LayoutDetalheFocado'
 import { HistoricoTimeline, type EventoHistorico } from './_HistoricoTimeline'
 import { rpcCompras } from './_rpc'
-import { VinculosBar, VinculosLista, gruposVinculosSC } from './_VinculosProcesso'
+import { VinculosFocado, VinculosLista, gruposVinculosSC } from './_VinculosProcesso'
 import { MotivoModal } from './_MotivoModal'
+import { InfoChip } from '@/components/ui/InfoChip'
+import { StatRow } from '@/components/ui/StatRow'
+import { MorePopover } from '@/components/ui/MorePopover'
+import { StatusDot } from '@/components/ui/StatusDot'
 
 // ── Tipos do payload da RPC cmp_detalhe_solicitacao ──
 type ProfileMini = { id: string; nome: string | null; email: string }
@@ -144,9 +149,10 @@ export function SolicitacaoDetalhePage() {
   useEffect(() => { fetchData() }, [fetchData])
 
   const gruposVinc = useMemo(
-    () => gruposVinculosSC({ cotacoes, pedidos, recebimentos }),
-    [cotacoes, pedidos, recebimentos],
+    () => gruposVinculosSC({ sc: sc ?? undefined, cotacoes, pedidos, recebimentos }),
+    [sc, cotacoes, pedidos, recebimentos],
   )
+  const totalVinculos = cotacoes.length + pedidos.length + recebimentos.length
 
   const contagensEtapas = useMemo(
     () => (sc ? contagensDetalheProcessoSC(sc, itens, pedidos) : {}),
@@ -259,73 +265,136 @@ export function SolicitacaoDetalhePage() {
   const metaSc = etapaAtual ? metaEtapaProcessoSC(etapaAtual) : metaSolicitacao(sc.status)
   const prio = PRIORIDADE_META[sc.prioridade]
 
-  // ── Header full-width ──
+  // ── Linha 1: badges (status compacto + prioridade se !normal) ──
   const badges = (
     <>
-      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${metaSc.badge}`}>
+      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${metaSc.badge}`}>
         <span className={`h-1.5 w-1.5 rounded-full ${metaSc.dot}`} />
         {metaSc.label}
       </span>
-      {sc.status !== 'aguardando_aprovacao' && sc.status !== 'atendida' && (
-        <span className="text-[10px] text-gray-500 dark:text-gray-400" title="Status administrativo da SC">
-          SC: {STATUS_META[sc.status].label}
-        </span>
-      )}
       {sc.prioridade !== 'normal' && (
-        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.badge}`}>
+        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${prio.badge}`}>
           {prio.label}
         </span>
       )}
     </>
   )
 
+  // ── Linha 1: ações (max 2 visíveis + menu kebab) ──
+  const acoesPrimarias: React.ReactNode[] = []
+  const acoesSecundarias: Array<{ label: string; onClick: () => void; tom?: 'red' }> = []
+
+  if (podeAprovar) {
+    acoesPrimarias.push(
+      <Button key="aprovar"
+        isDisabled={actionLoading === 'aprovar'}
+        onPress={aprovar}
+        className="bg-emerald-600 text-white hover:bg-emerald-700 aria-disabled:opacity-60 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+        <CheckCircle2 size={13} /> Aprovar
+      </Button>,
+    )
+    acoesPrimarias.push(
+      <Button key="reprovar"
+        isDisabled={actionLoading === 'reprovar'}
+        onPress={() => { setModal('reprovar'); setMotivo('') }}
+        className="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+        <XCircle size={13} /> Reprovar
+      </Button>,
+    )
+  }
+  if (podeIniciarCotacao) {
+    acoesPrimarias.push(
+      <Button key="cotacao"
+        onPress={() => navigate(`/compras/cotacoes/nova?sc=${sc.id}`)}
+        className="bg-violet-600 text-white hover:bg-violet-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+        <FileSearch size={13} /> Iniciar cotação
+      </Button>,
+    )
+    if (podePedidoDireto) {
+      acoesSecundarias.push({ label: 'Pedido direto', onClick: () => navigate(`/compras/pedidos/novo?sc=${sc.id}`) })
+    }
+  } else if (podePedidoDireto) {
+    acoesPrimarias.push(
+      <Button key="pedido"
+        onPress={() => navigate(`/compras/pedidos/novo?sc=${sc.id}`)}
+        className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+        <ShoppingCart size={13} /> Pedido direto
+      </Button>,
+    )
+  }
+  if (podeCancelar) {
+    acoesSecundarias.push({
+      label: 'Cancelar solicitação',
+      onClick: () => { setModal('cancelar'); setMotivo('') },
+      tom: 'red',
+    })
+  }
+
   const acoes = (
     <>
-      {podeAprovar && (
-        <>
-          <Button
-            isDisabled={actionLoading === 'aprovar'}
-            onPress={aprovar}
-            className="bg-emerald-600 text-white hover:bg-emerald-700 aria-disabled:opacity-60 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg"
-          >
-            <CheckCircle2 size={13} /> {actionLoading === 'aprovar' ? 'Aprovando…' : 'Aprovar'}
-          </Button>
-          <Button
-            isDisabled={actionLoading === 'reprovar'}
-            onPress={() => { setModal('reprovar'); setMotivo('') }}
-            className="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg"
-          >
-            <XCircle size={13} /> Reprovar
-          </Button>
-        </>
-      )}
-      {podeIniciarCotacao && (
-        <Button
-          onPress={() => navigate(`/compras/cotacoes/nova?sc=${sc.id}`)}
-          className="bg-violet-600 text-white hover:bg-violet-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg"
+      {acoesPrimarias}
+      {acoesSecundarias.length > 0 && (
+        <MorePopover
+          align="end"
+          label={<MoreHorizontal size={14} />}
+          title="Mais ações"
+          className="!px-1.5 !py-1"
         >
-          <FileSearch size={13} /> Iniciar cotação
-        </Button>
-      )}
-      {podePedidoDireto && (
-        <Button
-          onPress={() => navigate(`/compras/pedidos/novo?sc=${sc.id}`)}
-          className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg"
-        >
-          <ShoppingCart size={13} /> Pedido direto
-        </Button>
-      )}
-      {podeCancelar && (
-        <Button
-          onPress={() => { setModal('cancelar'); setMotivo('') }}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg"
-        >
-          <Ban size={13} /> Cancelar
-        </Button>
+          <div className="space-y-0.5">
+            {acoesSecundarias.map(a => (
+              <button
+                key={a.label}
+                type="button"
+                onClick={a.onClick}
+                className={`w-full text-left px-2 py-1.5 text-[11px] rounded ${
+                  a.tom === 'red'
+                    ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40'
+                    : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                {a.label}
+              </button>
+            ))}
+          </div>
+        </MorePopover>
       )}
     </>
   )
 
+  // ── Linha 2: meta (3 InfoChips principais + +N mais) ──
+  const empresaNome = sc.empresa?.nome_fantasia ?? sc.empresa?.razao_social ?? '—'
+  const solicitanteNome = sc.solicitante?.nome ?? sc.solicitante?.email ?? '—'
+
+  const metaFaixa = (
+    <StatRow max={3}>
+      <InfoChip label="Empresa">{empresaNome}</InfoChip>
+      <InfoChip label="Solicitante">{solicitanteNome}</InfoChip>
+      <InfoChip label="Estimado" destaque>
+        {totalEstimado > 0 ? formatMoney(totalEstimado) : '—'}
+      </InfoChip>
+      {sc.departamento && (
+        <InfoChip label="Depto.">
+          {sc.departamento.codigo ? `${sc.departamento.codigo} · ${sc.departamento.nome}` : sc.departamento.nome}
+        </InfoChip>
+      )}
+      <InfoChip label="Gestor">
+        {sc.departamento?.gestor?.nome ?? sc.departamento?.gestor?.email ?? '—'}
+      </InfoChip>
+      {sc.data_necessaria && (
+        <InfoChip label="Necessária">{formatDate(sc.data_necessaria)}</InfoChip>
+      )}
+      <InfoChip label="Itens">{itens.length}</InfoChip>
+      <InfoChip label="Criada">{formatDateTime(sc.created_at)}</InfoChip>
+      {sc.status !== 'aguardando_aprovacao' && sc.status !== 'atendida' && (
+        <InfoChip label="SC">{STATUS_META[sc.status].label}</InfoChip>
+      )}
+    </StatRow>
+  )
+
+  // ── Faixa dedicada de vínculos (renderizada no rodapé do principal) ──
+  const vinculosSecao = <VinculosFocado grupos={gruposVinc} />
+
+  // ── Alerta sutil ──
   const alerta = sc.status === 'reprovada' && sc.motivo_reprovacao ? (
     <AlertaLinha tom="red">
       Reprovada por {sc.aprovador?.nome ?? sc.aprovador?.email ?? '—'}: {sc.motivo_reprovacao}
@@ -334,58 +403,17 @@ export function SolicitacaoDetalhePage() {
     <AlertaLinha tom="gray">Solicitação cancelada.</AlertaLinha>
   ) : null
 
-  const faixaMeta = (
-    <>
-      <MetaChip label="Empresa">
-        {sc.empresa?.nome_fantasia ?? sc.empresa?.razao_social ?? '—'}
-      </MetaChip>
-      <MetaSep />
-      <MetaChip label="Depto.">
-        {sc.departamento
-          ? (sc.departamento.codigo ? `${sc.departamento.codigo} · ${sc.departamento.nome}` : sc.departamento.nome)
-          : '—'}
-      </MetaChip>
-      <MetaSep />
-      <MetaChip label="Solicitante">
-        {sc.solicitante?.nome ?? sc.solicitante?.email ?? '—'}
-      </MetaChip>
-      <MetaSep />
-      <MetaChip label="Gestor">
-        {sc.departamento?.gestor?.nome ?? sc.departamento?.gestor?.email ?? (
-          <span className="text-amber-600 dark:text-amber-400">sem gestor</span>
-        )}
-      </MetaChip>
-      {sc.data_necessaria && (
-        <>
-          <MetaSep />
-          <MetaChip label="Necessária">{formatDate(sc.data_necessaria)}</MetaChip>
-        </>
-      )}
-      <MetaSep />
-      <MetaChip label="Itens">{itens.length}</MetaChip>
-      {totalEstimado > 0 && (
-        <>
-          <MetaSep />
-          <MetaChip label="Estimado" destaque>{formatMoney(totalEstimado)}</MetaChip>
-        </>
-      )}
-    </>
-  )
-
+  // ── Painel lateral ──
   const detalhes = (
     <dl className="space-y-2 text-sm">
-      <PropLinha label="Empresa" icone={<Building2 size={11} />}>
-        {sc.empresa?.nome_fantasia ?? sc.empresa?.razao_social ?? '—'}
-      </PropLinha>
-      <PropLinha label="Departamento" icone={<Network size={11} />}>
+      <PropLinha label="Empresa">{empresaNome}</PropLinha>
+      <PropLinha label="Departamento">
         {sc.departamento
           ? (sc.departamento.codigo ? `${sc.departamento.codigo} · ${sc.departamento.nome}` : sc.departamento.nome)
           : '—'}
       </PropLinha>
-      <PropLinha label="Solicitante" icone={<UserIcon size={11} />}>
-        {sc.solicitante?.nome ?? sc.solicitante?.email ?? '—'}
-      </PropLinha>
-      <PropLinha label="Gestor (aprovador)" icone={<UserIcon size={11} />}>
+      <PropLinha label="Solicitante">{solicitanteNome}</PropLinha>
+      <PropLinha label="Gestor (aprovador)">
         {sc.departamento?.gestor?.nome ?? sc.departamento?.gestor?.email ?? (
           <span className="text-amber-600 dark:text-amber-400">sem gestor definido</span>
         )}
@@ -398,7 +426,7 @@ export function SolicitacaoDetalhePage() {
           {formatMoney(totalEstimado)}
         </span>
       </PropLinha>
-      <PropLinha label="Criada" icone={<Calendar size={11} />}>
+      <PropLinha label="Criada">
         <span title={formatDateTime(sc.created_at)}>{formatDateTime(sc.created_at)}</span>
       </PropLinha>
       {sc.aprovado_em && (
@@ -417,21 +445,34 @@ export function SolicitacaoDetalhePage() {
     </dl>
   )
 
-  const painelVinculos = (
-    <section className="space-y-4 text-sm">
-      <VinculosLista grupos={gruposVinc} />
-    </section>
+  const painelSecoes: PainelSecao[] = [
+    { id: 'historico', label: 'Histórico', icone: <History size={13} />, badge: historico.length, conteudo: <HistoricoTimeline eventos={historico} /> },
+    { id: 'vinculos', label: 'Vínculos', icone: <Network size={13} />, badge: totalVinculos || undefined, conteudo: <VinculosLista grupos={gruposVinc} /> },
+    { id: 'detalhes', label: 'Detalhes', icone: <Info size={13} />, conteudo: detalhes },
+  ]
+
+  // ── Principal: faixa de etapas slim ocupa o topo, tabela de itens abaixo ──
+  // Faixa de etapas via prop `fluxo` (compacta no header). Tabela na main.
+  const fluxoSlim = (
+    <FaixaEtapasToolbar
+      etapas={ETAPAS_PROCESSO_SC}
+      contagens={contagensEtapas}
+      meta={metaEtapaProcessoSC}
+      apenasVisualizacao
+      etapaAtual={etapaAtual}
+      variant="slim"
+    />
   )
 
   const tabelaItens = (
     <div>
-      <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/40 dark:bg-gray-800/20">
-        <p className="text-xs text-gray-600 dark:text-gray-400">
-          <strong className="text-gray-900 dark:text-gray-100">{itens.length}</strong> {itens.length === 1 ? 'item' : 'itens'}
+      <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-800/20">
+        <p className="text-[11px] text-gray-500 dark:text-gray-400">
+          <strong className="text-gray-800 dark:text-gray-200">{itens.length}</strong> {itens.length === 1 ? 'item' : 'itens'}
         </p>
         {totalEstimado > 0 && (
-          <p className="text-xs text-gray-500">
-            Total estimado: <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{formatMoney(totalEstimado)}</span>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+            Total estimado: <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{formatMoney(totalEstimado)}</span>
           </p>
         )}
       </div>
@@ -440,45 +481,41 @@ export function SolicitacaoDetalhePage() {
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50/60 dark:bg-gray-800/40 border-b border-gray-100 dark:border-gray-800">
+            <thead className="border-b border-gray-100 dark:border-gray-800">
               <tr>
-                <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 w-10">#</th>
-                <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500">Produto</th>
-                <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500">Qtd.</th>
-                <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500">UoM</th>
-                <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500">Preço estim.</th>
-                <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500">Total</th>
-                <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500">Status</th>
+                <th className="px-3 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400 w-10">#</th>
+                <th className="px-3 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">Produto</th>
+                <th className="px-3 py-1.5 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-400">Qtd.</th>
+                <th className="px-3 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">UoM</th>
+                <th className="px-3 py-1.5 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-400">Preço estim.</th>
+                <th className="px-3 py-1.5 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-400">Total</th>
+                <th className="px-3 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody className="divide-y divide-gray-50 dark:divide-gray-800/60">
               {itens.map(it => {
-                const stMeta = metaItem(it.status_item)
                 const totalLinha = Number(it.quantidade) * Number(it.preco_estimado ?? 0)
                 return (
                   <tr key={it.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
-                    <td className="px-3 py-2.5 align-top text-[11px] font-mono text-gray-400">{it.linha}</td>
-                    <td className="px-3 py-2.5 align-top">
-                      <p className="font-medium text-gray-900 dark:text-gray-100 leading-tight">{it.produto?.nome ?? '—'}</p>
+                    <td className="px-3 py-2 align-top text-[11px] font-mono text-gray-400">{it.linha}</td>
+                    <td className="px-3 py-2 align-top">
+                      <p className="text-[13px] font-medium text-gray-900 dark:text-gray-100 leading-tight">{it.produto?.nome ?? '—'}</p>
                       <p className="text-[11px] text-gray-500 font-mono mt-0.5">{it.produto?.codigo}</p>
                       {it.observacao && <p className="text-[11px] text-gray-500 mt-0.5">{it.observacao}</p>}
                     </td>
-                    <td className="px-3 py-2.5 align-top text-right tabular-nums">{formatQty(it.quantidade)}</td>
-                    <td className="px-3 py-2.5 align-top text-gray-500">{it.unidade_medida?.sigla ?? ''}</td>
-                    <td className="px-3 py-2.5 align-top text-right tabular-nums text-gray-600 dark:text-gray-300">
+                    <td className="px-3 py-2 align-top text-right tabular-nums text-[12px]">{formatQty(it.quantidade)}</td>
+                    <td className="px-3 py-2 align-top text-gray-500 text-[11px]">{it.unidade_medida?.sigla ?? ''}</td>
+                    <td className="px-3 py-2 align-top text-right tabular-nums text-gray-600 dark:text-gray-300 text-[12px]">
                       {it.preco_estimado != null ? formatMoney(it.preco_estimado) : '—'}
                     </td>
-                    <td className="px-3 py-2.5 align-top text-right tabular-nums font-semibold text-gray-800 dark:text-gray-100">
+                    <td className="px-3 py-2 align-top text-right tabular-nums font-semibold text-gray-800 dark:text-gray-100 text-[12px]">
                       {it.preco_estimado != null ? formatMoney(totalLinha) : '—'}
                     </td>
-                    <td className="px-3 py-2.5 align-top">
-                      <span
+                    <td className="px-3 py-2 align-top">
+                      <StatusDot
+                        tone={toneItem(it.status_item)}
                         title={resumoEtapaItem(it.status_item) ?? undefined}
-                        className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${stMeta.badge}`}
-                      >
-                        <span className={`h-1 w-1 rounded-full ${stMeta.dot}`} />
-                        {stMeta.label}
-                      </span>
+                      />
                     </td>
                   </tr>
                 )
@@ -490,11 +527,8 @@ export function SolicitacaoDetalhePage() {
     </div>
   )
 
-  const painelSecoes: PainelSecao[] = [
-    { id: 'historico', label: 'Histórico', badge: historico.length, conteudo: <HistoricoTimeline eventos={historico} /> },
-    { id: 'vinculos', label: 'Vínculos', badge: (cotacoes.length + pedidos.length + recebimentos.length) || undefined, conteudo: painelVinculos },
-    { id: 'detalhes', label: 'Detalhes', conteudo: detalhes },
-  ]
+  // Marca toneEtapaProcessoSC como usado (validação semântica futura)
+  void toneEtapaProcessoSC
 
   return (
     <>
@@ -508,18 +542,10 @@ export function SolicitacaoDetalhePage() {
         }
         badges={badges}
         acoes={acoes}
-        meta={faixaMeta}
-        vinculos={<VinculosBar grupos={gruposVinc} />}
+        meta={metaFaixa}
         alerta={alerta}
-        fluxo={
-          <FaixaEtapasToolbar
-            etapas={ETAPAS_PROCESSO_SC}
-            contagens={contagensEtapas}
-            meta={metaEtapaProcessoSC}
-            apenasVisualizacao
-            etapaAtual={etapaAtual}
-          />
-        }
+        fluxo={fluxoSlim}
+        vinculosRodape={vinculosSecao}
         principal={tabelaItens}
         painelSecoes={painelSecoes}
       />

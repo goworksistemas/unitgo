@@ -1,21 +1,21 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Search, ShoppingCart, Calendar, Building2, Truck,
+  Search, ShoppingCart, Rows, Rows3,
 } from 'lucide-react'
-import { Card, CardContent } from '@heroui/react'
 import { supabase } from '@/lib/supabase'
 import type {
   CmpCotacaoStatus, CmpFornecedor, CmpPedido, CmpPedidoStatus, CoreEmpresa,
 } from '@/types/database'
 import { formatDate, formatMoney } from './_shared'
-import { ETAPAS_PEDIDO_FLUXO, metaCotacao, metaPedido, resumoEtapaPedido } from './_fluxoEtapas'
-import { StatusBadge } from './_StatusBadge'
+import { ETAPAS_PEDIDO_FLUXO, metaPedido, tonePedido } from './_fluxoEtapas'
 import { LinhaExpansivel } from './_LinhaExpansivel'
 import { PainelPedido } from './_PainelPedido'
 import { AcoesAprovacaoPedido } from './_AcoesAprovacaoLista'
 import { FaixaEtapasToolbar } from './_FaixaEtapasToolbar'
 import { useContagensEtapas } from './_useContagensEtapas'
+import { StatusDot } from '@/components/ui/StatusDot'
+import { useDensidade } from '@/hooks/useDensidade'
 
 const PAGE_SIZE = 25
 const STATUS_FLUXO = ETAPAS_PEDIDO_FLUXO.map(e => e.key)
@@ -52,6 +52,7 @@ export function PedidosPage() {
   })
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const [densidade, , toggleDensidade] = useDensidade()
 
   useEffect(() => { const t = setTimeout(() => setDebounced(search.trim()), 300); return () => clearTimeout(t) }, [search])
   useEffect(() => { setPage(0) }, [debounced, filtro])
@@ -114,17 +115,29 @@ export function PedidosPage() {
         contagens={contagens}
         meta={metaPedido}
         chaveTodas="todos"
+        variant="slim"
       />
 
-      <div className="relative max-w-md">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input type="search" value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar por número…"
-          className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 pl-8 pr-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input type="search" value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por número…"
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 pl-8 pr-3 py-1.5 text-xs outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+        </div>
+        <button
+          type="button"
+          onClick={toggleDensidade}
+          title={densidade === 'cozy' ? 'Compactar linhas' : 'Aumentar espaçamento'}
+          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1.5 text-[11px] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          {densidade === 'cozy' ? <Rows3 size={13} /> : <Rows size={13} />}
+          {densidade === 'cozy' ? 'Cozy' : 'Compact'}
+        </button>
       </div>
 
-      <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-gray-900">
-        <CardContent className="p-0">
+      <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+        <div className="p-0">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
@@ -140,56 +153,51 @@ export function PedidosPage() {
             <ul className="divide-y divide-gray-100 dark:divide-gray-800">
               {pedidos.map(p => {
                 const meta = metaPedido(p.status)
-                const cotMeta = p.cotacao ? metaCotacao(p.cotacao.status) : null
-                const resumo = resumoEtapaPedido(p.status)
                 const aberto = abertos.has(p.id)
                 return (
                   <LinhaExpansivel
                     key={p.id}
                     aberto={aberto}
                     onToggle={() => toggleAberto(p.id)}
+                    densidade={densidade}
                     cabecalho={
                       <>
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/30">
-                          <ShoppingCart size={16} className="text-indigo-600 dark:text-indigo-400" />
-                        </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <Link
                               to={`/compras/pedidos/${p.id}`}
                               onClick={e => e.stopPropagation()}
-                              className="text-sm font-mono font-semibold text-indigo-700 dark:text-indigo-300 hover:underline"
+                              className="text-[13px] font-mono font-semibold text-indigo-700 dark:text-indigo-300 hover:underline"
                               title="Abrir pedido"
                             >
                               {p.numero}
                             </Link>
-                            <StatusBadge meta={meta} size="md" />
-                            {cotMeta && p.cotacao && (
+                            <StatusDot tone={tonePedido(p.status)} label={meta.label} />
+                            {p.cotacao && (
                               <Link
                                 to={`/compras/cotacoes/${p.cotacao.id}`}
                                 onClick={e => e.stopPropagation()}
-                                className="inline-flex items-center gap-1 rounded-full border border-violet-200 dark:border-violet-800 bg-violet-50/80 dark:bg-violet-950/40 px-2 py-0.5 text-[10px] font-medium text-violet-800 dark:text-violet-200 hover:bg-violet-100"
+                                className="text-[11px] font-mono text-violet-700 dark:text-violet-300 hover:underline"
                                 title={`Cotação: ${p.cotacao.numero}`}
                               >
                                 {p.cotacao.numero}
                               </Link>
                             )}
                           </div>
-                          {resumo && (
-                            <p className="mt-0.5 text-[11px] text-gray-600 dark:text-gray-400">{resumo}</p>
-                          )}
-                          <div className="mt-1 flex items-center gap-3 flex-wrap text-xs text-gray-500 dark:text-gray-400">
-                            <span className="inline-flex items-center gap-1"><Truck size={11} />
+                          <div className="mt-0.5 flex items-center gap-3 flex-wrap text-[11px] text-gray-500 dark:text-gray-400">
+                            <span className="truncate" title={p.fornecedor?.nome_fantasia ?? p.fornecedor?.razao_social ?? '—'}>
                               {p.fornecedor?.nome_fantasia ?? p.fornecedor?.razao_social ?? '—'}
                             </span>
-                            <span className="inline-flex items-center gap-1"><Building2 size={11} />
+                            <span className="text-gray-300 dark:text-gray-600">·</span>
+                            <span className="truncate" title={p.empresa?.nome_fantasia ?? p.empresa?.razao_social ?? '—'}>
                               {p.empresa?.nome_fantasia ?? p.empresa?.razao_social ?? '—'}
                             </span>
-                            <span className="inline-flex items-center gap-1"><Calendar size={11} />{formatDate(p.created_at)}</span>
+                            <span className="text-gray-300 dark:text-gray-600">·</span>
+                            <span>{formatDate(p.created_at)}</span>
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-semibold tabular-nums text-gray-800 dark:text-gray-100">
+                          <p className="text-[13px] font-semibold tabular-nums text-gray-800 dark:text-gray-100">
                             {formatMoney(p.total_estimado)}
                           </p>
                         </div>
@@ -207,8 +215,8 @@ export function PedidosPage() {
               })}
             </ul>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {!loading && total > 0 && (
         <div className="flex items-center justify-between flex-wrap gap-2 text-sm">

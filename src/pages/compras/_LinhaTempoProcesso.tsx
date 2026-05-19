@@ -5,7 +5,7 @@ import {
   User as UserIcon, Clock,
 } from 'lucide-react'
 import { rpcCompras } from './_rpc'
-import type { CmpCotacaoStatus, CmpPedidoStatus, CmpSolicitacaoStatus } from '@/types/database'
+import type { CmpCotacaoStatus, CmpSolicitacaoStatus } from '@/types/database'
 import { COTACAO_STATUS_META, PEDIDO_STATUS_META, STATUS_META } from './_shared'
 
 /**

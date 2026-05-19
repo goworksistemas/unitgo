@@ -1,6 +1,8 @@
 import type { EtapaFluxo } from './_fluxoEtapas'
 import type { StatusMeta } from './_shared'
 
+type Variant = 'full' | 'slim'
+
 type Props<T extends string> = {
   etapas: EtapaFluxo<T>[]
   contagens: Partial<Record<T, number>>
@@ -10,6 +12,11 @@ type Props<T extends string> = {
   chaveTodas?: 'todos' | 'todas'
   apenasVisualizacao?: boolean
   etapaAtual?: T | null
+  /**
+   * - `full`  (default): chevron grande, 2 linhas (título + ação), usado em listagens com filtro
+   * - `slim`: chevron magro, 1 linha (`nº · ● Título  count`), ação só no tooltip
+   */
+  variant?: Variant
 }
 
 const TIP = 14 // px da "ponta" do chevron
@@ -25,7 +32,11 @@ function clipFor(isFirst: boolean, isLast: boolean) {
   return `polygon(0 0, calc(100% - ${TIP}px) 0, 100% 50%, calc(100% - ${TIP}px) 100%, 0 100%, ${TIP}px 50%)`
 }
 
-function cores(ativo: boolean, atual: boolean) {
+// ─────────────────────────────────────────────
+// FULL: visual original (mantido para listagens)
+// ─────────────────────────────────────────────
+
+function coresFull(ativo: boolean, atual: boolean) {
   if (atual) {
     return {
       bg: 'bg-amber-100 dark:bg-amber-900/40',
@@ -56,9 +67,56 @@ function cores(ativo: boolean, atual: boolean) {
   }
 }
 
+// ─────────────────────────────────────────────
+// SLIM: 1 linha, baixo destaque, cor só na atual
+// ─────────────────────────────────────────────
+
+function coresSlim(ativo: boolean, atual: boolean, concluida: boolean) {
+  if (atual) {
+    return {
+      bg: 'bg-amber-100 dark:bg-amber-900/40',
+      hover: '',
+      titulo: 'text-amber-800 dark:text-amber-200 font-semibold',
+      count: 'text-amber-700 dark:text-amber-300',
+      dot: 'bg-amber-500',
+      numero: 'bg-amber-600 text-white',
+    }
+  }
+  if (ativo) {
+    return {
+      bg: 'bg-emerald-100 dark:bg-emerald-900/40',
+      hover: '',
+      titulo: 'text-emerald-800 dark:text-emerald-200 font-semibold',
+      count: 'text-emerald-700 dark:text-emerald-300',
+      dot: 'bg-emerald-500',
+      numero: 'bg-emerald-600 text-white',
+    }
+  }
+  if (concluida) {
+    return {
+      bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+      hover: 'hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30',
+      titulo: 'text-emerald-700/80 dark:text-emerald-300/80',
+      count: 'text-emerald-700/80 dark:text-emerald-300/80',
+      dot: 'bg-emerald-500',
+      numero: 'bg-white dark:bg-gray-900 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800',
+    }
+  }
+  return {
+    bg: 'bg-gray-100 dark:bg-gray-800/70',
+    hover: 'hover:bg-gray-200 dark:hover:bg-gray-700/70',
+    titulo: 'text-gray-600 dark:text-gray-400',
+    count: 'text-gray-500 dark:text-gray-500',
+    dot: 'bg-gray-300 dark:bg-gray-600',
+    numero: 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700',
+  }
+}
+
 /**
  * Faixa horizontal de etapas em formato chevron (>) — encaixa uma na outra.
- * Compacta, sempre acima do search.
+ *
+ * Usar `variant='slim'` em telas de **detalhe** (linha única, baixo destaque).
+ * Usar `variant='full'` (default) em **listagens** com filtro por etapa.
  */
 export function FaixaEtapasToolbar<T extends string>({
   etapas,
@@ -69,7 +127,12 @@ export function FaixaEtapasToolbar<T extends string>({
   chaveTodas = 'todos',
   apenasVisualizacao = false,
   etapaAtual = null,
+  variant = 'full',
 }: Props<T>) {
+  const ordemAtual = apenasVisualizacao && etapaAtual != null
+    ? etapas.find(e => e.key === etapaAtual)?.ordem ?? null
+    : null
+
   return (
     <div
       className="flex items-stretch w-full overflow-x-auto"
@@ -81,9 +144,69 @@ export function FaixaEtapasToolbar<T extends string>({
         const count = contagens[e.key] ?? 0
         const ativo = !apenasVisualizacao && filtroAtivo === e.key
         const atual = apenasVisualizacao && etapaAtual === e.key
+        const concluida = ordemAtual != null && e.ordem > 0 && e.ordem < ordemAtual
         const isFirst = idx === 0
         const isLast = idx === etapas.length - 1
-        const c = cores(ativo, atual)
+
+        const style: React.CSSProperties = {
+          clipPath: clipFor(isFirst, isLast),
+          marginLeft: isFirst ? 0 : -(TIP - 2),
+          paddingLeft: isFirst ? 10 : 10 + TIP,
+          paddingRight: isLast ? 10 : 10 + TIP,
+          zIndex: ativo || atual ? 2 : 1,
+        }
+
+        if (variant === 'slim') {
+          const c = coresSlim(ativo, atual, concluida)
+          const baseCls = `relative flex-1 min-w-[140px] h-8 flex items-center text-left transition-colors ${c.bg} ${c.hover}`
+
+          const conteudo = (
+            <span className="flex items-center gap-1.5 min-w-0 w-full">
+              <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${c.numero}`}>
+                {e.ordem}
+              </span>
+              <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${c.dot}`} aria-hidden />
+              <span className={`flex-1 min-w-0 text-[11px] leading-tight truncate ${c.titulo}`}>
+                {e.etapa}
+              </span>
+              {count > 0 && (
+                <span className={`text-[11px] tabular-nums leading-none shrink-0 ${c.count}`}>
+                  {count}
+                </span>
+              )}
+            </span>
+          )
+
+          if (apenasVisualizacao) {
+            return (
+              <div
+                key={e.key}
+                title={`${e.etapa} — ${e.acao}`}
+                className={baseCls}
+                style={style}
+                aria-current={atual ? 'step' : undefined}
+              >
+                {conteudo}
+              </div>
+            )
+          }
+          return (
+            <button
+              key={e.key}
+              type="button"
+              onClick={() => onFiltro?.(ativo ? chaveTodas : e.key)}
+              title={`${e.etapa} — ${e.acao}`}
+              className={baseCls}
+              style={style}
+            >
+              {conteudo}
+            </button>
+          )
+        }
+
+        // variant === 'full'
+        const c = coresFull(ativo, atual)
+        const baseCls = `relative flex-1 min-w-[180px] flex flex-col justify-start text-left transition-colors py-2 ${c.bg} ${c.hover}`
 
         const conteudo = (
           <>
@@ -118,16 +241,6 @@ export function FaixaEtapasToolbar<T extends string>({
           </>
         )
 
-        const baseCls = `relative flex-1 min-w-[180px] flex flex-col justify-start text-left transition-colors py-2 ${c.bg} ${c.hover}`
-
-        const style: React.CSSProperties = {
-          clipPath: clipFor(isFirst, isLast),
-          marginLeft: isFirst ? 0 : -(TIP - 2),
-          paddingLeft: isFirst ? 10 : 10 + TIP,
-          paddingRight: isLast ? 10 : 10 + TIP,
-          zIndex: ativo || atual ? 2 : 1,
-        }
-
         if (apenasVisualizacao) {
           return (
             <div
@@ -141,7 +254,6 @@ export function FaixaEtapasToolbar<T extends string>({
             </div>
           )
         }
-
         return (
           <button
             key={e.key}
@@ -157,4 +269,18 @@ export function FaixaEtapasToolbar<T extends string>({
       })}
     </div>
   )
+}
+
+/**
+ * Próxima ação sugerida — texto curto baseado na etapa atual.
+ * Use no header das telas de detalhe para mostrar "o que fazer agora".
+ */
+export function proximaAcao<T extends string>(
+  etapas: EtapaFluxo<T>[],
+  etapaAtual: T | null | undefined,
+): { etapa: string; acao: string } | null {
+  if (!etapaAtual) return null
+  const e = etapas.find(x => x.key === etapaAtual)
+  if (!e) return null
+  return { etapa: e.etapa, acao: e.acao }
 }

@@ -1,7 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Calendar, ExternalLink, Eye, Link as LinkIcon, RefreshCw,
+  Calendar, ExternalLink, Eye, Link as LinkIcon,
   Search, ShoppingBag, Truck, FileText,
 } from 'lucide-react'
 import { MlPedidoCompraAcoes } from '@/components/compras/MlPedidoCompraAcoes'

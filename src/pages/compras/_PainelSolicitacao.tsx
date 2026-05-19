@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Package, FileSearch, ShoppingCart, Receipt, ExternalLink, Truck, Crown,
@@ -8,9 +8,10 @@ import {
   COTACAO_STATUS_META, PEDIDO_STATUS_META,
   formatDateTime, formatMoney, formatQty,
 } from './_shared'
-import { metaItem, resumoEtapaItem } from './_fluxoEtapas'
+import { toneCotacao, tonePedido } from './_fluxoEtapas'
 import { rpcCompras } from './_rpc'
-import { VinculosBar, gruposVinculosSC } from './_VinculosProcesso'
+import { Section } from '@/components/ui/Section'
+import { StatusDot } from '@/components/ui/StatusDot'
 import type { CmpItemStatus } from '@/types/database'
 
 // ── Tipos do payload da RPC `cmp_painel_solicitacao` ──
@@ -88,11 +89,6 @@ export function PainelSolicitacao({ scId }: { scId: string }) {
     return () => { cancel = true }
   }, [scId])
 
-  const gruposVinc = useMemo(
-    () => gruposVinculosSC({ cotacoes, pedidos, recebimentos }),
-    [cotacoes, pedidos, recebimentos],
-  )
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -116,187 +112,163 @@ export function PainelSolicitacao({ scId }: { scId: string }) {
   const totalEstimado = itens.reduce((s, it) => s + Number(it.quantidade) * Number(it.preco_estimado ?? 0), 0)
 
   return (
-    <div className="space-y-3">
-      <VinculosBar grupos={gruposVinc} />
-      {/* Itens */}
-      <Bloco titulo={`Itens (${itens.length})`} icone={<Package size={13} />}
-        meta={totalEstimado > 0 ? `Total estimado: ${formatMoney(totalEstimado)}` : undefined}>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Coluna 1: Itens */}
+      <Section
+        title={
+          <span className="inline-flex items-center gap-1.5">
+            <Package size={11} /> Itens · {itens.length}
+            {totalEstimado > 0 && <span className="text-gray-400 normal-case font-normal">· {formatMoney(totalEstimado)}</span>}
+          </span>
+        }
+      >
         {itens.length === 0 ? (
-          <p className="px-4 py-4 text-xs text-gray-400">Sem itens.</p>
+          <p className="text-xs text-gray-400 py-2">Sem itens.</p>
         ) : (
-          <table className="w-full text-xs">
-            <thead className="bg-gray-50/60 dark:bg-gray-800/40 text-[10px] uppercase tracking-wider text-gray-400">
-              <tr>
-                <th className="px-3 py-2 text-left w-8">#</th>
-                <th className="px-3 py-2 text-left">Produto</th>
-                <th className="px-3 py-2 text-right">Qtd.</th>
-                <th className="px-3 py-2 text-left">UoM</th>
-                <th className="px-3 py-2 text-right">Preço estim.</th>
-                <th className="px-3 py-2 text-right">Total</th>
-                <th className="px-3 py-2 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {itens.map(it => {
-                const stMeta = metaItem(it.status_item)
-                const total = Number(it.quantidade) * Number(it.preco_estimado ?? 0)
-                return (
-                  <tr key={it.id}>
-                    <td className="px-3 py-2 font-mono text-gray-400">{it.linha}</td>
-                    <td className="px-3 py-2">
-                      <p className="font-medium text-gray-800 dark:text-gray-200">{it.produto?.nome ?? '—'}</p>
-                      <p className="text-[10px] font-mono text-gray-500">{it.produto?.codigo ?? ''}</p>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatQty(it.quantidade)}</td>
-                    <td className="px-3 py-2 text-gray-500">{it.unidade_medida?.sigla ?? '—'}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-gray-600">{formatMoney(it.preco_estimado)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums font-semibold">{it.preco_estimado != null ? formatMoney(total) : '—'}</td>
-                    <td className="px-3 py-2">
-                      <span
-                        title={resumoEtapaItem(it.status_item) ?? undefined}
-                        className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${stMeta.badge}`}
-                      >
-                        <span className={`h-1.5 w-1.5 rounded-full ${stMeta.dot}`} />
-                        {stMeta.label}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800/60">
+            {itens.map(it => {
+              const total = Number(it.quantidade) * Number(it.preco_estimado ?? 0)
+              return (
+                <li key={it.id} className="py-1.5">
+                  <div className="min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-[10px] font-mono text-gray-400 shrink-0">#{it.linha}</span>
+                        <p className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">{it.produto?.nome ?? '—'}</p>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-2 text-[10px] text-gray-500">
+                        <span className="font-mono">{it.produto?.codigo}</span>
+                        <span className="tabular-nums">{formatQty(it.quantidade)} {it.unidade_medida?.sigla ?? ''}</span>
+                        {it.preco_estimado != null && (
+                          <span className="tabular-nums">· {formatMoney(total)}</span>
+                        )}
+                      </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
         )}
-      </Bloco>
+      </Section>
 
-      {/* Cotações */}
-      {cotacoes.length > 0 && (
-        <Bloco titulo={`Cotações vinculadas (${cotacoes.length})`} icone={<FileSearch size={13} />}>
-          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+      {/* Coluna 2: Cotações */}
+      <Section
+        title={
+          <span className="inline-flex items-center gap-1.5">
+            <FileSearch size={11} /> Cotações · {cotacoes.length}
+          </span>
+        }
+      >
+        {cotacoes.length === 0 ? (
+          <p className="text-xs text-gray-400 py-2">Sem cotações.</p>
+        ) : (
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800/60">
             {cotacoes.map(c => {
               const meta = COTACAO_STATUS_META[c.status]
               return (
-                <li key={c.id}>
-                  <Link
-                    to={`/compras/cotacoes/${c.id}`}
-                    onClick={e => e.stopPropagation()}
-                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-violet-50/40 dark:hover:bg-violet-950/20"
-                  >
-                    <FileSearch size={13} className="text-violet-600 dark:text-violet-400 shrink-0" />
+                <li key={c.id} className="py-1.5">
+                  <Link to={`/compras/cotacoes/${c.id}`} onClick={e => e.stopPropagation()}
+                    className="group flex items-center gap-2 hover:opacity-80">
+                    <FileSearch size={11} className="text-violet-500 shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-mono font-semibold text-gray-800 dark:text-gray-200">{c.numero}</span>
-                        <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${meta.badge}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-                          {meta.label}
-                        </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] font-mono font-semibold text-violet-700 dark:text-violet-300 truncate">{c.numero}</span>
+                        <StatusDot tone={toneCotacao(c.status)} label={meta.label} />
                       </div>
-                      <p className="text-[11px] text-gray-500 truncate mt-0.5">
-                        {c.titulo} · {c.itens_count} item(s)
+                      <p className="text-[10px] text-gray-500 truncate">
+                        {c.titulo}
                         {(c.total_escolhido ?? 0) > 0 && (
-                          <span className="ml-2 inline-flex items-center gap-0.5 text-emerald-700 dark:text-emerald-400">
-                            <Crown size={9} /> {formatMoney(c.total_escolhido)}
+                          <span className="ml-1 inline-flex items-center gap-0.5 text-emerald-700 dark:text-emerald-400">
+                            · <Crown size={8} /> {formatMoney(c.total_escolhido)}
                           </span>
                         )}
                       </p>
                     </div>
-                    <ExternalLink size={11} className="text-gray-400 shrink-0" />
+                    <ExternalLink size={10} className="text-gray-300 group-hover:text-gray-500 shrink-0" />
                   </Link>
                 </li>
               )
             })}
           </ul>
-        </Bloco>
-      )}
+        )}
+      </Section>
 
-      {/* Pedidos */}
-      {pedidos.length > 0 && (
-        <Bloco titulo={`Pedidos (${pedidos.length})`} icone={<ShoppingCart size={13} />}>
-          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+      {/* Coluna 3: Pedidos */}
+      <Section
+        title={
+          <span className="inline-flex items-center gap-1.5">
+            <ShoppingCart size={11} /> Pedidos · {pedidos.length}
+          </span>
+        }
+      >
+        {pedidos.length === 0 ? (
+          <p className="text-xs text-gray-400 py-2">Sem pedidos.</p>
+        ) : (
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800/60">
             {pedidos.map(p => {
               const meta = PEDIDO_STATUS_META[p.status]
               const progresso = p.qtd_total > 0 ? (p.qtd_recebida / p.qtd_total) * 100 : 0
               return (
-                <li key={p.id}>
-                  <Link
-                    to={`/compras/pedidos/${p.id}`}
-                    onClick={e => e.stopPropagation()}
-                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20"
-                  >
-                    <ShoppingCart size={13} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <li key={p.id} className="py-1.5">
+                  <Link to={`/compras/pedidos/${p.id}`} onClick={e => e.stopPropagation()}
+                    className="group flex items-center gap-2 hover:opacity-80">
+                    <ShoppingCart size={11} className="text-indigo-500 shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-mono font-semibold text-gray-800 dark:text-gray-200">{p.numero}</span>
-                        <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${meta.badge}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-                          {meta.label}
-                        </span>
-                        {!p.cotacao_id && <span className="text-[10px] text-gray-400 italic">(direto)</span>}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] font-mono font-semibold text-indigo-700 dark:text-indigo-300 truncate">{p.numero}</span>
+                        <StatusDot tone={tonePedido(p.status)} label={meta.label} />
+                        {!p.cotacao_id && <span className="text-[9px] text-gray-400 italic">direto</span>}
                       </div>
-                      <p className="text-[11px] text-gray-500 mt-0.5 inline-flex items-center gap-1">
-                        <Truck size={10} /> {p.fornecedor?.nome_fantasia ?? p.fornecedor?.razao_social ?? '—'}
-                        {progresso > 0 && <span className="ml-2 text-emerald-700 dark:text-emerald-400">· {progresso.toFixed(0)}% recebido</span>}
+                      <p className="text-[10px] text-gray-500 truncate inline-flex items-center gap-1">
+                        <Truck size={9} /> {p.fornecedor?.nome_fantasia ?? p.fornecedor?.razao_social ?? '—'}
+                        <span className="text-gray-400">·</span>
+                        <span className="tabular-nums font-semibold">{formatMoney(p.total)}</span>
+                        {progresso > 0 && <span className="text-emerald-700 dark:text-emerald-400">· {progresso.toFixed(0)}%</span>}
                       </p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs font-semibold tabular-nums text-gray-800 dark:text-gray-100">{formatMoney(p.total)}</p>
-                    </div>
-                    <ExternalLink size={11} className="text-gray-400 shrink-0" />
+                    <ExternalLink size={10} className="text-gray-300 group-hover:text-gray-500 shrink-0" />
                   </Link>
                 </li>
               )
             })}
           </ul>
-        </Bloco>
-      )}
+        )}
+      </Section>
 
-      {/* Recebimentos */}
-      {recebimentos.length > 0 && (
-        <Bloco titulo={`Recebimentos (${recebimentos.length})`} icone={<Receipt size={13} />}>
-          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+      {/* Coluna 4: Recebimentos */}
+      <Section
+        title={
+          <span className="inline-flex items-center gap-1.5">
+            <Receipt size={11} /> Recebimentos · {recebimentos.length}
+          </span>
+        }
+      >
+        {recebimentos.length === 0 ? (
+          <p className="text-xs text-gray-400 py-2">Sem recebimentos.</p>
+        ) : (
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800/60">
             {recebimentos.map(r => (
-              <li key={r.id} className="flex items-center gap-3 px-4 py-2.5">
-                <Receipt size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <li key={r.id} className="py-1.5 flex items-center gap-2">
+                <Receipt size={11} className="text-emerald-500 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-mono font-semibold">{r.numero}</span>
-                    <span className="text-[10px] text-gray-500">do {r.pedido_numero}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-mono font-semibold">{r.numero}</span>
+                    <span className="text-[10px] text-gray-400">{r.pedido_numero}</span>
                   </div>
-                  <p className="text-[10px] text-gray-500">
-                    <Calendar size={9} className="inline mr-1" />
-                    {formatDateTime(r.data_recebimento)}
+                  <p className="text-[10px] text-gray-500 inline-flex items-center gap-1">
+                    <Calendar size={9} /> {formatDateTime(r.data_recebimento)}
                   </p>
                 </div>
               </li>
             ))}
           </ul>
-        </Bloco>
-      )}
+        )}
+      </Section>
 
-      {/* Vazio */}
       {itens.length === 0 && cotacoes.length === 0 && pedidos.length === 0 && recebimentos.length === 0 && (
-        <div className="flex items-center gap-2 px-4 py-6 text-xs text-gray-400">
+        <div className="col-span-full flex items-center gap-2 px-4 py-6 text-xs text-gray-400">
           <AlertCircle size={13} /> Sem dados vinculados ainda.
         </div>
       )}
     </div>
-  )
-}
-
-function Bloco({ titulo, icone, meta, children }: {
-  titulo: string
-  icone: React.ReactNode
-  meta?: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
-      <div className="flex items-center justify-between gap-2 border-b border-gray-100 dark:border-gray-800 px-4 py-2 bg-gray-50/40 dark:bg-gray-800/40">
-        <h3 className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">
-          {icone} {titulo}
-        </h3>
-        {meta && <span className="text-[11px] text-gray-500">{meta}</span>}
-      </div>
-      <div className="overflow-x-auto">{children}</div>
-    </section>
   )
 }

@@ -239,17 +239,29 @@ export async function pedidosResumoPorScIds(
   if (itemIds.length > 0) {
     const { data: pedItens } = await supabase
       .from('cmp_pedidos_compra_itens')
-      .select('solicitacao_item_id, pedido:cmp_pedidos_compra(id, status)')
+      .select('solicitacao_item_id, pedido_id')
       .in('solicitacao_item_id', itemIds)
+
+    const pedIds = [...new Set((pedItens ?? []).map(r => r.pedido_id as string))]
+    const pedPorId: Record<string, { id: string; status: CmpPedidoStatus }> = {}
+    if (pedIds.length > 0) {
+      const { data: peds } = await supabase
+        .from('cmp_pedidos_compra')
+        .select('id, status')
+        .in('id', pedIds)
+      for (const p of peds ?? []) {
+        pedPorId[p.id] = { id: p.id, status: p.status as CmpPedidoStatus }
+      }
+    }
 
     const itemParaSc: Record<string, string> = {}
     itensSc?.forEach(i => { itemParaSc[i.id] = i.solicitacao_id as string })
 
     for (const row of pedItens ?? []) {
-      const ped = row.pedido as { id: string; status: CmpPedidoStatus } | null
-      if (!ped?.id) continue
+      const ped = pedPorId[row.pedido_id as string]
+      if (!ped) continue
       const sid = itemParaSc[row.solicitacao_item_id as string]
-      if (sid) addPedido(sid, { id: ped.id, status: ped.status })
+      if (sid) addPedido(sid, ped)
     }
   }
 

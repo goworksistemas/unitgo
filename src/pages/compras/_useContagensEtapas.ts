@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import type {
+  CmpCotacaoStatus, CmpPedidoStatus, CmpSolicitacaoStatus,
+} from '@/types/database'
+
+type CmpStatusUnion = CmpSolicitacaoStatus | CmpCotacaoStatus | CmpPedidoStatus
 
 /** Contagens por status (head requests em paralelo) para a faixa de etapas */
 export function useContagensEtapas<T extends string>(
@@ -17,7 +22,7 @@ export function useContagensEtapas<T extends string>(
         const { count } = await supabase
           .from(tabela)
           .select('*', { count: 'exact', head: true })
-          .eq('status', status)
+          .eq('status', status as CmpStatusUnion)
         return { status, count: count ?? 0 }
       }),
     )

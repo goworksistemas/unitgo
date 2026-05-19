@@ -11,7 +11,6 @@ import {
 import { rpcCompras } from './_rpc'
 import { VinculosBar, gruposVinculosPedido } from './_VinculosProcesso'
 import { resumoEtapaPedido } from './_fluxoEtapas'
-import { useAuth } from '@/contexts/AuthContext'
 
 // ── Tipos do payload da RPC `cmp_painel_pedido` ──
 type PedidoFull = {
@@ -55,7 +54,6 @@ interface RpcPainelPed {
 }
 
 export function PainelPedido({ pedidoId }: { pedidoId: string }) {
-  const { profile } = useAuth()
   const [ped, setPed] = useState<PedidoFull | null>(null)
   const [itens, setItens] = useState<ItemPed[]>([])
   const [recebimentos, setRecebimentos] = useState<RecebimentoMin[]>([])

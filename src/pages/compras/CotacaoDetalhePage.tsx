@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
-  CheckCircle2, Building2, Calendar, FileText, Package,
-  User as UserIcon, AlertCircle, Trophy, Crown, ShoppingCart, Plus, X, Truck, Edit3,
+  CheckCircle2, Calendar,
+  Trophy, Crown, ShoppingCart, Plus, X, Truck, Edit3,
+  History, Network, Info,
 } from 'lucide-react'
 import { BotaoVoltar } from '@/components/shared/BotaoVoltar'
 import { Button } from '@heroui/react'
@@ -14,19 +15,23 @@ import type {
   CmpPedidoStatus, CmpSolicitacaoStatus,
 } from '@/types/database'
 import {
-  COTACAO_STATUS_META, PEDIDO_STATUS_META,
+  COTACAO_STATUS_META,
   formatDate, formatDateTime, formatMoney, formatQty,
 } from './_shared'
-import { LinhaTempoProcesso } from './_LinhaTempoProcesso'
+import { ETAPAS_COTACAO_FLUXO, metaCotacao } from './_fluxoEtapas'
+import { FaixaEtapasToolbar } from './_FaixaEtapasToolbar'
 import { gerarPedidosDaCotacao } from './_gerarPedidos'
 import { PropLinha } from './_LayoutDetalhe'
 import {
-  LayoutDetalheFocado, MetaChip, MetaSep, AlertaLinha, type PainelSecao,
+  LayoutDetalheFocado, AlertaLinha, type PainelSecao,
 } from './_LayoutDetalheFocado'
 import { HistoricoTimeline, type EventoHistorico } from './_HistoricoTimeline'
 import { rpcCompras } from './_rpc'
-import { VinculosBar, VinculosLista, gruposVinculosCotacao } from './_VinculosProcesso'
-
+import {
+  VinculosFocado, VinculosLista, gruposVinculosCotacao, type ScTooltipInput,
+} from './_VinculosProcesso'
+import { InfoChip } from '@/components/ui/InfoChip'
+import { StatRow } from '@/components/ui/StatRow'
 // ── Tipos do payload da RPC cmp_detalhe_cotacao ──
 type ProfileMini = { id: string; nome: string | null; email: string }
 
@@ -102,8 +107,12 @@ export function CotacaoDetalhePage() {
   const [fornecedores, setFornecedores] = useState<FornecedorFull[]>([])
   const [respostas, setRespostas] = useState<CmpCotacaoRespostaItem[]>([])
   const [escolhas, setEscolhas] = useState<CmpCotacaoEscolha[]>([])
-  const [scsVinc, setScsVinc] = useState<{ id: string; numero: string; status: CmpSolicitacaoStatus }[]>([])
+  const [scsVinc, setScsVinc] = useState<ScTooltipInput[]>([])
   const [pedidosVinc, setPedidosVinc] = useState<PedidoVinc[]>([])
+  const [recebimentosVinc, setRecebimentosVinc] = useState<Array<{
+    id: string; numero: string; pedido_id: string; pedido_numero?: string
+    data_recebimento: string; observacoes?: string | null
+  }>>([])
   const [historico, setHistorico] = useState<EventoHistorico[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -142,14 +151,58 @@ export function CotacaoDetalhePage() {
     setScsVinc(data.scs_vinculadas ?? [])
     setPedidosVinc(data.pedidos ?? [])
     setHistorico(data.historico ?? [])
+
+    // Recebimentos vinculados aos pedidos desta cotação — não vêm na RPC
+    const pedIds = (data.pedidos ?? []).map(p => p.id)
+    if (pedIds.length > 0) {
+      const { data: recs } = await supabase
+        .from('cmp_recebimentos')
+        .select('id, numero, pedido_id, data_recebimento, observacoes, pedido:cmp_pedidos_compra(numero)')
+        .in('pedido_id', pedIds)
+        .order('data_recebimento', { ascending: false })
+      setRecebimentosVinc(((recs ?? []) as unknown as Array<{
+        id: string; numero: string; pedido_id: string
+        data_recebimento: string; observacoes: string | null
+        pedido?: { numero: string } | null
+      }>).map(r => ({
+        id: r.id,
+        numero: r.numero,
+        pedido_id: r.pedido_id,
+        pedido_numero: r.pedido?.numero,
+        data_recebimento: r.data_recebimento,
+        observacoes: r.observacoes,
+      })))
+    } else {
+      setRecebimentosVinc([])
+    }
+
     if (!silent) setLoading(false)
   }, [id])
 
   useEffect(() => { fetchData() }, [fetchData])
 
   const gruposVinc = useMemo(
-    () => gruposVinculosCotacao({ scs: scsVinc, pedidos: pedidosVinc }),
-    [scsVinc, pedidosVinc],
+    () => gruposVinculosCotacao({
+      cotacao: cot ? {
+        id: cot.id,
+        numero: cot.numero,
+        titulo: cot.titulo,
+        status: cot.status,
+        comprador: cot.comprador,
+        prazo_resposta: cot.prazo_resposta,
+        created_at: cot.created_at,
+        itens_count: itens.length,
+        fornecedores_count: fornecedores.length,
+        total_escolhido: escolhas.reduce((sum, esc) => {
+          const it = itens.find(i => i.id === esc.cotacao_item_id)
+          return sum + (it ? it.quantidade * esc.preco_final_unitario : 0)
+        }, 0),
+      } : null,
+      scs: scsVinc,
+      pedidos: pedidosVinc,
+      recebimentos: recebimentosVinc,
+    }),
+    [cot, itens, fornecedores, escolhas, scsVinc, pedidosVinc, recebimentosVinc],
   )
 
   // ── Mapas de leitura rápida ──
@@ -367,11 +420,23 @@ export function CotacaoDetalhePage() {
   // ── Header full-width ──
   const badges = (
     <>
-      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusMeta.badge}`}>
+      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${statusMeta.badge}`}>
         <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`} />
         {statusMeta.label}
       </span>
     </>
+  )
+
+  const totalVinculos = scsVinc.length + pedidosVinc.length
+  const fluxoSlim = (
+    <FaixaEtapasToolbar
+      etapas={ETAPAS_COTACAO_FLUXO}
+      contagens={{}}
+      meta={metaCotacao}
+      apenasVisualizacao
+      etapaAtual={cot.status}
+      variant="slim"
+    />
   )
 
   const acoes = (
@@ -405,26 +470,20 @@ export function CotacaoDetalhePage() {
   ) : null
 
   const faixaMeta = (
-    <>
-      <MetaChip label="Empresa">{cot.empresa?.nome_fantasia ?? cot.empresa?.razao_social ?? '—'}</MetaChip>
-      <MetaSep />
-      <MetaChip label="Comprador">{cot.comprador?.nome ?? cot.comprador?.email ?? '—'}</MetaChip>
-      <MetaSep />
-      <MetaChip label="Prazo">{formatDate(cot.prazo_resposta)}</MetaChip>
-      <MetaSep />
-      <MetaChip label="Itens">{itens.length}</MetaChip>
-      <MetaSep />
-      <MetaChip label="Fornec.">{fornecedores.length}</MetaChip>
-      <MetaSep />
-      <MetaChip label="Vencedores">{escolhas.length}/{itens.length}</MetaChip>
-      {totalGeral > 0 && (
-        <>
-          <MetaSep />
-          <MetaChip label="Total" destaque>{formatMoney(totalGeral)}</MetaChip>
-        </>
-      )}
-    </>
+    <StatRow max={3}>
+      <InfoChip label="Comprador">{cot.comprador?.nome ?? cot.comprador?.email ?? '—'}</InfoChip>
+      <InfoChip label="Vencedores">{escolhas.length}/{itens.length}</InfoChip>
+      {totalGeral > 0
+        ? <InfoChip label="Total" destaque>{formatMoney(totalGeral)}</InfoChip>
+        : <InfoChip label="Fornec.">{fornecedores.length}</InfoChip>}
+      <InfoChip label="Empresa">{cot.empresa?.nome_fantasia ?? cot.empresa?.razao_social ?? '—'}</InfoChip>
+      {totalGeral > 0 && <InfoChip label="Fornec.">{fornecedores.length}</InfoChip>}
+      <InfoChip label="Prazo">{formatDate(cot.prazo_resposta)}</InfoChip>
+      <InfoChip label="Itens">{itens.length}</InfoChip>
+    </StatRow>
   )
+
+  const vinculosSecao = <VinculosFocado grupos={gruposVinc} />
 
   const detalhes = (
     <dl className="space-y-2 text-sm">
@@ -651,9 +710,9 @@ export function CotacaoDetalhePage() {
       })()
 
   const painelSecoes: PainelSecao[] = [
-    { id: 'historico', label: 'Histórico', badge: historico.length, conteudo: <HistoricoTimeline eventos={historico} /> },
-    { id: 'vinculos', label: 'Vínculos', badge: (scsVinc.length + pedidosVinc.length) || undefined, conteudo: painelVinculos },
-    { id: 'detalhes', label: 'Detalhes', conteudo: detalhes },
+    { id: 'historico', label: 'Histórico', icone: <History size={13} />, badge: historico.length, conteudo: <HistoricoTimeline eventos={historico} /> },
+    { id: 'vinculos', label: 'Vínculos', icone: <Network size={13} />, badge: totalVinculos || undefined, conteudo: painelVinculos },
+    { id: 'detalhes', label: 'Detalhes', icone: <Info size={13} />, conteudo: detalhes },
   ]
 
   return (
@@ -665,9 +724,9 @@ export function CotacaoDetalhePage() {
         badges={badges}
         acoes={acoes}
         meta={faixaMeta}
-        vinculos={<VinculosBar grupos={gruposVinc} />}
         alerta={alerta}
-        fluxo={<LinhaTempoProcesso cotacaoId={cot.id} currentStep="cotacao" compacto />}
+        fluxo={fluxoSlim}
+        vinculosRodape={vinculosSecao}
         principal={principal}
         painelSecoes={painelSecoes}
       />

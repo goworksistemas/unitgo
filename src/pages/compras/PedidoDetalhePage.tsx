@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   Truck, Send,
-  CheckCircle2, Receipt, Ban, XCircle, RefreshCw,
-  ArrowRightLeft,
-  User as UserIcon,
+  CheckCircle2, Receipt, XCircle, RefreshCw,
+  ArrowRightLeft, MoreHorizontal,
+  History, Network, Info,
 } from 'lucide-react'
 import { BotaoVoltar } from '@/components/shared/BotaoVoltar'
 import { Button } from '@heroui/react'
@@ -16,20 +16,25 @@ import type {
   CmpFornecedor, CmpPedidoStatus, CmpPedidoItemStatus,
   PrdProduto, PrdUnidadeMedida,
 } from '@/types/database'
-import {
-  PEDIDO_ITEM_STATUS_META, STATUS_META,
-  formatMoney, formatQty,
-} from './_shared'
-import { metaPedido, resumoEtapaPedido } from './_fluxoEtapas'
-import { LinhaTempoProcesso } from './_LinhaTempoProcesso'
+import { formatMoney, formatQty } from './_shared'
+import { ETAPAS_PEDIDO_FLUXO, metaPedido } from './_fluxoEtapas'
+import { FaixaEtapasToolbar } from './_FaixaEtapasToolbar'
 import { PropLinha } from './_LayoutDetalhe'
 import {
-  LayoutDetalheFocado, MetaChip, MetaSep, AlertaLinha, type PainelSecao,
+  LayoutDetalheFocado, AlertaLinha, type PainelSecao,
 } from './_LayoutDetalheFocado'
 import { HistoricoTimeline, type EventoHistorico } from './_HistoricoTimeline'
 import { rpcCompras } from './_rpc'
 import { PainelMercadoLivre } from './_PainelMercadoLivre'
-import { VinculosBar, VinculosLista, gruposVinculosPedido } from './_VinculosProcesso'
+import {
+  VinculosFocado, VinculosLista, gruposVinculosPedido, itensResumoFromPedidoItens,
+  type CotTooltipInput, type ScTooltipInput,
+} from './_VinculosProcesso'
+import { InfoChip } from '@/components/ui/InfoChip'
+import { StatRow } from '@/components/ui/StatRow'
+import { MorePopover } from '@/components/ui/MorePopover'
+import { StatusDot } from '@/components/ui/StatusDot'
+import type { StatusTone } from '@/components/ui/StatusDot'
 
 // ── Tipos do payload da RPC cmp_detalhe_pedido ──
 type ProfileMini = { id: string; nome: string | null; email: string }
@@ -49,7 +54,7 @@ type PedidoFull = {
   ml_pedido_id: string | null
   empresa?: { id: string; razao_social: string; nome_fantasia: string | null; cnpj: string | null } | null
   fornecedor?: { id: string; razao_social: string; nome_fantasia: string | null; cnpj_cpf: string | null } | null
-  cotacao?: { id: string; numero: string; status: string } | null
+  cotacao?: CotTooltipInput | null
   comprador?: ProfileMini | null
   aprovador?: ProfileMini | null
 }
@@ -70,11 +75,25 @@ type RecebimentoMin = {
   recebedor?: ProfileMini | null
 }
 
+type PedidoVincRpc = {
+  id: string; numero: string; status: CmpPedidoStatus
+  cotacao_id?: string | null
+  fornecedor?: { razao_social: string; nome_fantasia: string | null } | null
+  created_at?: string; enviado_em?: string | null
+  total?: number; qtd_total?: number; qtd_recebida?: number
+  itens_resumo?: Array<{
+    linha?: number; nome: string; codigo?: string | null
+    quantidade?: number; unidade?: string | null
+    preco_unitario?: number; total?: number; quantidade_recebida?: number
+  }>
+}
+
 interface RpcDetalhePed {
   pedido: PedidoFull
   itens: ItemFull[]
   recebimentos: RecebimentoMin[]
-  scs_origem: { id: string; numero: string; status: keyof typeof STATUS_META }[]
+  scs_origem: ScTooltipInput[]
+  pedidos_vinc?: PedidoVincRpc[]
   historico: EventoHistorico[]
 }
 
@@ -87,7 +106,12 @@ export function PedidoDetalhePage() {
   const [itens, setItens] = useState<ItemFull[]>([])
   const [recebimentos, setRecebimentos] = useState<RecebimentoMin[]>([])
   const [historico, setHistorico] = useState<EventoHistorico[]>([])
-  const [scsOrigem, setScsOrigem] = useState<{ id: string; numero: string; status: keyof typeof STATUS_META }[]>([])
+  const [scsOrigem, setScsOrigem] = useState<ScTooltipInput[]>([])
+  const [pedidosIrmaos, setPedidosIrmaos] = useState<PedidoVincRpc[]>([])
+  const [recebimentosVinc, setRecebimentosVinc] = useState<Array<{
+    id: string; numero: string; pedido_id: string; pedido_numero?: string
+    data_recebimento: string; observacoes?: string | null
+  }>>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
@@ -122,21 +146,105 @@ export function PedidoDetalhePage() {
     setRecebimentos(detalheResp.data.recebimentos ?? [])
     setScsOrigem(detalheResp.data.scs_origem ?? [])
     setHistorico(detalheResp.data.historico ?? [])
+
+    let vincPedidos = detalheResp.data.pedidos_vinc ?? []
+    if (vincPedidos.length === 0 && pedido?.cotacao_id) {
+      const { data: todos } = await supabase
+        .from('cmp_pedidos_compra')
+        .select('id, numero, status, created_at, enviado_em, cotacao_id, fornecedor:cmp_fornecedores(razao_social,nome_fantasia), itens:cmp_pedidos_compra_itens(linha, quantidade, preco_unitario, quantidade_recebida, produto:prd_produtos(codigo,nome), unidade_medida:prd_unidades_medida(sigla))')
+        .eq('cotacao_id', pedido.cotacao_id)
+      type Row = {
+        id: string; numero: string; status: CmpPedidoStatus
+        created_at?: string; enviado_em?: string | null; cotacao_id?: string | null
+        fornecedor?: { razao_social: string; nome_fantasia: string | null } | null
+        itens?: Array<{
+          linha: number; quantidade: number; preco_unitario: number; quantidade_recebida: number
+          produto?: { codigo: string; nome: string } | null
+          unidade_medida?: { sigla: string } | null
+        }>
+      }
+      vincPedidos = ((todos ?? []) as unknown as Row[]).map(p => ({
+        id: p.id,
+        numero: p.numero,
+        status: p.status,
+        cotacao_id: p.cotacao_id,
+        fornecedor: p.fornecedor ?? null,
+        created_at: p.created_at,
+        enviado_em: p.enviado_em ?? null,
+        total: (p.itens ?? []).reduce((s, it) => s + Number(it.quantidade) * Number(it.preco_unitario), 0),
+        qtd_total: (p.itens ?? []).reduce((s, it) => s + Number(it.quantidade), 0),
+        qtd_recebida: (p.itens ?? []).reduce((s, it) => s + Number(it.quantidade_recebida), 0),
+        itens_resumo: itensResumoFromPedidoItens(p.itens ?? []),
+      }))
+    }
+    setPedidosIrmaos(vincPedidos.filter(p => p.id !== pedido?.id))
+    await carregarRecebimentosVinc(
+      vincPedidos.length > 0 ? vincPedidos.map(p => p.id) : [pedido.id],
+    )
+
     setLoading(false)
   }, [id])
+
+  const carregarRecebimentosVinc = useCallback(async (idsPedidos: string[]) => {
+    if (idsPedidos.length === 0) {
+      setRecebimentosVinc([])
+      return
+    }
+    const { data: recs } = await supabase
+      .from('cmp_recebimentos')
+      .select('id, numero, pedido_id, data_recebimento, observacoes, pedido:cmp_pedidos_compra(numero)')
+      .in('pedido_id', idsPedidos)
+      .order('data_recebimento', { ascending: false })
+
+    setRecebimentosVinc(((recs ?? []) as unknown as Array<{
+      id: string; numero: string; pedido_id: string
+      data_recebimento: string; observacoes: string | null
+      pedido?: { numero: string } | null
+    }>).map(r => ({
+      id: r.id,
+      numero: r.numero,
+      pedido_id: r.pedido_id,
+      pedido_numero: r.pedido?.numero,
+      data_recebimento: r.data_recebimento,
+      observacoes: r.observacoes,
+    })))
+  }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
 
   const gruposVinc = useMemo(
     () => ped
       ? gruposVinculosPedido({
-          cotacao: ped.cotacao,
+          pedido: {
+            id: ped.id,
+            numero: ped.numero,
+            status: ped.status,
+            fornecedor: ped.fornecedor ?? undefined,
+            cotacao_id: ped.cotacao_id,
+            created_at: ped.created_at,
+            enviado_em: ped.enviado_em,
+            total: itens.reduce((s, it) => s + Number(it.quantidade) * Number(it.preco_unitario), 0),
+            qtd_total: itens.reduce((s, it) => s + Number(it.quantidade), 0),
+            qtd_recebida: itens.reduce((s, it) => s + Number(it.quantidade_recebida), 0),
+            itens_resumo: itensResumoFromPedidoItens(itens),
+          },
+          pedidosIrmaos: pedidosIrmaos.map(p => ({
+            ...p,
+            cotacao_id: ped.cotacao_id,
+          })),
+          cotacao: ped.cotacao ?? undefined,
           scs: scsOrigem,
-          recebimentos,
+          recebimentos: recebimentosVinc.length > 0
+            ? recebimentosVinc
+            : recebimentos.map(r => ({
+                ...r,
+                pedido_id: ped.id,
+                pedido_numero: ped.numero,
+              })),
           mlPedidoId: ped.ml_pedido_id,
         })
       : [],
-    [ped, scsOrigem, recebimentos],
+    [ped, itens, scsOrigem, recebimentos, recebimentosVinc, pedidosIrmaos],
   )
 
   async function marcarEnviado() {
@@ -217,94 +325,132 @@ export function PedidoDetalhePage() {
   }
 
   const statusMeta = metaPedido(ped.status)
-  const resumoEtapa = resumoEtapaPedido(ped.status)
   const total = itens.reduce((sum, it) => sum + Number(it.quantidade) * Number(it.preco_unitario), 0)
   const totalRecebido = itens.reduce((sum, it) => sum + Number(it.quantidade_recebida) * Number(it.preco_unitario), 0)
   const progresso = total > 0 ? (totalRecebido / total) * 100 : 0
 
   // ── Header full-width ──
   const badges = (
-    <>
-      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusMeta.badge}`}>
-        <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`} />
-        {statusMeta.label}
-      </span>
-    </>
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${statusMeta.badge}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`} />
+      {statusMeta.label}
+    </span>
   )
+
+  // Ações: até 2 primárias + menu kebab para secundárias
+  const acoesPrimarias: React.ReactNode[] = []
+  const acoesSecundarias: Array<{ label: string; onClick: () => void; tom?: 'red' }> = []
+
+  if (podeAprovar && ped.status === 'aguardando_aprovacao') {
+    acoesPrimarias.push(
+      <Button key="aprovar" isDisabled={actionLoading === 'aprovar'} onPress={aprovarPedido}
+        className="bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+        <CheckCircle2 size={13} /> Aprovar pedido
+      </Button>,
+    )
+    acoesPrimarias.push(
+      <Button key="reprovar" isDisabled={actionLoading === 'reprovar'} onPress={reprovarPedido}
+        className="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+        <XCircle size={13} /> Reprovar
+      </Button>,
+    )
+  }
+  if (podeEditar && ped.status === 'aprovado') {
+    acoesPrimarias.push(
+      <Button key="enviar" isDisabled={actionLoading === 'enviar'} onPress={marcarEnviado}
+        className="bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+        <Send size={13} /> Confirmar compra
+      </Button>,
+    )
+  }
+  if (podeEditar && ['aprovado', 'enviado', 'parcialmente_recebido'].includes(ped.status)) {
+    acoesPrimarias.push(
+      <Button key="receb" onPress={() => navigate(`/compras/recebimentos/novo?pedido=${ped.id}`)}
+        className="bg-violet-600 text-white hover:bg-violet-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+        <Receipt size={13} /> Registrar recebimento
+      </Button>,
+    )
+  }
+  if (podeEditar && !['cancelado', 'recebido'].includes(ped.status)) {
+    acoesSecundarias.push({ label: 'Cancelar pedido', onClick: cancelar, tom: 'red' })
+  }
 
   const acoes = (
     <>
-      {podeAprovar && ped.status === 'aguardando_aprovacao' && (
-        <>
-          <Button isDisabled={actionLoading === 'aprovar'} onPress={aprovarPedido}
-            className="bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
-            <CheckCircle2 size={13} /> Aprovar pedido
-          </Button>
-          <Button isDisabled={actionLoading === 'reprovar'} onPress={reprovarPedido}
-            className="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
-            <XCircle size={13} /> Reprovar
-          </Button>
-        </>
-      )}
-      {podeEditar && ped.status === 'aprovado' && (
-        <Button isDisabled={actionLoading === 'enviar'} onPress={marcarEnviado}
-          className="bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
-          <Send size={13} /> Confirmar compra com fornecedor
-        </Button>
-      )}
-      {podeEditar && ['aprovado','enviado','parcialmente_recebido'].includes(ped.status) && (
-        <Button onPress={() => navigate(`/compras/recebimentos/novo?pedido=${ped.id}`)}
-          className="bg-violet-600 text-white hover:bg-violet-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
-          <Receipt size={13} /> Registrar recebimento
-        </Button>
-      )}
-      {podeEditar && !['cancelado','recebido'].includes(ped.status) && (
-        <Button onPress={cancelar}
-          className="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
-          <Ban size={13} /> Cancelar
-        </Button>
+      {acoesPrimarias.slice(0, 2)}
+      {(acoesPrimarias.length > 2 || acoesSecundarias.length > 0) && (
+        <MorePopover
+          align="end"
+          label={<MoreHorizontal size={14} />}
+          title="Mais ações"
+          className="!px-1.5 !py-1"
+        >
+          <div className="space-y-0.5">
+            {acoesPrimarias.slice(2).map((_, idx) => (
+              <button key={`extra-${idx}`} type="button" className="hidden">{/* placeholder */}</button>
+            ))}
+            {acoesSecundarias.map(a => (
+              <button
+                key={a.label}
+                type="button"
+                onClick={a.onClick}
+                className={`w-full text-left px-2 py-1.5 text-[11px] rounded ${
+                  a.tom === 'red'
+                    ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40'
+                    : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                {a.label}
+              </button>
+            ))}
+          </div>
+        </MorePopover>
       )}
     </>
   )
 
-  const alerta = (
-    <>
-      {resumoEtapa && (
-        <p className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 text-sm text-gray-700 dark:text-gray-200">
-          {resumoEtapa}
-        </p>
-      )}
-      {ped.status === 'cancelado' && ped.motivo_cancelamento && (
-        <AlertaLinha tom="red">Cancelado: {ped.motivo_cancelamento}</AlertaLinha>
-      )}
-    </>
-  )
+  const alerta = ped.status === 'cancelado' && ped.motivo_cancelamento ? (
+    <AlertaLinha tom="red">Cancelado: {ped.motivo_cancelamento}</AlertaLinha>
+  ) : null
+
+  const fornecedorNome = ped.fornecedor?.nome_fantasia ?? ped.fornecedor?.razao_social ?? '—'
 
   const faixaMeta = (
-    <>
-      <MetaChip label="Fornecedor" destaque>
-        {ped.fornecedor?.nome_fantasia ?? ped.fornecedor?.razao_social ?? '—'}
-      </MetaChip>
-      <MetaSep />
-      <MetaChip label="Empresa">{ped.empresa?.nome_fantasia ?? ped.empresa?.razao_social ?? '—'}</MetaChip>
-      <MetaSep />
-      <MetaChip label="Total" destaque>{formatMoney(total)}</MetaChip>
-      {progresso > 0 && (
-        <>
-          <MetaSep />
-          <MetaChip label="Recebido">{progresso.toFixed(0)}%</MetaChip>
-        </>
-      )}
-    </>
+    <StatRow max={3}>
+      <InfoChip label="Fornecedor" destaque>{fornecedorNome}</InfoChip>
+      <InfoChip label="Total" destaque>{formatMoney(total)}</InfoChip>
+      {progresso > 0
+        ? <InfoChip label="Recebido">{progresso.toFixed(0)}%</InfoChip>
+        : <InfoChip label="Empresa">{ped.empresa?.nome_fantasia ?? ped.empresa?.razao_social ?? '—'}</InfoChip>}
+      {progresso > 0 && <InfoChip label="Empresa">{ped.empresa?.nome_fantasia ?? ped.empresa?.razao_social ?? '—'}</InfoChip>}
+      <InfoChip label="Comprador">{ped.comprador?.nome ?? ped.comprador?.email ?? '—'}</InfoChip>
+      <InfoChip label="Aprovador">{ped.aprovador?.nome ?? ped.aprovador?.email ?? '—'}</InfoChip>
+      {ped.prazo_entrega_dias && <InfoChip label="Prazo">{ped.prazo_entrega_dias}d</InfoChip>}
+      {ped.condicao_pagamento && <InfoChip label="Pag.">{ped.condicao_pagamento}</InfoChip>}
+    </StatRow>
+  )
+
+  const totalVinculos = gruposVinc.reduce((n, g) => n + g.itens.filter(i => !i.atual).length, 0)
+  const vinculosSecao = <VinculosFocado grupos={gruposVinc} />
+
+  const fluxoSlim = (
+    <FaixaEtapasToolbar
+      etapas={ETAPAS_PEDIDO_FLUXO}
+      contagens={{}}
+      meta={metaPedido}
+      apenasVisualizacao
+      etapaAtual={ped.status}
+      variant="slim"
+    />
   )
 
 
   const detalhes = (
     <dl className="space-y-2 text-sm">
-      <PropLinha label="Comprador" icone={<UserIcon size={11} />}>
+      <PropLinha label="Comprador">
         {ped.comprador?.nome ?? ped.comprador?.email ?? '—'}
       </PropLinha>
-      <PropLinha label="Aprovador" icone={<UserIcon size={11} />}>
+      <PropLinha label="Aprovador">
         {ped.aprovador?.nome ?? ped.aprovador?.email ?? '—'}
       </PropLinha>
       <PropLinha label="Prazo entrega">
@@ -356,7 +502,6 @@ export function PedidoDetalhePage() {
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {itens.map(it => {
                     const totalLinha = Number(it.quantidade) * Number(it.preco_unitario)
-                    const stMeta = PEDIDO_ITEM_STATUS_META[it.status_item]
                     return (
                       <tr key={it.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
                         <td className="px-3 py-2.5 text-gray-400 font-mono align-top text-[11px]">{it.linha}</td>
@@ -375,10 +520,10 @@ export function PedidoDetalhePage() {
                           </span>
                         </td>
                         <td className="px-3 py-2.5 align-top">
-                          <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${stMeta.badge}`}>
-                            <span className={`h-1 w-1 rounded-full ${stMeta.dot}`} />
-                            {stMeta.label}
-                          </span>
+                          <StatusDot
+                            tone={tonePedidoItem(it.status_item)}
+                            label={rotuloItemPedido(it.status_item)}
+                          />
                         </td>
                       </tr>
                     )
@@ -402,9 +547,9 @@ export function PedidoDetalhePage() {
   )
 
   const painelSecoes: PainelSecao[] = [
-    { id: 'historico', label: 'Histórico', badge: historico.length, conteudo: <HistoricoTimeline eventos={historico} /> },
-    { id: 'vinculos', label: 'Vínculos', conteudo: painelVinculos },
-    { id: 'detalhes', label: 'Detalhes', conteudo: detalhes },
+    { id: 'historico', label: 'Histórico', icone: <History size={13} />, badge: historico.length, conteudo: <HistoricoTimeline eventos={historico} /> },
+    { id: 'vinculos', label: 'Vínculos', icone: <Network size={13} />, badge: totalVinculos || undefined, conteudo: painelVinculos },
+    { id: 'detalhes', label: 'Detalhes', icone: <Info size={13} />, conteudo: detalhes },
   ]
 
   return (
@@ -416,20 +561,33 @@ export function PedidoDetalhePage() {
         badges={badges}
         acoes={acoes}
         meta={faixaMeta}
-        vinculos={<VinculosBar grupos={gruposVinc} />}
         alerta={alerta}
-        fluxo={
-          <LinhaTempoProcesso
-            pedidoId={ped.id}
-            currentStep={['enviado','parcialmente_recebido','recebido'].includes(ped.status) ? 'recebimento' : 'pedido'}
-            compacto
-          />
-        }
+        fluxo={fluxoSlim}
+        vinculosRodape={vinculosSecao}
         principal={principal}
         painelSecoes={painelSecoes}
       />
     </>
   )
+}
+
+// ── Helpers para StatusDot da tabela de itens do pedido ───────────────
+function tonePedidoItem(status: CmpPedidoItemStatus): StatusTone {
+  switch (status) {
+    case 'pendente':              return 'amber'
+    case 'parcialmente_recebido': return 'violet'
+    case 'recebido':              return 'emerald'
+    default:                      return 'gray'
+  }
+}
+
+function rotuloItemPedido(status: CmpPedidoItemStatus): string {
+  switch (status) {
+    case 'pendente':              return 'Pendente'
+    case 'parcialmente_recebido': return 'Parcial'
+    case 'recebido':              return 'Recebido'
+    default:                      return String(status)
+  }
 }
 
 // ────────────────────────────────────────────────────────────────

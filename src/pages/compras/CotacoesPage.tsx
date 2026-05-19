@@ -1,20 +1,21 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  Plus, Search, FileSearch, Calendar, Building2, User as UserIcon, FileText,
+  Plus, Search, FileSearch, User as UserIcon, FileText, Rows, Rows3,
 } from 'lucide-react'
-import { Button, Card, CardContent } from '@heroui/react'
+import { Button } from '@heroui/react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type { CmpCotacao, CmpCotacaoStatus, CmpSolicitacao, CoreEmpresa, Profile } from '@/types/database'
 import { PRIORIDADE_META, formatDate } from './_shared'
-import { ETAPAS_COTACAO_FLUXO, metaCotacao, resumoEtapaCotacao } from './_fluxoEtapas'
-import { StatusBadge } from './_StatusBadge'
+import { ETAPAS_COTACAO_FLUXO, metaCotacao, toneCotacao } from './_fluxoEtapas'
 import { FaixaEtapasToolbar } from './_FaixaEtapasToolbar'
 import { useContagensEtapas } from './_useContagensEtapas'
 import { Bandeja, BandejaItem } from './_bandejas'
 import { LinhaExpansivel } from './_LinhaExpansivel'
 import { PainelCotacao } from './_PainelCotacao'
+import { StatusDot } from '@/components/ui/StatusDot'
+import { useDensidade } from '@/hooks/useDensidade'
 
 const PAGE_SIZE = 25
 const STATUS_FLUXO = ETAPAS_COTACAO_FLUXO.map(e => e.key)
@@ -51,6 +52,7 @@ export function CotacoesPage() {
   })
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const [densidade, , toggleDensidade] = useDensidade()
 
   useEffect(() => { const t = setTimeout(() => setDebounced(search.trim()), 300); return () => clearTimeout(t) }, [search])
   useEffect(() => { setPage(0) }, [debounced, filtro])
@@ -171,19 +173,31 @@ export function CotacoesPage() {
         contagens={contagens}
         meta={metaCotacao}
         chaveTodas="todas"
+        variant="slim"
       />
 
-      <div className="relative max-w-md">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          type="search" value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar por número ou título…"
-          className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 pl-8 pr-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-        />
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="search" value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por número ou título…"
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 pl-8 pr-3 py-1.5 text-xs outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={toggleDensidade}
+          title={densidade === 'cozy' ? 'Compactar linhas' : 'Aumentar espaçamento'}
+          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1.5 text-[11px] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          {densidade === 'cozy' ? <Rows3 size={13} /> : <Rows size={13} />}
+          {densidade === 'cozy' ? 'Cozy' : 'Compact'}
+        </button>
       </div>
 
-      <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-gray-900">
-        <CardContent className="p-0">
+      <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+        <div className="p-0">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
@@ -204,44 +218,42 @@ export function CotacoesPage() {
             <ul className="divide-y divide-gray-100 dark:divide-gray-800">
               {cotacoes.map(cot => {
                 const meta = metaCotacao(cot.status)
-                const resumo = resumoEtapaCotacao(cot.status)
                 const aberto = abertos.has(cot.id)
+                const compact = densidade === 'compact'
                 return (
                   <LinhaExpansivel
                     key={cot.id}
                     aberto={aberto}
                     onToggle={() => toggleAberto(cot.id)}
+                    densidade={densidade}
                     cabecalho={
-                      <>
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-50 dark:bg-violet-950/30">
-                          <FileSearch size={16} className="text-violet-600 dark:text-violet-400" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            to={`/compras/cotacoes/${cot.id}`}
+                            onClick={e => e.stopPropagation()}
+                            className="text-[13px] font-mono font-semibold text-violet-700 dark:text-violet-300 hover:underline"
+                            title="Abrir cotação"
+                          >
+                            {cot.numero}
+                          </Link>
+                          <StatusDot tone={toneCotacao(cot.status)} label={meta.label} />
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Link
-                              to={`/compras/cotacoes/${cot.id}`}
-                              onClick={e => e.stopPropagation()}
-                              className="text-sm font-mono font-semibold text-violet-700 dark:text-violet-300 hover:underline"
-                              title="Abrir cotação"
-                            >
-                              {cot.numero}
-                            </Link>
-                            <StatusBadge meta={meta} size="md" />
-                          </div>
-                          {resumo && (
-                            <p className="mt-0.5 text-[11px] text-gray-600 dark:text-gray-400">{resumo}</p>
+                        <p className={`text-[12px] text-gray-700 dark:text-gray-200 truncate ${compact ? 'mt-0' : 'mt-0.5'}`}>{cot.titulo}</p>
+                        <div className="mt-0.5 flex items-center gap-3 flex-wrap text-[11px] text-gray-500 dark:text-gray-400">
+                          <span className="truncate" title={cot.comprador?.nome ?? cot.comprador?.email ?? '—'}>{cot.comprador?.nome ?? cot.comprador?.email ?? '—'}</span>
+                          <span className="text-gray-300 dark:text-gray-600">·</span>
+                          <span className="truncate" title={cot.empresa?.nome_fantasia ?? cot.empresa?.razao_social ?? '—'}>{cot.empresa?.nome_fantasia ?? cot.empresa?.razao_social ?? '—'}</span>
+                          <span className="text-gray-300 dark:text-gray-600">·</span>
+                          <span>{formatDate(cot.created_at)}</span>
+                          {cot.prazo_resposta && (
+                            <>
+                              <span className="text-gray-300 dark:text-gray-600">·</span>
+                              <span className="text-amber-600 dark:text-amber-400">prazo {formatDate(cot.prazo_resposta)}</span>
+                            </>
                           )}
-                          <p className="mt-0.5 text-sm text-gray-700 dark:text-gray-200 truncate">{cot.titulo}</p>
-                          <div className="mt-0.5 flex items-center gap-3 flex-wrap text-xs text-gray-500 dark:text-gray-400">
-                            <span className="inline-flex items-center gap-1"><UserIcon size={11} />{cot.comprador?.nome ?? cot.comprador?.email ?? '—'}</span>
-                            <span className="inline-flex items-center gap-1"><Building2 size={11} />{cot.empresa?.nome_fantasia ?? cot.empresa?.razao_social ?? '—'}</span>
-                            <span className="inline-flex items-center gap-1"><Calendar size={11} />{formatDate(cot.created_at)}</span>
-                            {cot.prazo_resposta && (
-                              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">prazo {formatDate(cot.prazo_resposta)}</span>
-                            )}
-                          </div>
                         </div>
-                      </>
+                      </div>
                     }
                     painel={aberto ? <PainelCotacao cotId={cot.id} /> : null}
                   />
@@ -249,8 +261,8 @@ export function CotacoesPage() {
               })}
             </ul>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {!loading && total > 0 && (
         <div className="flex items-center justify-between flex-wrap gap-2 text-sm">

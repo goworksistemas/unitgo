@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  Plus, Search, FileText, Calendar, Building2, User as UserIcon, Hash, Network,
+  Plus, Search, FileText, Hash, Rows, Rows3,
 } from 'lucide-react'
-import { Button, Card, CardContent } from '@heroui/react'
+import { Button } from '@heroui/react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type {
-  CmpCotacaoStatus, CmpItemStatus, CmpPedidoStatus, CmpSolicitacao,
+  CmpCotacaoStatus, CmpItemStatus, CmpSolicitacao,
   CoreDepartamento, CoreEmpresa, Profile,
 } from '@/types/database'
 import { PRIORIDADE_META, formatDate } from './_shared'
 import {
-  ETAPAS_PROCESSO_SC, metaEtapaProcessoSC, metaSolicitacao, type EtapaProcessoSC,
+  ETAPAS_PROCESSO_SC, metaEtapaProcessoSC, metaSolicitacao,
+  toneEtapaProcessoSC, type EtapaProcessoSC,
 } from './_fluxoEtapas'
-import { StatusBadge } from './_StatusBadge'
 import { LinhaExpansivel } from './_LinhaExpansivel'
 import { PainelSolicitacao } from './_PainelSolicitacao'
 import { AcoesAprovacaoSC } from './_AcoesAprovacaoLista'
@@ -22,8 +22,10 @@ import { FaixaEtapasToolbar } from './_FaixaEtapasToolbar'
 import { useContagensProcessoSC } from './_useContagensProcessoSC'
 import {
   etapaAtualProcessoSC, itensResumoPorScIds, pedidosResumoPorScIds,
-  resumoProcessoSC, scIdsParaEtapa,
+  resumoProcessoSC, scIdsParaEtapa, type PedidoMin,
 } from './_processoSC'
+import { StatusDot } from '@/components/ui/StatusDot'
+import { useDensidade } from '@/hooks/useDensidade'
 
 const PAGE_SIZE = 25
 
@@ -36,7 +38,7 @@ type SolicitacaoEnriquecida = CmpSolicitacao & {
   total_itens?: number
   cotacoes_vinculadas?: CotacaoVinculadaMin[]
   itens_resumo?: { status_item: CmpItemStatus }[]
-  pedidos_resumo?: { status: CmpPedidoStatus }[]
+  pedidos_resumo?: PedidoMin[]
 }
 
 export function SolicitacoesPage() {
@@ -60,6 +62,7 @@ export function SolicitacoesPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const { contagens, recarregarContagens } = useContagensProcessoSC()
+  const [densidade, , toggleDensidade] = useDensidade()
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 300)
@@ -106,11 +109,23 @@ export function SolicitacoesPage() {
       const scIds = base.map(s => s.id)
       const { data: vincs } = await supabase
         .from('cmp_cotacoes_solicitacoes')
-        .select('solicitacao_id, cotacao:cmp_cotacoes(id, numero, status)')
+        .select('solicitacao_id, cotacao_id')
         .in('solicitacao_id', scIds)
 
+      const cotIds = [...new Set((vincs ?? []).map(v => v.cotacao_id as string))]
+      const cotPorId: Record<string, CotacaoVinculadaMin> = {}
+      if (cotIds.length > 0) {
+        const { data: cots } = await supabase
+          .from('cmp_cotacoes')
+          .select('id, numero, status')
+          .in('id', cotIds)
+        for (const c of cots ?? []) {
+          cotPorId[c.id] = c as CotacaoVinculadaMin
+        }
+      }
+
       for (const row of vincs ?? []) {
-        const cot = row.cotacao as CotacaoVinculadaMin | null
+        const cot = cotPorId[row.cotacao_id as string]
         if (!cot?.id) continue
         const sid = row.solicitacao_id as string
         if (!cotacoesPorSc[sid]) cotacoesPorSc[sid] = []
@@ -173,23 +188,35 @@ export function SolicitacoesPage() {
         contagens={contagens}
         meta={metaEtapaProcessoSC}
         chaveTodas="todas"
+        variant="slim"
       />
 
-      <div className="relative max-w-md">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          type="search"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar por número ou justificativa…"
-          className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 pl-8 pr-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-        />
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por número ou justificativa…"
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 pl-8 pr-3 py-1.5 text-xs outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={toggleDensidade}
+          title={densidade === 'cozy' ? 'Compactar linhas' : 'Aumentar espaçamento'}
+          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1.5 text-[11px] text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+        >
+          {densidade === 'cozy' ? <Rows3 size={13} /> : <Rows size={13} />}
+          {densidade === 'cozy' ? 'Cozy' : 'Compact'}
+        </button>
       </div>
 
 
       {/* Lista */}
-      <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-gray-900">
-        <CardContent className="p-0">
+      <div className="rounded-xl border border-gray-100 dark:border-gray-800 dark:bg-gray-900 bg-white shadow-sm">
+        <div className="p-0">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
@@ -231,27 +258,29 @@ export function SolicitacoesPage() {
                   : null
                 const aberto = abertos.has(sc.id)
                 const cotPrincipal = sc.cotacoes_vinculadas?.[0]
+                const toneAtual = etapaAtual
+                  ? toneEtapaProcessoSC(etapaAtual)
+                  : 'gray'
+                const compact = densidade === 'compact'
                 return (
                   <LinhaExpansivel
                     key={sc.id}
                     aberto={aberto}
                     onToggle={() => toggleAberto(sc.id)}
+                    densidade={densidade}
                     cabecalho={
                       <>
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
-                          <FileText size={16} className="text-emerald-600 dark:text-emerald-400" />
-                        </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <Link
                               to={`/compras/solicitacoes/${sc.id}`}
                               onClick={e => e.stopPropagation()}
-                              className="text-sm font-mono font-semibold text-emerald-700 dark:text-emerald-300 hover:underline"
+                              className="text-[13px] font-mono font-semibold text-emerald-700 dark:text-emerald-300 hover:underline"
                               title="Abrir solicitação"
                             >
                               {sc.numero}
                             </Link>
-                            <StatusBadge meta={meta} size="md" />
+                            <StatusDot tone={toneAtual} label={meta.label} />
                             {cotPrincipal && (
                               <Link
                                 to={`/compras/cotacoes/${cotPrincipal.id}`}
@@ -263,41 +292,39 @@ export function SolicitacoesPage() {
                               </Link>
                             )}
                             {sc.prioridade !== 'normal' && (
-                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.badge}`}>
+                              <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${prio.badge}`}>
                                 {prio.label}
                               </span>
                             )}
                           </div>
-                          {(resumo ?? resumoFallback) && (
-                            <p className="mt-0.5 text-[11px] text-gray-600 dark:text-gray-400">
+                          {!compact && (resumo ?? resumoFallback) && (
+                            <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
                               {resumo ?? resumoFallback}
                             </p>
                           )}
-                          <div className="mt-1 flex items-center gap-3 flex-wrap text-xs text-gray-500 dark:text-gray-400">
-                            <span className="inline-flex items-center gap-1">
-                              <UserIcon size={11} />
+                          <div className="mt-0.5 flex items-center gap-3 flex-wrap text-[11px] text-gray-500 dark:text-gray-400">
+                            <span className="truncate" title={sc.solicitante?.nome ?? sc.solicitante?.email ?? '—'}>
                               {sc.solicitante?.nome ?? sc.solicitante?.email ?? '—'}
                             </span>
-                            <span className="inline-flex items-center gap-1">
-                              <Network size={11} />
-                              {sc.departamento?.nome ?? '—'}
-                            </span>
-                            <span className="inline-flex items-center gap-1">
-                              <Building2 size={11} />
+                            <span className="text-gray-300 dark:text-gray-600">·</span>
+                            <span className="truncate">{sc.departamento?.nome ?? '—'}</span>
+                            <span className="text-gray-300 dark:text-gray-600">·</span>
+                            <span title={`Empresa: ${sc.empresa?.nome_fantasia ?? sc.empresa?.razao_social ?? '—'}`} className="truncate">
                               {sc.empresa?.nome_fantasia ?? sc.empresa?.razao_social ?? '—'}
                             </span>
-                            <span className="inline-flex items-center gap-1">
-                              <Calendar size={11} />
-                              {formatDate(sc.created_at)}
-                            </span>
+                            <span className="text-gray-300 dark:text-gray-600">·</span>
+                            <span>{formatDate(sc.created_at)}</span>
                             {sc.data_necessaria && (
-                              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                                <Hash size={11} /> precisa em {formatDate(sc.data_necessaria)}
-                              </span>
+                              <>
+                                <span className="text-gray-300 dark:text-gray-600">·</span>
+                                <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                                  <Hash size={11} /> {formatDate(sc.data_necessaria)}
+                                </span>
+                              </>
                             )}
                           </div>
-                          {sc.justificativa && (
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {!compact && sc.justificativa && (
+                            <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400 truncate">
                               {sc.justificativa}
                             </p>
                           )}
@@ -311,8 +338,8 @@ export function SolicitacoesPage() {
               })}
             </ul>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Paginação */}
       {!loading && total > 0 && (

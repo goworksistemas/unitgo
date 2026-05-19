@@ -113,23 +113,25 @@ export function AcoesAprovacaoSC({
 
   return (
     <>
-      <Button
-        isDisabled={loading != null}
-        onPress={aprovar}
-        className={btnAprovar}
-        title="Aprovar solicitação"
-      >
-        <CheckCircle2 size={12} />
-        {loading === 'aprovar' ? '…' : 'Aprovar'}
-      </Button>
-      <Button
-        isDisabled={loading != null}
-        onPress={() => { setModalReprovar(true); setMotivo('') }}
-        className={btnReprovar}
-        title="Reprovar solicitação"
-      >
-        <XCircle size={12} /> Reprovar
-      </Button>
+      <span className="inline-flex" title="Aprovar solicitação">
+        <Button
+          isDisabled={loading != null}
+          onPress={aprovar}
+          className={btnAprovar}
+        >
+          <CheckCircle2 size={12} />
+          {loading === 'aprovar' ? '…' : 'Aprovar'}
+        </Button>
+      </span>
+      <span className="inline-flex" title="Reprovar solicitação">
+        <Button
+          isDisabled={loading != null}
+          onPress={() => { setModalReprovar(true); setMotivo('') }}
+          className={btnReprovar}
+        >
+          <XCircle size={12} /> Reprovar
+        </Button>
+      </span>
       {modalReprovar && (
         <MotivoModal
           titulo="Reprovar solicitação"
@@ -225,23 +227,25 @@ export function AcoesAprovacaoPedido({
 
   return (
     <>
-      <Button
-        isDisabled={loading != null}
-        onPress={aprovar}
-        className={btnAprovar}
-        title="Aprovar pedido"
-      >
-        <CheckCircle2 size={12} />
-        {loading === 'aprovar' ? '…' : 'Aprovar'}
-      </Button>
-      <Button
-        isDisabled={loading != null}
-        onPress={() => { setModalReprovar(true); setMotivo('') }}
-        className={btnReprovar}
-        title="Reprovar pedido"
-      >
-        <XCircle size={12} /> Reprovar
-      </Button>
+      <span className="inline-flex" title="Aprovar pedido">
+        <Button
+          isDisabled={loading != null}
+          onPress={aprovar}
+          className={btnAprovar}
+        >
+          <CheckCircle2 size={12} />
+          {loading === 'aprovar' ? '…' : 'Aprovar'}
+        </Button>
+      </span>
+      <span className="inline-flex" title="Reprovar pedido">
+        <Button
+          isDisabled={loading != null}
+          onPress={() => { setModalReprovar(true); setMotivo('') }}
+          className={btnReprovar}
+        >
+          <XCircle size={12} /> Reprovar
+        </Button>
+      </span>
       {modalReprovar && (
         <MotivoModal
           titulo="Reprovar pedido"

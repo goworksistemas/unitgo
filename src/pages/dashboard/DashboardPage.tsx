@@ -6,29 +6,59 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 
+// ─── Tipos e modelo de contadores ──────────────────────────────────────────
+
 interface PipelineCounts {
-  // SC
-  sc_aguardando_aprovacao: number
-  sc_aprovada_sem_cotacao: number
-  // Cotação
-  cot_aberta: number
-  cot_respondida: number
-  cot_vencedor_escolhido: number
-  // Pedido aguardando aprovação (alçada)
-  ped_aguardando_aprovacao: number
-  ped_aguardando_envio: number
-  ped_enviado: number
-  ped_parcial: number
-  // Recebimento
-  rec_hoje: number
+  // SC ─ ação: aprovar / acompanhar
+  sc_aguardando_aprovacao: number  // gestor precisa aprovar
+  sc_em_andamento: number          // aprovada com itens não finalizados
+  sc_atendidas_mes: number         // concluídas no mês corrente
+
+  // Cotação ─ ação: aguardar fornec. / escolher vencedor / gerar pedido
+  cot_aberta: number               // aguardando resposta de fornecedor
+  cot_respondida: number           // precisa escolher vencedor
+  cot_vencedor_escolhido: number   // precisa gerar pedido
+  cot_encerradas_mes: number       // encerradas no mês corrente
+
+  // Pedido ─ ação: aprovar / comprar / receber
+  ped_aguardando_aprovacao: number // aprovador precisa aprovar
+  ped_aprovado: number             // comprador precisa efetuar compra
+  ped_em_transito: number          // enviado + parcialmente_recebido
+  ped_recebidos_mes: number        // concluídos no mês corrente
+
+  // Recebimento ─ ação: registrar entrada
+  rec_hoje: number                 // registrados hoje (local)
+  rec_7d: number                   // registrados nos últimos 7 dias
 }
 
 const ZERO: PipelineCounts = {
-  sc_aguardando_aprovacao: 0, sc_aprovada_sem_cotacao: 0,
-  cot_aberta: 0, cot_respondida: 0, cot_vencedor_escolhido: 0,
-  ped_aguardando_aprovacao: 0, ped_aguardando_envio: 0, ped_enviado: 0, ped_parcial: 0,
-  rec_hoje: 0,
+  sc_aguardando_aprovacao: 0, sc_em_andamento: 0, sc_atendidas_mes: 0,
+  cot_aberta: 0, cot_respondida: 0, cot_vencedor_escolhido: 0, cot_encerradas_mes: 0,
+  ped_aguardando_aprovacao: 0, ped_aprovado: 0, ped_em_transito: 0, ped_recebidos_mes: 0,
+  rec_hoje: 0, rec_7d: 0,
 }
+
+// ─── Helpers de data ──────────────────────────────────────────────────────
+
+function inicioDoDiaLocalIso(): string {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d.toISOString()
+}
+function inicioDoMesLocalIso(): string {
+  const d = new Date()
+  d.setDate(1)
+  d.setHours(0, 0, 0, 0)
+  return d.toISOString()
+}
+function nDiasAtrasLocalIso(n: number): string {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() - n)
+  return d.toISOString()
+}
+
+// ─── Componente ────────────────────────────────────────────────────────────
 
 export function DashboardPage() {
   const { profile } = useAuth()
@@ -42,44 +72,79 @@ export function DashboardPage() {
     async function carregar() {
       setLoading(true)
       const c = { ...ZERO }
+      const inicioDia = inicioDoDiaLocalIso()
+      const inicioMes = inicioDoMesLocalIso()
+      const inicio7d = nDiasAtrasLocalIso(7)
 
-      const consultas = await Promise.all([
-        supabase.from('cmp_solicitacoes_compra').select('*', { count: 'exact', head: true }).eq('status', 'aguardando_aprovacao'),
-        supabase.from('cmp_cotacoes').select('*', { count: 'exact', head: true }).eq('status', 'aberta'),
-        supabase.from('cmp_cotacoes').select('*', { count: 'exact', head: true }).eq('status', 'respondida'),
-        supabase.from('cmp_cotacoes').select('*', { count: 'exact', head: true }).eq('status', 'vencedor_escolhido'),
-        supabase.from('cmp_pedidos_compra').select('*', { count: 'exact', head: true }).eq('status', 'aguardando_aprovacao'),
-        supabase.from('cmp_pedidos_compra').select('*', { count: 'exact', head: true }).eq('status', 'aprovado').is('enviado_em', null),
-        supabase.from('cmp_pedidos_compra').select('*', { count: 'exact', head: true }).eq('status', 'enviado'),
-        supabase.from('cmp_pedidos_compra').select('*', { count: 'exact', head: true }).eq('status', 'parcialmente_recebido'),
+      // Contadores diretos por status (paralelo)
+      const resultados = await Promise.all([
+        // 0  SC aguardando aprovação
+        supabase.from('cmp_solicitacoes_compra').select('*', { count: 'exact', head: true })
+          .eq('status', 'aguardando_aprovacao'),
+        // 1  SC atendidas no mês
+        supabase.from('cmp_solicitacoes_compra').select('*', { count: 'exact', head: true })
+          .eq('status', 'atendida').gte('updated_at', inicioMes),
+        // 2  Cotação aberta
+        supabase.from('cmp_cotacoes').select('*', { count: 'exact', head: true })
+          .eq('status', 'aberta'),
+        // 3  Cotação respondida (precisa escolher vencedor)
+        supabase.from('cmp_cotacoes').select('*', { count: 'exact', head: true })
+          .eq('status', 'respondida'),
+        // 4  Cotação vencedor escolhido (precisa gerar pedido)
+        supabase.from('cmp_cotacoes').select('*', { count: 'exact', head: true })
+          .eq('status', 'vencedor_escolhido'),
+        // 5  Cotação encerradas no mês
+        supabase.from('cmp_cotacoes').select('*', { count: 'exact', head: true })
+          .eq('status', 'encerrada').gte('updated_at', inicioMes),
+        // 6  Pedido aguardando aprovação
+        supabase.from('cmp_pedidos_compra').select('*', { count: 'exact', head: true })
+          .eq('status', 'aguardando_aprovacao'),
+        // 7  Pedido aprovado (a comprar com fornecedor)
+        supabase.from('cmp_pedidos_compra').select('*', { count: 'exact', head: true })
+          .eq('status', 'aprovado'),
+        // 8  Pedido enviado (em trânsito completo)
+        supabase.from('cmp_pedidos_compra').select('*', { count: 'exact', head: true })
+          .eq('status', 'enviado'),
+        // 9  Pedido parcialmente recebido (em trânsito parcial)
+        supabase.from('cmp_pedidos_compra').select('*', { count: 'exact', head: true })
+          .eq('status', 'parcialmente_recebido'),
+        // 10 Pedidos recebidos no mês
+        supabase.from('cmp_pedidos_compra').select('*', { count: 'exact', head: true })
+          .eq('status', 'recebido').gte('updated_at', inicioMes),
+        // 11 Recebimentos hoje
+        supabase.from('cmp_recebimentos').select('*', { count: 'exact', head: true })
+          .gte('data_recebimento', inicioDia),
+        // 12 Recebimentos últimos 7 dias
+        supabase.from('cmp_recebimentos').select('*', { count: 'exact', head: true })
+          .gte('data_recebimento', inicio7d),
       ])
 
-      c.sc_aguardando_aprovacao = consultas[0].count ?? 0
-      c.cot_aberta              = consultas[1].count ?? 0
-      c.cot_respondida          = consultas[2].count ?? 0
-      c.cot_vencedor_escolhido  = consultas[3].count ?? 0
-      c.ped_aguardando_aprovacao= consultas[4].count ?? 0
-      c.ped_aguardando_envio    = consultas[5].count ?? 0
-      c.ped_enviado             = consultas[6].count ?? 0
-      c.ped_parcial             = consultas[7].count ?? 0
+      c.sc_aguardando_aprovacao = resultados[0].count ?? 0
+      c.sc_atendidas_mes        = resultados[1].count ?? 0
+      c.cot_aberta              = resultados[2].count ?? 0
+      c.cot_respondida          = resultados[3].count ?? 0
+      c.cot_vencedor_escolhido  = resultados[4].count ?? 0
+      c.cot_encerradas_mes      = resultados[5].count ?? 0
+      c.ped_aguardando_aprovacao= resultados[6].count ?? 0
+      c.ped_aprovado            = resultados[7].count ?? 0
+      const pedEnviado          = resultados[8].count ?? 0
+      const pedParcial          = resultados[9].count ?? 0
+      c.ped_em_transito         = pedEnviado + pedParcial
+      c.ped_recebidos_mes       = resultados[10].count ?? 0
+      c.rec_hoje                = resultados[11].count ?? 0
+      c.rec_7d                  = resultados[12].count ?? 0
 
-      // SCs aprovadas que ainda têm itens pendentes (= aguardando virar cotação)
+      // ─── SCs em andamento: aprovadas com pelo menos 1 item ativo
+      // (não atendido e não cancelado) — significa que ainda há linha
+      // aguardando cotação/pedido/recebimento.
       const { data: scsAprov } = await supabase
         .from('cmp_solicitacoes_compra')
         .select('id, itens:cmp_solicitacoes_compra_itens(status_item)')
         .eq('status', 'aprovada')
-      c.sc_aprovada_sem_cotacao = (scsAprov ?? []).filter(sc => {
+      c.sc_em_andamento = (scsAprov ?? []).filter(sc => {
         const itens = (sc as { itens?: { status_item: string }[] }).itens ?? []
-        return itens.some(i => i.status_item === 'pendente')
+        return itens.some(i => i.status_item !== 'atendido' && i.status_item !== 'cancelado')
       }).length
-
-      // Recebimentos de hoje
-      const hojeIso = new Date(); hojeIso.setHours(0, 0, 0, 0)
-      const { count: recHoje } = await supabase
-        .from('cmp_recebimentos')
-        .select('*', { count: 'exact', head: true })
-        .gte('data_recebimento', hojeIso.toISOString())
-      c.rec_hoje = recHoje ?? 0
 
       setCounts(c)
       setLoading(false)
@@ -117,18 +182,22 @@ export function DashboardPage() {
                 href="/compras/solicitacoes"
                 primario={counts.sc_aguardando_aprovacao}
                 primarioLabel="aguardando aprovação"
-                secundario={counts.sc_aprovada_sem_cotacao}
-                secundarioLabel={`${counts.sc_aprovada_sem_cotacao} aprovada(s) aguardando cotação`}
+                stats={[
+                  { numero: counts.sc_em_andamento, label: 'em andamento' },
+                  { numero: counts.sc_atendidas_mes, label: 'concluídas no mês' },
+                ]}
               />
               <EtapaPipeline
                 titulo="Cotação"
                 icone={<FileSearch size={18} />}
                 tone="violet"
                 href="/compras/cotacoes"
-                primario={counts.cot_aberta + counts.cot_respondida}
-                primarioLabel="em andamento"
-                secundario={counts.cot_vencedor_escolhido}
-                secundarioLabel={`${counts.cot_vencedor_escolhido} com vencedor escolhido`}
+                primario={counts.cot_respondida + counts.cot_vencedor_escolhido}
+                primarioLabel="precisam de ação"
+                stats={[
+                  { numero: counts.cot_aberta, label: 'aguardando resposta' },
+                  { numero: counts.cot_encerradas_mes, label: 'encerradas no mês' },
+                ]}
               />
               <EtapaPipeline
                 titulo="Pedido"
@@ -137,18 +206,22 @@ export function DashboardPage() {
                 href="/compras/pedidos"
                 primario={counts.ped_aguardando_aprovacao}
                 primarioLabel="aguardando aprovação"
-                secundario={counts.ped_enviado + counts.ped_parcial}
-                secundarioLabel={`${counts.ped_enviado + counts.ped_parcial} em trânsito`}
+                stats={[
+                  { numero: counts.ped_aprovado, label: 'aprovados a comprar' },
+                  { numero: counts.ped_recebidos_mes, label: 'recebidos no mês' },
+                ]}
               />
               <EtapaPipeline
                 titulo="Recebimento"
                 icone={<Receipt size={18} />}
                 tone="emerald"
                 href="/compras/recebimentos"
-                primario={counts.ped_enviado + counts.ped_parcial}
+                primario={counts.ped_em_transito}
                 primarioLabel="pedidos esperando entrega"
-                secundario={counts.rec_hoje}
-                secundarioLabel={`${counts.rec_hoje} recebido${counts.rec_hoje !== 1 ? 's' : ''} hoje`}
+                stats={[
+                  { numero: counts.rec_hoje, label: 'recebidos hoje' },
+                  { numero: counts.rec_7d, label: 'em 7 dias' },
+                ]}
               />
             </div>
           </section>
@@ -168,8 +241,10 @@ export function DashboardPage() {
 
 // ────────────────────────────────────────────────────────────────
 
+type StatPipeline = { numero: number; label: string }
+
 function EtapaPipeline({
-  titulo, icone, tone, href, primario, primarioLabel, secundarioLabel,
+  titulo, icone, tone, href, primario, primarioLabel, stats,
 }: {
   titulo: string
   icone: React.ReactNode
@@ -177,8 +252,7 @@ function EtapaPipeline({
   href: string
   primario: number
   primarioLabel: string
-  secundario?: number
-  secundarioLabel: string
+  stats?: StatPipeline[]
 }) {
   const toneCls = {
     blue:    { chip: 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400', num: 'text-blue-700 dark:text-blue-300', hover: 'hover:bg-blue-50/40 dark:hover:bg-blue-950/20' },
@@ -200,9 +274,18 @@ function EtapaPipeline({
         {primario}
       </p>
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{primarioLabel}</p>
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-        {secundarioLabel}
-      </p>
+      {stats && stats.length > 0 && (
+        <dl className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-1">
+          {stats.map(s => (
+            <div key={s.label} className="flex items-baseline justify-between gap-2 text-[11px]">
+              <dt className="text-gray-500 dark:text-gray-400 truncate">{s.label}</dt>
+              <dd className={`tabular-nums font-semibold ${s.numero > 0 ? 'text-gray-700 dark:text-gray-200' : 'text-gray-300 dark:text-gray-700'}`}>
+                {s.numero}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
     </Link>
   )
 }

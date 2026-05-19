@@ -4,6 +4,64 @@ import type {
 import {
   COTACAO_STATUS_META, ITEM_STATUS_META, PEDIDO_STATUS_META, STATUS_META, type StatusMeta,
 } from './_shared'
+import type { StatusTone } from '@/components/ui/StatusDot'
+
+// ─── Tons (StatusTone) por status — usado pelo StatusDot ──────────────────────
+
+export function toneSolicitacao(status: CmpSolicitacaoStatus): StatusTone {
+  switch (status) {
+    case 'aguardando_aprovacao': return 'amber'
+    case 'aprovada':              return 'emerald'
+    case 'atendida':              return 'blue'
+    case 'reprovada':             return 'red'
+    case 'cancelada':             return 'gray'
+  }
+}
+
+export function toneItem(status: CmpItemStatus): StatusTone {
+  switch (status) {
+    case 'pendente':   return 'gray'
+    case 'em_cotacao': return 'violet'
+    case 'em_pedido':  return 'indigo'
+    case 'atendido':   return 'emerald'
+    case 'cancelado':  return 'red'
+  }
+}
+
+export function toneCotacao(status: CmpCotacaoStatus): StatusTone {
+  switch (status) {
+    case 'aberta':             return 'gray'
+    case 'respondida':         return 'violet'
+    case 'vencedor_escolhido': return 'indigo'
+    case 'encerrada':          return 'emerald'
+    case 'cancelada':          return 'gray'
+  }
+}
+
+export function tonePedido(status: CmpPedidoStatus): StatusTone {
+  switch (status) {
+    case 'aguardando_aprovacao':   return 'amber'
+    case 'aprovado':               return 'emerald'
+    case 'enviado':                return 'blue'
+    case 'parcialmente_recebido':  return 'violet'
+    case 'recebido':               return 'emerald'
+    case 'cancelado':              return 'gray'
+  }
+}
+
+export function toneEtapaProcessoSC(etapa:
+  | 'aguardando_aprovacao' | 'compra_itens' | 'pedido_aprovacao'
+  | 'pedido_compra' | 'aguardando_recebimento' | 'concluida',
+): StatusTone {
+  switch (etapa) {
+    case 'aguardando_aprovacao': return 'amber'
+    case 'compra_itens':         return 'sky'
+    case 'pedido_aprovacao':     return 'amber'
+    case 'pedido_compra':        return 'indigo'
+    case 'aguardando_recebimento': return 'blue'
+    case 'concluida':            return 'emerald'
+  }
+}
 
 /** Etapa do fluxo — nome + ação esperada (compatível com o que o usuário precisa fazer) */
 export type EtapaFluxo<T extends string> = {

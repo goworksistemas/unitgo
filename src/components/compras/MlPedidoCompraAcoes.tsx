@@ -7,7 +7,7 @@ import { Button } from '@heroui/react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import type { CmpFornecedor, CmpPedido, MlPedidoItem, PrdProduto, PrdUnidadeMedida } from '@/types/database'
+import type { CmpFornecedor, CmpPedido, MlPedidoItem, PrdProduto } from '@/types/database'
 import { formatMoney } from '@/pages/compras/_shared'
 
 type PedidoCompraRef = { id: string; numero: string }
@@ -26,7 +26,7 @@ export type MlPedidoCompraAcoesProps = {
 
 type PedidoBusca = CmpPedido & { empresa?: { id: string }; fornecedor?: CmpFornecedor }
 
-type ProdutoOpt = PrdProduto & { unidade_medida?: PrdUnidadeMedida | null }
+type ProdutoOpt = Pick<PrdProduto, 'id' | 'codigo' | 'nome' | 'unidade_medida_id'>
 
 type LinhaCriar = {
   mlItem: MlPedidoItem
@@ -432,14 +432,18 @@ function CriarPedidoModal({
 
   return (
     <>
-      <Button
-        isDisabled={semItens}
-        onPress={() => setAberto(true)}
-        className="bg-blue-600 text-white hover:bg-blue-700 px-2.5 py-1 text-xs font-medium inline-flex items-center gap-1.5 disabled:opacity-50"
+      <span
+        className="inline-flex"
         title={semItens ? 'Pedido ML sem itens' : undefined}
       >
-        <Plus size={11} /> {compact ? 'Criar PC' : 'Criar pedido de compra'}
-      </Button>
+        <Button
+          isDisabled={semItens}
+          onPress={() => setAberto(true)}
+          className="bg-blue-600 text-white hover:bg-blue-700 px-2.5 py-1 text-xs font-medium inline-flex items-center gap-1.5 disabled:opacity-50"
+        >
+          <Plus size={11} /> {compact ? 'Criar PC' : 'Criar pedido de compra'}
+        </Button>
+      </span>
 
       {aberto && (
         <div
@@ -556,7 +560,7 @@ function LinhaProdutoPicker({
     async function buscar() {
       let q = supabase
         .from('prd_produtos')
-        .select('id,codigo,nome,unidade_medida_id, unidade_medida:prd_unidades_medida(id,nome,sigla,ativo)')
+        .select('id, codigo, nome, unidade_medida_id')
         .eq('ativo', true)
         .order('nome')
         .limit(12)

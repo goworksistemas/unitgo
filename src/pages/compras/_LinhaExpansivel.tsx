@@ -3,25 +3,26 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
 
 /**
  * Linha de listagem clicável que expande para um painel rico inline.
- * O conteúdo do painel é renderizado pelo `painel` (lazy — só monta quando aberto).
- * `acoes` é um slot opcional à direita (ex.: aprovar/reprovar na listagem).
  *
- * O botão de toggle envolve apenas a área do cabeçalho (chevron + conteúdo),
- * permitindo que `acoes` contenha <a>/<button> sem aninhamento inválido.
+ * - `densidade`: `cozy` (default) ou `compact` reduz padding vertical/lateral
+ * - `acoes`: aparecem **só em hover** (e quando aberto) — não competem visualmente
  */
 export function LinhaExpansivel({
   aberto, onToggle, cabecalho, painel, acoes,
+  densidade = 'cozy',
 }: {
   aberto: boolean
   onToggle: () => void
   cabecalho: ReactNode
   painel: ReactNode
   acoes?: ReactNode
+  densidade?: 'cozy' | 'compact'
 }) {
+  const padding = densidade === 'compact' ? 'px-3 py-2' : 'px-4 py-3'
   return (
-    <li>
+    <li className="group">
       <div
-        className={`w-full flex items-center gap-2 px-4 py-3 transition-colors ${
+        className={`w-full flex items-center gap-2 transition-colors ${padding} ${
           aberto
             ? 'bg-gray-50 dark:bg-gray-800/60'
             : 'hover:bg-gray-50/60 dark:hover:bg-gray-800/60'
@@ -39,7 +40,12 @@ export function LinhaExpansivel({
           {cabecalho}
         </button>
         {acoes && (
-          <div className="shrink-0 flex items-center gap-1 flex-wrap justify-end max-w-[min(100%,280px)]" onClick={e => e.stopPropagation()}>
+          <div
+            className={`shrink-0 flex items-center gap-1 flex-wrap justify-end max-w-[min(100%,280px)] transition-opacity ${
+              aberto ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+            }`}
+            onClick={e => e.stopPropagation()}
+          >
             {acoes}
           </div>
         )}
