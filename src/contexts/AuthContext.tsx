@@ -31,21 +31,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id).finally(() => setLoading(false))
-      else setLoading(false)
-    })
+    let cancelled = false
+
+    // Failsafe: se `getSession()` travar (rede caída, token corrompido,
+    // etc.) liberamos o app em vez de deixar a tela do Spinner para
+    // sempre. 3 segundos é suficiente; em rede normal `getSession`
+    // retorna em < 200 ms.
+    const failSafe = setTimeout(() => {
+      if (!cancelled) {
+        console.warn('[AuthContext] getSession demorou > 3s — liberando app sem sessão.')
+        setLoading(false)
+      }
+    }, 3000)
+
+    async function init() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (cancelled) return
+        setSession(session)
+        setUser(session?.user ?? null)
+        if (session?.user) void fetchProfile(session.user.id)
+      } catch (err) {
+        console.error('[AuthContext] getSession falhou:', err)
+      } finally {
+        if (!cancelled) {
+          clearTimeout(failSafe)
+          setLoading(false)
+        }
+      }
+    }
+
+    void init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
+      if (session?.user) void fetchProfile(session.user.id)
       else setProfile(null)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      clearTimeout(failSafe)
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function refreshProfile() {

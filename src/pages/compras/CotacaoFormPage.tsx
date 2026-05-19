@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import {
-  ChevronLeft, Save, Plus, Trash2, Search, Package, X, AlertCircle, FileText, Check,
+  Save, Plus, Trash2, Search, Package, X, AlertCircle, FileText, Check,
 } from 'lucide-react'
+import { BotaoVoltar } from '@/components/shared/BotaoVoltar'
 import { Button } from '@heroui/react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -271,9 +272,7 @@ export function CotacaoFormPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link to="/compras/cotacoes" className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-emerald-600 mb-2">
-          <ChevronLeft size={14} /> Cotações
-        </Link>
+        <BotaoVoltar fallback="/compras/cotacoes" label="Voltar" />
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Nova cotação</h1>

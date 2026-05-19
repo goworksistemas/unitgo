@@ -4,151 +4,71 @@ import {
   FileText, CheckCircle2, FileSearch, ShoppingCart, Receipt,
   User as UserIcon, Clock,
 } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { rpcCompras } from './_rpc'
+import type { CmpCotacaoStatus, CmpPedidoStatus, CmpSolicitacaoStatus } from '@/types/database'
+import { COTACAO_STATUS_META, PEDIDO_STATUS_META, STATUS_META } from './_shared'
 
 /**
  * Stepper compacto que mostra o fluxo COMPLETO de uma compra
  * (Solicitação → Aprovação → Cotação → Pedido → Recebimento)
  * em qualquer tela de detalhe — basta passar o ID de qualquer "objeto" do processo.
+ *
+ * Dados vêm de uma única chamada à RPC `cmp_linha_tempo`, que já resolve
+ * o `scId` a partir de uma cotação ou pedido e devolve sc/cotacoes/pedidos
+ * e a contagem de recebimentos em UM round-trip.
  */
 export function LinhaTempoProcesso({
   scId,
   cotacaoId,
   pedidoId,
   currentStep,
+  compacto = false,
 }: {
   scId?: string | null
   cotacaoId?: string | null
   pedidoId?: string | null
   currentStep: 'sc' | 'aprovacao' | 'cotacao' | 'pedido' | 'recebimento'
+  compacto?: boolean
 }) {
-  const [resolvedScId, setResolvedScId] = useState<string | null>(scId ?? null)
   const [data, setData] = useState<ProcessoData | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Resolve scId a partir de cotacaoId ou pedidoId, se necessário
-  useEffect(() => {
-    let cancel = false
-    async function resolver() {
-      if (scId) { setResolvedScId(scId); return }
-      if (cotacaoId) {
-        const { data } = await supabase.from('cmp_cotacoes_solicitacoes')
-          .select('solicitacao_id').eq('cotacao_id', cotacaoId).limit(1).maybeSingle()
-        if (!cancel) setResolvedScId(data?.solicitacao_id ?? null)
-        return
-      }
-      if (pedidoId) {
-        // Tenta via cotação
-        const { data: ped } = await supabase.from('cmp_pedidos_compra')
-          .select('cotacao_id').eq('id', pedidoId).maybeSingle()
-        if (ped?.cotacao_id) {
-          const { data: cotSc } = await supabase.from('cmp_cotacoes_solicitacoes')
-            .select('solicitacao_id').eq('cotacao_id', ped.cotacao_id).limit(1).maybeSingle()
-          if (!cancel) setResolvedScId(cotSc?.solicitacao_id ?? null)
-          return
-        }
-        // Pedido direto: pega via item.solicitacao_item_id
-        const { data: itens } = await supabase.from('cmp_pedidos_compra_itens')
-          .select('solicitacao_item_id').eq('pedido_id', pedidoId).not('solicitacao_item_id', 'is', null).limit(1)
-        if (itens && itens[0]?.solicitacao_item_id) {
-          const { data: scItem } = await supabase.from('cmp_solicitacoes_compra_itens')
-            .select('solicitacao_id').eq('id', itens[0].solicitacao_item_id).maybeSingle()
-          if (!cancel) setResolvedScId(scItem?.solicitacao_id ?? null)
-        } else {
-          if (!cancel) setResolvedScId(null)
-        }
-      }
-    }
-    resolver()
-    return () => { cancel = true }
-  }, [scId, cotacaoId, pedidoId])
-
-  // Carrega os dados do processo
   useEffect(() => {
     let cancel = false
     async function carregar() {
       setLoading(true)
-      const d: ProcessoData = {
-        sc: null, cotacoes: [], pedidos: [], recebimentos: [],
-      }
-
-      if (resolvedScId) {
-        const { data: sc } = await supabase.from('cmp_solicitacoes_compra')
-          .select(`*,
-            solicitante:profiles!cmp_solicitacoes_compra_solicitante_id_fkey(id,nome,email),
-            aprovador:profiles!cmp_solicitacoes_compra_aprovador_id_fkey(id,nome,email),
-            departamento:core_departamentos(id,nome,gestor_id,gestor:profiles!core_departamentos_gestor_id_fkey(id,nome,email))
-          `).eq('id', resolvedScId).maybeSingle()
-        d.sc = sc as SCMin | null
-
-        const { data: vincs } = await supabase.from('cmp_cotacoes_solicitacoes')
-          .select('cotacao_id').eq('solicitacao_id', resolvedScId)
-        const cotIds = (vincs ?? []).map(v => v.cotacao_id)
-        if (cotIds.length > 0) {
-          const { data: cots } = await supabase.from('cmp_cotacoes')
-            .select(`id,numero,status,aprovado_em,aprovador:profiles!cmp_cotacoes_aprovador_id_fkey(id,nome,email)`)
-            .in('id', cotIds).order('created_at')
-          d.cotacoes = (cots ?? []) as unknown as CotMin[]
-        }
-      } else if (cotacaoId) {
-        // Cotação avulsa (sem SC)
-        const { data: cot } = await supabase.from('cmp_cotacoes')
-          .select(`id,numero,status,aprovado_em,aprovador:profiles!cmp_cotacoes_aprovador_id_fkey(id,nome,email)`)
-          .eq('id', cotacaoId).maybeSingle()
-        if (cot) d.cotacoes = [cot as unknown as CotMin]
-      }
-
-      // Pedidos: via cotações OU via solicitacao_item_id (pedido direto)
-      const pedidosTodos: PedMin[] = []
-      if (d.cotacoes.length > 0) {
-        const { data: peds } = await supabase.from('cmp_pedidos_compra')
-          .select(`id,numero,status,cotacao_id,aprovado_em,enviado_em,fornecedor:cmp_fornecedores(id,razao_social,nome_fantasia)`)
-          .in('cotacao_id', d.cotacoes.map(c => c.id)).order('created_at')
-        pedidosTodos.push(...((peds ?? []) as unknown as PedMin[]))
-      }
-      if (resolvedScId) {
-        // Pedidos diretos
-        const { data: scItens } = await supabase.from('cmp_solicitacoes_compra_itens')
-          .select('id').eq('solicitacao_id', resolvedScId)
-        const scItemIds = (scItens ?? []).map(i => i.id)
-        if (scItemIds.length > 0) {
-          const { data: pedItens } = await supabase.from('cmp_pedidos_compra_itens')
-            .select('pedido_id').in('solicitacao_item_id', scItemIds)
-          const pedIdsDiretos = Array.from(new Set((pedItens ?? []).map(i => i.pedido_id)))
-            .filter(pid => !pedidosTodos.some(p => p.id === pid))
-          if (pedIdsDiretos.length > 0) {
-            const { data: peds } = await supabase.from('cmp_pedidos_compra')
-              .select(`id,numero,status,cotacao_id,aprovado_em,enviado_em,fornecedor:cmp_fornecedores(id,razao_social,nome_fantasia)`)
-              .in('id', pedIdsDiretos).order('created_at')
-            pedidosTodos.push(...((peds ?? []) as unknown as PedMin[]))
-          }
-        }
-      }
-      d.pedidos = pedidosTodos
-
-      if (pedidosTodos.length > 0) {
-        const { data: recs } = await supabase.from('cmp_recebimentos')
-          .select('id,numero,data_recebimento,pedido_id')
-          .in('pedido_id', pedidosTodos.map(p => p.id))
-          .order('data_recebimento')
-        d.recebimentos = (recs ?? []) as RecMin[]
-      }
-
-      if (!cancel) {
-        setData(d)
+      const { data: payload, error } = await rpcCompras<RpcLinhaTempo>('cmp_linha_tempo', {
+        p_sc_id: scId ?? null,
+        p_cot_id: cotacaoId ?? null,
+        p_pedido_id: pedidoId ?? null,
+      })
+      if (cancel) return
+      if (error) {
+        console.error('[LinhaTempoProcesso] cmp_linha_tempo:', error)
+        setData({ sc: null, cotacoes: [], pedidos: [], recebimentosQtd: 0, scId: null })
         setLoading(false)
+        return
       }
+      const p = payload ?? ({} as RpcLinhaTempo)
+      setData({
+        sc: p.sc ?? null,
+        cotacoes: p.cotacoes ?? [],
+        pedidos: p.pedidos ?? [],
+        recebimentosQtd: p.recebimentos_qtd ?? 0,
+        scId: p.sc?.id ?? null,
+      })
+      setLoading(false)
     }
     carregar()
     return () => { cancel = true }
-  }, [resolvedScId, cotacaoId])
+  }, [scId, cotacaoId, pedidoId])
 
   const steps = useMemo(() => buildSteps(data), [data])
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 py-4">
-        <div className="h-12 flex items-center justify-center">
+      <div className={compacto ? 'py-0.5' : 'rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 py-4'}>
+        <div className={`${compacto ? 'h-7' : 'h-12'} flex items-center justify-center`}>
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
         </div>
       </div>
@@ -156,6 +76,63 @@ export function LinhaTempoProcesso({
   }
 
   if (!data || (!data.sc && data.cotacoes.length === 0)) return null
+
+  // ── Modo compacto: altura reduzida, apenas círculos + label, sem caixa externa ──
+  if (compacto) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-1 overflow-x-auto">
+          {steps.map((s, idx) => {
+            const Icon = s.icon
+            const isAtual = s.key === currentStep
+            const isConcluido = s.status === 'concluido'
+            const isSkip = s.status === 'skip'
+
+            const cor =
+              isAtual      ? 'bg-amber-500 text-white border-amber-500 ring-2 ring-amber-200 dark:ring-amber-900/40' :
+              isConcluido  ? 'bg-emerald-500 text-white border-emerald-500' :
+              isSkip       ? 'bg-gray-200 text-gray-400 border-gray-200 dark:bg-gray-800 dark:border-gray-700' :
+                             'bg-white dark:bg-gray-900 text-gray-400 border-gray-300 dark:border-gray-700'
+
+            const conector =
+              isConcluido || (steps[idx + 1] && (steps[idx + 1].status === 'concluido' || steps[idx + 1].status === 'atual'))
+                ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'
+
+            const conteudo = (
+              <>
+                <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all ${cor}`}>
+                  {isConcluido ? <CheckCircle2 size={11} /> : <Icon size={10} />}
+                </div>
+                <span className={`text-[11px] font-medium whitespace-nowrap ${
+                  isAtual     ? 'text-amber-700 dark:text-amber-300' :
+                  isConcluido ? 'text-emerald-700 dark:text-emerald-300' :
+                  isSkip      ? 'text-gray-400 line-through' :
+                                'text-gray-500'
+                }`}>{idx + 1}. {s.label}</span>
+              </>
+            )
+
+            return (
+              <div key={s.key} className="flex items-center flex-1 min-w-fit">
+                {s.link ? (
+                  <Link to={s.link} className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors flex-1">
+                    {conteudo}
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-1.5 px-1.5 py-0.5 flex-1">
+                    {conteudo}
+                  </div>
+                )}
+                {idx < steps.length - 1 && (
+                  <div className={`mx-1 h-0.5 w-4 shrink-0 ${conector}`} />
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
@@ -233,36 +210,39 @@ export function LinhaTempoProcesso({
 }
 
 // ────────────────────────────────────────────────────────────────
-// Tipos internos
+// Tipos internos (espelham o retorno da RPC cmp_linha_tempo)
 // ────────────────────────────────────────────────────────────────
+
+interface RpcLinhaTempo {
+  sc: SCMin | null
+  cotacoes: CotMin[]
+  pedidos: PedMin[]
+  recebimentos_qtd: number
+}
 
 interface ProcessoData {
   sc: SCMin | null
   cotacoes: CotMin[]
   pedidos: PedMin[]
-  recebimentos: RecMin[]
+  recebimentosQtd: number
+  scId: string | null
 }
 
 interface SCMin {
   id: string; numero: string; status: string
-  enviada_em: string | null; aprovado_em: string | null
-  solicitante?: { nome?: string | null; email: string } | null
-  aprovador?: { nome?: string | null; email: string } | null
-  departamento?: { nome: string; gestor?: { nome?: string | null; email: string } | null } | null
+  created_at: string | null
+  aprovado_em: string | null
 }
 interface CotMin {
   id: string; numero: string; status: string
+  created_at: string | null
   aprovado_em: string | null
-  aprovador?: { nome?: string | null; email: string } | null
 }
 interface PedMin {
   id: string; numero: string; status: string
-  cotacao_id: string | null
-  aprovado_em: string | null; enviado_em: string | null
-  fornecedor?: { razao_social: string; nome_fantasia: string | null } | null
-}
-interface RecMin {
-  id: string; numero: string; data_recebimento: string; pedido_id: string
+  created_at: string | null
+  enviado_em: string | null
+  aprovado_em: string | null
 }
 
 interface Step {
@@ -281,19 +261,31 @@ function buildSteps(d: ProcessoData | null): Step[] {
   const sc = d.sc
   const cots = d.cotacoes
   const peds = d.pedidos
-  const recs = d.recebimentos
+  const recsQtd = d.recebimentosQtd
 
   const cotPrincipal = cots.find(c => c.status !== 'cancelada') ?? cots[0]
-  const temPedDireto = peds.some(p => !p.cotacao_id)
+  // Sem cotacao_id no payload da RPC: heurística — se há pedidos mas não há cotações vinculadas,
+  // o processo seguiu por "pedido direto".
+  const temPedDireto = peds.length > 0 && cots.length === 0
+  const numerosPedidos = peds.map(p => p.numero).filter(Boolean)
+  const previewPedidos = (limite = 2) => {
+    if (numerosPedidos.length === 0) return ''
+    if (numerosPedidos.length <= limite) return numerosPedidos.join(', ')
+    return `${numerosPedidos.slice(0, limite).join(', ')} +${numerosPedidos.length - limite}`
+  }
+
+  // Quando há SC, todos os caminhos do passo "Pedido" levam para a visão consolidada
+  // do processo (lista de pedidos vinculados). Sem SC, cai pro detalhe do primeiro pedido.
+  const linkPedidos = d.scId
+    ? `/compras/solicitacoes/${d.scId}/pedidos`
+    : (peds[0] ? `/compras/pedidos/${peds[0].id}` : undefined)
 
   // ── SC
   const stepSC: Step = sc
     ? {
         key: 'sc', label: 'Solicitação', icon: FileText,
         status: 'concluido',
-        detalhe: sc.numero,
-        subdetalhe: sc.solicitante?.nome ?? sc.solicitante?.email,
-        subdetalheIcon: 'user',
+        detalhe: `${sc.numero} · ${STATUS_META[sc.status as CmpSolicitacaoStatus]?.label ?? sc.status}`,
         link: `/compras/solicitacoes/${sc.id}`,
       }
     : { key: 'sc', label: 'Solicitação', icon: FileText, status: 'skip', detalhe: 'sem SC' }
@@ -301,15 +293,13 @@ function buildSteps(d: ProcessoData | null): Step[] {
   // ── Aprovação SC
   const stepAprov: Step = sc
     ? sc.status === 'aprovada' || sc.status === 'atendida'
-      ? { key: 'aprovacao', label: 'Aprovação SC', icon: CheckCircle2, status: 'concluido',
-          detalhe: 'aprovada', subdetalhe: sc.aprovador?.nome ?? sc.aprovador?.email, subdetalheIcon: 'user' }
+      ? { key: 'aprovacao', label: 'Aprovação SC', icon: CheckCircle2, status: 'concluido', detalhe: STATUS_META.aprovada.label }
       : sc.status === 'aguardando_aprovacao'
-      ? { key: 'aprovacao', label: 'Aprovação SC', icon: CheckCircle2, status: 'atual',
-          detalhe: 'aguardando', subdetalhe: sc.departamento?.gestor?.nome ?? 'sem gestor', subdetalheIcon: 'user' }
+      ? { key: 'aprovacao', label: 'Aprovação SC', icon: CheckCircle2, status: 'atual', detalhe: STATUS_META.aguardando_aprovacao.label }
       : sc.status === 'reprovada'
-      ? { key: 'aprovacao', label: 'Aprovação SC', icon: CheckCircle2, status: 'concluido', detalhe: 'reprovada' }
+      ? { key: 'aprovacao', label: 'Aprovação SC', icon: CheckCircle2, status: 'concluido', detalhe: STATUS_META.reprovada.label }
       : sc.status === 'cancelada'
-      ? { key: 'aprovacao', label: 'Aprovação SC', icon: CheckCircle2, status: 'skip', detalhe: 'cancelada' }
+      ? { key: 'aprovacao', label: 'Aprovação SC', icon: CheckCircle2, status: 'skip', detalhe: STATUS_META.cancelada.label }
       : { key: 'aprovacao', label: 'Aprovação SC', icon: CheckCircle2, status: 'pendente' }
     : { key: 'aprovacao', label: 'Aprovação SC', icon: CheckCircle2, status: 'skip' }
 
@@ -322,28 +312,22 @@ function buildSteps(d: ProcessoData | null): Step[] {
       const status = sc && (sc.status === 'aprovada' || sc.status === 'atendida') ? 'atual' : 'pendente'
       return { key: 'cotacao', label: 'Cotação', icon: FileSearch, status, detalhe: status === 'atual' ? 'aguardando comprador' : '' }
     }
-    const aprov = cots.find(c => c.status === 'orcamento_aprovado')
-    if (aprov && cots.every(c => c.status === 'orcamento_aprovado' || c.status === 'cancelada')) {
+
+    const encerradas = cots.filter(c => c.status === 'encerrada')
+    if (encerradas.length > 0 && cots.every(c => c.status === 'encerrada' || c.status === 'cancelada')) {
+      const ref = encerradas[0]
       return {
         key: 'cotacao', label: 'Cotação', icon: FileSearch, status: 'concluido',
-        detalhe: cots.length > 1 ? `${cots.length} cotações` : cotPrincipal.numero,
-        subdetalhe: aprov.aprovador?.nome ?? aprov.aprovador?.email,
-        subdetalheIcon: 'user',
-        link: `/compras/cotacoes/${aprov.id}`,
+        detalhe: cots.length > 1 ? `${cots.length} cotações` : `${ref.numero}: ${COTACAO_STATUS_META.encerrada.label}`,
+        link: `/compras/cotacoes/${ref.id}`,
       }
     }
-    let subStatus = ''
-    let resp = 'Comprador'
-    switch (cotPrincipal.status) {
-      case 'aberta':                          subStatus = 'lançar preços'; break
-      case 'respondida':                      subStatus = 'escolher vencedor'; break
-      case 'vencedor_escolhido':              subStatus = 'enviar p/ diretoria'; break
-      case 'aguardando_aprovacao_orcamento':  subStatus = 'aguardando diretoria'; resp = 'Diretor'; break
-      default:                                subStatus = cotPrincipal.status
-    }
+
+    const cotSt = cotPrincipal.status as CmpCotacaoStatus
+    const subStatus = COTACAO_STATUS_META[cotSt]?.label ?? cotPrincipal.status
     return {
       key: 'cotacao', label: 'Cotação', icon: FileSearch, status: 'atual',
-      detalhe: `${cotPrincipal.numero}: ${subStatus}`, subdetalhe: resp, subdetalheIcon: 'user',
+      detalhe: `${cotPrincipal.numero}: ${subStatus}`,
       link: `/compras/cotacoes/${cotPrincipal.id}`,
     }
   })()
@@ -351,7 +335,7 @@ function buildSteps(d: ProcessoData | null): Step[] {
   // ── Pedido
   const stepPed: Step = (() => {
     if (peds.length === 0) {
-      if (cots.some(c => c.status === 'orcamento_aprovado')) {
+      if (cots.some(c => c.status === 'vencedor_escolhido')) {
         return { key: 'pedido', label: 'Pedido', icon: ShoppingCart, status: 'atual', detalhe: 'aguardando geração' }
       }
       return { key: 'pedido', label: 'Pedido', icon: ShoppingCart, status: 'pendente' }
@@ -365,30 +349,36 @@ function buildSteps(d: ProcessoData | null): Step[] {
       return {
         key: 'pedido', label: 'Pedido', icon: ShoppingCart, status: 'concluido',
         detalhe: peds.length > 1 ? `${peds.length} pedidos` : peds[0].numero,
-        link: peds.length === 1 ? `/compras/pedidos/${peds[0].id}` : undefined,
+        subdetalhe: peds.length > 1 ? previewPedidos() : undefined,
+        link: linkPedidos,
       }
     }
     if (aguardando.length > 0) {
       return {
         key: 'pedido', label: 'Pedido', icon: ShoppingCart, status: 'atual',
-        detalhe: `${aguardando.length} aguardando aprovação`,
-        subdetalhe: 'Diretor', subdetalheIcon: 'user',
-        link: `/compras/pedidos/${aguardando[0].id}`,
+        detalhe: aguardando.length === 1
+          ? `${aguardando[0].numero}: ${PEDIDO_STATUS_META.aguardando_aprovacao.label}`
+          : `${aguardando.length} · ${PEDIDO_STATUS_META.aguardando_aprovacao.label}`,
+        subdetalhe: aguardando.length > 1 ? previewPedidos() : undefined,
+        link: linkPedidos,
       }
     }
     if (aprovados.length > 0) {
       return {
         key: 'pedido', label: 'Pedido', icon: ShoppingCart, status: 'atual',
-        detalhe: `${aprovados.length} aguardando envio`,
-        subdetalhe: 'Comprador', subdetalheIcon: 'user',
-        link: `/compras/pedidos/${aprovados[0].id}`,
+        detalhe: aprovados.length === 1
+          ? `${aprovados[0].numero}: ${PEDIDO_STATUS_META.aprovado.label}`
+          : `${aprovados.length} · ${PEDIDO_STATUS_META.aprovado.label}`,
+        subdetalhe: aprovados.length > 1 ? previewPedidos() : undefined,
+        link: linkPedidos,
       }
     }
     if (ativos.length > 0) {
       return {
         key: 'pedido', label: 'Pedido', icon: ShoppingCart, status: 'concluido',
         detalhe: peds.length > 1 ? `${peds.length} pedidos` : peds[0].numero,
-        link: peds.length === 1 ? `/compras/pedidos/${peds[0].id}` : undefined,
+        subdetalhe: peds.length > 1 ? previewPedidos() : undefined,
+        link: linkPedidos,
       }
     }
     return { key: 'pedido', label: 'Pedido', icon: ShoppingCart, status: 'concluido', detalhe: `${peds.length} cancelado(s)` }
@@ -403,12 +393,11 @@ function buildSteps(d: ProcessoData | null): Step[] {
     const recebidos = peds.filter(p => p.status === 'recebido')
     if (recebidos.length === peds.length) {
       return { key: 'recebimento', label: 'Recebimento', icon: Receipt, status: 'concluido',
-        detalhe: `${recs.length} recebimento(s)` }
+        detalhe: `${recsQtd} recebimento(s)` }
     }
     if (enviados.length > 0) {
       return { key: 'recebimento', label: 'Recebimento', icon: Receipt, status: 'atual',
-        detalhe: `${enviados.length} esperando entrega`,
-        subdetalhe: 'Almoxarife', subdetalheIcon: 'user' }
+        detalhe: `${enviados.length} esperando entrega` }
     }
     return { key: 'recebimento', label: 'Recebimento', icon: Receipt, status: 'pendente' }
   })()

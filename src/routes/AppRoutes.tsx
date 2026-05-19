@@ -1,5 +1,5 @@
 import { type ReactElement } from 'react'
-import { Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes, useParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { AppLayout } from '@/layouts/AppLayout'
 import LoginPage from '@/pages/auth/LoginPage'
@@ -26,6 +26,10 @@ import { PedidoDetalhePage } from '@/pages/compras/PedidoDetalhePage'
 import { RecebimentosPage } from '@/pages/compras/RecebimentosPage'
 import { RecebimentoFormPage } from '@/pages/compras/RecebimentoFormPage'
 import { PedidoDiretoFormPage } from '@/pages/compras/PedidoDiretoFormPage'
+import { ProcessoPedidosPage } from '@/pages/compras/ProcessoPedidosPage'
+import { MercadoLivrePage } from '@/pages/cadastros/MercadoLivrePage'
+import { MlPedidosPage } from '@/pages/compras/MlPedidosPage'
+import { MlPedidoDetalhePage } from '@/pages/compras/MlPedidoDetalhePage'
 
 function Spinner() {
   return (
@@ -35,11 +39,11 @@ function Spinner() {
   )
 }
 
-function ProtectedRoute({ children }: { children: ReactElement }) {
+function ProtectedRoute() {
   const { user, loading } = useAuth()
   if (loading) return <Spinner />
   if (!user) return <Navigate to="/auth/login" replace />
-  return children
+  return <Outlet />
 }
 
 function PublicRoute({ children }: { children: ReactElement }) {
@@ -64,7 +68,8 @@ export function AppRoutes() {
       <Route path="/auth/redefinir-senha" element={<ResetPasswordPage />} />
 
       {/* Privadas */}
-      <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
         <Route path="/"               element={<DashboardPage />} />
         <Route path="/admin/usuarios" element={<UsuariosPage />} />
         <Route path="/perfil"         element={<PerfilPage />} />
@@ -73,10 +78,12 @@ export function AppRoutes() {
         <Route path="/cadastros/empresas"            element={<EmpresasPage />} />
         <Route path="/cadastros/departamentos"       element={<DepartamentosPage />} />
         <Route path="/cadastros/alcadas-aprovacao"   element={<AlcadasAprovacaoPage />} />
+        <Route path="/cadastros/mercado-livre"       element={<MercadoLivrePage />} />
 
         <Route path="/compras/solicitacoes"             element={<SolicitacoesPage />} />
         <Route path="/compras/solicitacoes/nova"        element={<SolicitacaoFormPage />} />
         <Route path="/compras/solicitacoes/:id"         element={<SolicitacaoDetalhePage />} />
+        <Route path="/compras/solicitacoes/:id/pedidos" element={<ProcessoPedidosPage />} />
 
         <Route path="/compras/fornecedores"             element={<FornecedoresPage />} />
 
@@ -93,6 +100,10 @@ export function AppRoutes() {
 
         <Route path="/compras/recebimentos"             element={<RecebimentosPage />} />
         <Route path="/compras/recebimentos/novo"        element={<RecebimentoFormPage />} />
+
+        <Route path="/compras/mercado-livre/:id"       element={<MlPedidoDetalhePage />} />
+        <Route path="/compras/mercado-livre"            element={<MlPedidosPage />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

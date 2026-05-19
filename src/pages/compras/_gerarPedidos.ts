@@ -73,6 +73,7 @@ export async function gerarPedidosDaCotacao({
       empresa_id: cotacao.empresa_id,
       fornecedor_id: grupo.fornecedorId,
       cotacao_id: cotacao.id,
+      origem: 'cotacao',
       comprador_id: cotacao.comprador_id,
       prazo_entrega_dias: grupo.prazo,
       condicao_pagamento: grupo.condicao,

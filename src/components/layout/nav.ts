@@ -1,6 +1,7 @@
 import {
   LayoutDashboard, Users, ShieldCheck, Package, Scale,
   ShoppingCart, FileText, Building2, Network, FileSearch, Truck, Receipt, Gavel,
+  ShoppingBag,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -8,6 +9,8 @@ export interface NavItem {
   name: string
   href: string
   icon: LucideIcon
+  /** URL opcional para um ícone de imagem (sobrepõe o Lucide quando definido) */
+  iconImg?: string
 }
 
 export interface NavGroup {
@@ -15,6 +18,8 @@ export interface NavGroup {
   accent: AccentKey
   icon?: LucideIcon
   items: NavItem[]
+  /** Se true, no menu expandido o cabeçalho do grupo é omitido (itens viram links de topo). */
+  semHeader?: boolean
 }
 
 export type AccentKey = 'blue' | 'slate' | 'emerald'
@@ -58,6 +63,7 @@ export const NAV_GROUPS: NavGroup[] = [
     group: 'Principal',
     accent: 'blue',
     icon: LayoutDashboard,
+    semHeader: true,
     items: [
       { name: 'Início', href: '/', icon: LayoutDashboard },
     ],
@@ -67,11 +73,10 @@ export const NAV_GROUPS: NavGroup[] = [
     accent: 'emerald',
     icon: ShoppingCart,
     items: [
-      { name: 'Solicitações', href: '/compras/solicitacoes', icon: FileText },
-      { name: 'Cotações',     href: '/compras/cotacoes',     icon: FileSearch },
-      { name: 'Pedidos',      href: '/compras/pedidos',      icon: ShoppingCart },
-      { name: 'Recebimentos', href: '/compras/recebimentos', icon: Receipt },
-      { name: 'Fornecedores', href: '/compras/fornecedores', icon: Truck },
+      { name: 'Solicitações',   href: '/compras/solicitacoes',   icon: FileText    },
+      { name: 'Cotações',       href: '/compras/cotacoes',       icon: FileSearch  },
+      { name: 'Pedidos',        href: '/compras/pedidos',        icon: ShoppingCart },
+      { name: 'Recebimentos',   href: '/compras/recebimentos',   icon: Receipt     },
     ],
   },
   {
@@ -79,12 +84,15 @@ export const NAV_GROUPS: NavGroup[] = [
     accent: 'slate',
     icon: ShieldCheck,
     items: [
-      { name: 'Usuários',            href: '/admin/usuarios',                icon: Users     },
-      { name: 'Empresas',            href: '/cadastros/empresas',            icon: Building2 },
-      { name: 'Departamentos',       href: '/cadastros/departamentos',       icon: Network   },
-      { name: 'Alçadas de aprovação',href: '/cadastros/alcadas-aprovacao',   icon: Gavel     },
-      { name: 'Produtos',            href: '/cadastros/produtos',            icon: Package   },
-      { name: 'Unidades de medida',  href: '/cadastros/unidades-medida',     icon: Scale     },
+      { name: 'Usuários',             href: '/admin/usuarios',                icon: Users      },
+      { name: 'Empresas',             href: '/cadastros/empresas',            icon: Building2  },
+      { name: 'Departamentos',        href: '/cadastros/departamentos',       icon: Network    },
+      { name: 'Alçadas de aprovação', href: '/cadastros/alcadas-aprovacao',   icon: Gavel      },
+      { name: 'Fornecedores',         href: '/compras/fornecedores',          icon: Truck      },
+      { name: 'Produtos',             href: '/cadastros/produtos',            icon: Package    },
+      { name: 'Unidades de medida',   href: '/cadastros/unidades-medida',     icon: Scale      },
+      { name: 'Integração ML',        href: '/cadastros/mercado-livre',       icon: ShoppingBag, iconImg: '/logo_ml.png' },
+      { name: 'Pedidos ML',           href: '/compras/mercado-livre',         icon: ShoppingBag, iconImg: '/logo_ml.png' },
     ],
   },
 ]

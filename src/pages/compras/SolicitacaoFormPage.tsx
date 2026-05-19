@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
-  ChevronLeft, Send, Plus, Trash2, Search, Package, X, AlertCircle, Network,
+  Send, Plus, Trash2, Search, Package, X, AlertCircle, Network,
 } from 'lucide-react'
+import { BotaoVoltar } from '@/components/shared/BotaoVoltar'
 import { Button } from '@heroui/react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -186,12 +187,7 @@ export function SolicitacaoFormPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link
-          to="/compras/solicitacoes"
-          className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-emerald-600 transition-colors mb-2"
-        >
-          <ChevronLeft size={14} /> Solicitações
-        </Link>
+        <BotaoVoltar fallback="/compras/solicitacoes" label="Voltar" />
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">

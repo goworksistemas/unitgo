@@ -110,9 +110,47 @@ export function AppSidebar({ onExpandedChange }: AppSidebarProps) {
           <nav className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden px-2 py-3">
             {NAV_GROUPS.map(group => {
               const accent         = ACCENTS[group.accent]
-              const isOpen         = !!expandedGroups[group.group]
+              const isOpen         = !!expandedGroups[group.group] || group.semHeader
               const groupHasActive = group.items.some(i => isActive(i.href))
               const GroupIcon      = group.icon
+
+              const renderItems = (
+                <div className={`space-y-0.5 ${group.semHeader ? '' : 'mt-0.5 pl-2'}`}>
+                  {group.items.map((item, idx) => {
+                    const active = isActive(item.href)
+                    const Icon   = item.icon
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        className={`group/item relative flex min-h-9 animate-flyout-item-enter items-center rounded-lg pl-3 pr-2 py-1.5 text-sm font-medium transition-all hover:translate-x-0.5 ${
+                          active
+                            ? `${accent.activeBg} ${accent.activeText}`
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
+                        style={{ animationDelay: `${Math.min(idx, 12) * 22}ms` }}
+                      >
+                        {active && (
+                          <span
+                            className={`pointer-events-none absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full ${accent.activeBar}`}
+                            aria-hidden
+                          />
+                        )}
+                        {item.iconImg ? (
+                          <img src={item.iconImg} alt="" className="w-4 h-4 mr-2 shrink-0 object-contain" />
+                        ) : (
+                          <Icon className="w-4 h-4 mr-2 shrink-0" />
+                        )}
+                        <span className="flex-1 truncate">{item.name}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )
+
+              if (group.semHeader) {
+                return <div key={group.group}>{renderItems}</div>
+              }
 
               return (
                 <div key={group.group}>
@@ -144,35 +182,7 @@ export function AppSidebar({ onExpandedChange }: AppSidebarProps) {
                     />
                   </button>
 
-                  {isOpen && (
-                    <div className="mt-0.5 space-y-0.5 pl-2">
-                      {group.items.map((item, idx) => {
-                        const active = isActive(item.href)
-                        const Icon   = item.icon
-                        return (
-                          <Link
-                            key={item.href}
-                            to={item.href}
-                            className={`group/item relative flex min-h-9 animate-flyout-item-enter items-center rounded-lg pl-3 pr-2 py-1.5 text-sm font-medium transition-all hover:translate-x-0.5 ${
-                              active
-                                ? `${accent.activeBg} ${accent.activeText}`
-                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                            }`}
-                            style={{ animationDelay: `${Math.min(idx, 12) * 22}ms` }}
-                          >
-                            {active && (
-                              <span
-                                className={`pointer-events-none absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full ${accent.activeBar}`}
-                                aria-hidden
-                              />
-                            )}
-                            <Icon className="w-4 h-4 mr-2 shrink-0" />
-                            <span className="flex-1 truncate">{item.name}</span>
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  )}
+                  {isOpen && renderItems}
                 </div>
               )
             })}
@@ -278,7 +288,11 @@ export function AppSidebar({ onExpandedChange }: AppSidebarProps) {
                   }`}
                   onClick={() => setFlyout(null)}
                 >
-                  <FIcon className="w-4 h-4 shrink-0" />
+                  {fi.iconImg ? (
+                    <img src={fi.iconImg} alt="" className="w-4 h-4 shrink-0 object-contain" />
+                  ) : (
+                    <FIcon className="w-4 h-4 shrink-0" />
+                  )}
                   {fi.name}
                 </Link>
               )

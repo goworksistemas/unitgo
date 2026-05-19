@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  ChevronLeft, Save, Search, X, AlertCircle, ShoppingCart, Package, Truck,
+  Save, Search, X, AlertCircle, ShoppingCart, Package, Truck,
 } from 'lucide-react'
+import { BotaoVoltar } from '@/components/shared/BotaoVoltar'
 import { Button } from '@heroui/react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -140,6 +141,7 @@ export function PedidoDiretoFormPage() {
         empresa_id: sc!.empresa_id,
         fornecedor_id: fornecedorId,
         cotacao_id: null,
+        origem: 'manual',
         comprador_id: profile!.id,
         prazo_entrega_dias: prazoDias ? parseInt(prazoDias) : null,
         condicao_pagamento: condPagamento.trim() || null,
@@ -199,9 +201,7 @@ export function PedidoDiretoFormPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link to="/compras/pedidos" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-emerald-600 mb-2">
-          <ChevronLeft size={14} /> Pedidos
-        </Link>
+        <BotaoVoltar fallback="/compras/pedidos" label="Voltar" />
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-semibold flex items-center gap-2">

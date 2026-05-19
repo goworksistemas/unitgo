@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  ChevronLeft, Save, Search, X, AlertCircle, Receipt, ShoppingCart, Package, FileBadge,
+  Save, Search, X, AlertCircle, Receipt, ShoppingCart, Package, FileBadge,
 } from 'lucide-react'
+import { BotaoVoltar } from '@/components/shared/BotaoVoltar'
 import { Button } from '@heroui/react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -220,9 +221,7 @@ export function RecebimentoFormPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link to="/compras/recebimentos" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-emerald-600 mb-2">
-          <ChevronLeft size={14} /> Recebimentos
-        </Link>
+        <BotaoVoltar fallback="/compras/recebimentos" label="Voltar" />
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-semibold">Novo recebimento</h1>

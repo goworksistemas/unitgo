@@ -1,0 +1,24 @@
+# Configuração do projeto Supabase (CLI / Dashboard)
+# Mais detalhes: https://supabase.com/docs/guides/cli/config
+
+project_id = "supplygo"
+
+# ────────────────────────────────────────────────────────────
+# Edge Functions
+# ────────────────────────────────────────────────────────────
+
+# ml-oauth-callback: aberto (ML redireciona o navegador sem JWT)
+[functions.ml-oauth-callback]
+verify_jwt = false
+
+# ml-webhook: aberto (ML POSTa sem JWT). Idempotência protege replays.
+[functions.ml-webhook]
+verify_jwt = false
+
+# ml-sync-resource: protegida — exige Bearer service_role (chamada interna)
+[functions.ml-sync-resource]
+verify_jwt = false   # validação manual via Authorization header
+
+# ml-refresh-tokens: protegida — chamada por cron com service_role
+[functions.ml-refresh-tokens]
+verify_jwt = false

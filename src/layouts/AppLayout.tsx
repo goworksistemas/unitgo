@@ -61,16 +61,36 @@ export function AppLayout() {
       <main
         className={`transition-[margin] duration-200 ease-out ${
           sidebarExpanded ? 'lg:ml-56' : 'lg:ml-14'
-        } pt-12 pb-20 lg:pb-6`}
+        } pt-12 ${isFullBleed(location.pathname) ? 'pb-16 lg:pb-0' : 'pb-20 lg:pb-6'}`}
       >
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-          <Outlet />
-        </div>
+        {isFullBleed(location.pathname) ? (
+          <div className="px-3 lg:px-4">
+            <Outlet />
+          </div>
+        ) : (
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+            <Outlet />
+          </div>
+        )}
       </main>
 
       <AppBottomNav />
     </div>
   )
+}
+
+/**
+ * Rotas que rodam em "full-bleed": sem max-width e com padding mínimo,
+ * para que a tela de detalhe ocupe toda a largura útil e não apareça
+ * como "caixa dentro de caixa". Em mobile mantemos um respiro pequeno
+ * para o conteúdo não colar nas bordas.
+ */
+function isFullBleed(pathname: string): boolean {
+  if (pathname.match(/^\/compras\/solicitacoes\/[^/]+(\/.*)?$/) && !pathname.endsWith('/nova')) return true
+  if (pathname.match(/^\/compras\/cotacoes\/[^/]+$/) && !pathname.endsWith('/nova')) return true
+  if (pathname.match(/^\/compras\/pedidos\/[^/]+$/) && !pathname.endsWith('/novo')) return true
+  if (pathname.match(/^\/compras\/processo\/[^/]+$/)) return true
+  return false
 }
 
 function getPageTitle(pathname: string): string {
@@ -83,6 +103,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/cadastros/empresas')) return 'Empresas'
   if (pathname.startsWith('/cadastros/departamentos')) return 'Departamentos'
   if (pathname.startsWith('/cadastros/alcadas-aprovacao')) return 'Alçadas de aprovação'
+  if (pathname.startsWith('/cadastros/mercado-livre')) return 'Mercado Livre'
   if (pathname.startsWith('/cadastros')) return 'Cadastros'
   if (pathname === '/compras/solicitacoes/nova') return 'Nova solicitação'
   if (pathname.match(/^\/compras\/solicitacoes\/[^/]+$/)) return 'Solicitação de compra'
@@ -97,6 +118,8 @@ function getPageTitle(pathname: string): string {
   if (pathname.match(/^\/compras\/processo\/[^/]+$/)) return 'Fluxo de compra'
   if (pathname === '/compras/recebimentos/novo') return 'Novo recebimento'
   if (pathname.startsWith('/compras/recebimentos')) return 'Recebimentos'
+  if (pathname.match(/^\/compras\/mercado-livre\/[^/]+$/)) return 'Pedido Mercado Livre'
+  if (pathname.startsWith('/compras/mercado-livre')) return 'Pedidos Mercado Livre'
   if (pathname.match(/^\/compras\/processo\//)) return 'Solicitação de compra'
   if (pathname.startsWith('/compras')) return 'Compras'
   return ''

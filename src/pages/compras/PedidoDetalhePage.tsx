@@ -1,33 +1,82 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  ChevronLeft, ShoppingCart, Truck, Building2, Calendar, Package, Send,
-  CheckCircle2, AlertCircle, Receipt, Ban, XCircle, RefreshCw, Scale,
-  ChevronDown, ChevronUp, ArrowRightLeft,
+  Truck, Send,
+  CheckCircle2, Receipt, Ban, XCircle, RefreshCw,
+  ArrowRightLeft,
+  User as UserIcon,
 } from 'lucide-react'
+import { BotaoVoltar } from '@/components/shared/BotaoVoltar'
 import { Button } from '@heroui/react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import type {
   CmpCotacao, CmpCotacaoFornecedor, CmpCotacaoItem, CmpCotacaoRespostaItem,
-  CmpFornecedor, CmpPedido, CmpPedidoItem, CmpRecebimento,
-  CoreEmpresa, PrdProduto, PrdUnidadeMedida, Profile,
+  CmpFornecedor, CmpPedidoStatus, CmpPedidoItemStatus,
+  PrdProduto, PrdUnidadeMedida,
 } from '@/types/database'
 import {
-  PEDIDO_STATUS_META, PEDIDO_ITEM_STATUS_META,
-  formatDateTime, formatMoney, formatQty,
+  PEDIDO_ITEM_STATUS_META, STATUS_META,
+  formatMoney, formatQty,
 } from './_shared'
+import { metaPedido, resumoEtapaPedido } from './_fluxoEtapas'
 import { LinhaTempoProcesso } from './_LinhaTempoProcesso'
+import { PropLinha } from './_LayoutDetalhe'
+import {
+  LayoutDetalheFocado, MetaChip, MetaSep, AlertaLinha, type PainelSecao,
+} from './_LayoutDetalheFocado'
+import { HistoricoTimeline, type EventoHistorico } from './_HistoricoTimeline'
+import { rpcCompras } from './_rpc'
+import { PainelMercadoLivre } from './_PainelMercadoLivre'
+import { VinculosBar, VinculosLista, gruposVinculosPedido } from './_VinculosProcesso'
 
-type PedidoFull = CmpPedido & {
-  empresa?: CoreEmpresa
-  fornecedor?: CmpFornecedor
-  cotacao?: Pick<CmpCotacao, 'id' | 'numero'>
-  comprador?: Profile
-  aprovador?: Profile
+// ── Tipos do payload da RPC cmp_detalhe_pedido ──
+type ProfileMini = { id: string; nome: string | null; email: string }
+
+type PedidoFull = {
+  id: string; numero: string; status: CmpPedidoStatus
+  empresa_id: string; fornecedor_id: string | null
+  cotacao_id: string | null
+  comprador_id: string | null; aprovador_id: string | null
+  prazo_entrega_dias: number | null
+  condicao_pagamento: string | null
+  observacoes: string | null
+  aprovado_em: string | null; enviado_em: string | null
+  cancelada_em: string | null
+  motivo_cancelamento: string | null
+  created_at: string; updated_at: string
+  ml_pedido_id: string | null
+  empresa?: { id: string; razao_social: string; nome_fantasia: string | null; cnpj: string | null } | null
+  fornecedor?: { id: string; razao_social: string; nome_fantasia: string | null; cnpj_cpf: string | null } | null
+  cotacao?: { id: string; numero: string; status: string } | null
+  comprador?: ProfileMini | null
+  aprovador?: ProfileMini | null
 }
-type ItemFull = CmpPedidoItem & { produto?: PrdProduto; unidade_medida?: PrdUnidadeMedida }
+
+type ItemFull = {
+  id: string; pedido_id: string; linha: number
+  solicitacao_item_id: string | null; cotacao_item_id: string | null
+  produto_id: string | null; unidade_medida_id: string | null
+  quantidade: number; preco_unitario: number; quantidade_recebida: number
+  observacao: string | null; status_item: CmpPedidoItemStatus
+  produto?: { id: string; codigo: string; nome: string; tipo: string; imagem_url: string | null } | null
+  unidade_medida?: { id: string; nome: string; sigla: string } | null
+}
+
+type RecebimentoMin = {
+  id: string; numero: string; data_recebimento: string
+  observacoes: string | null
+  recebedor?: ProfileMini | null
+}
+
+interface RpcDetalhePed {
+  pedido: PedidoFull
+  itens: ItemFull[]
+  recebimentos: RecebimentoMin[]
+  scs_origem: { id: string; numero: string; status: keyof typeof STATUS_META }[]
+  historico: EventoHistorico[]
+}
 
 export function PedidoDetalhePage() {
   const { id } = useParams<{ id: string }>()
@@ -36,7 +85,9 @@ export function PedidoDetalhePage() {
 
   const [ped, setPed] = useState<PedidoFull | null>(null)
   const [itens, setItens] = useState<ItemFull[]>([])
-  const [recebimentos, setRecebimentos] = useState<CmpRecebimento[]>([])
+  const [recebimentos, setRecebimentos] = useState<RecebimentoMin[]>([])
+  const [historico, setHistorico] = useState<EventoHistorico[]>([])
+  const [scsOrigem, setScsOrigem] = useState<{ id: string; numero: string; status: keyof typeof STATUS_META }[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
@@ -47,29 +98,46 @@ export function PedidoDetalhePage() {
   const fetchData = useCallback(async () => {
     if (!id) return
     setLoading(true)
-    const [pedResp, itensResp, recResp] = await Promise.all([
-      supabase.from('cmp_pedidos_compra').select(`
-        *,
-        empresa:core_empresas(*),
-        fornecedor:cmp_fornecedores(*),
-        cotacao:cmp_cotacoes(id,numero),
-        comprador:profiles!cmp_pedidos_compra_comprador_id_fkey(id,nome,email,role,ativo,avatar_url,departamento_id,created_at,updated_at),
-        aprovador:profiles!cmp_pedidos_compra_aprovador_id_fkey(id,nome,email,role,ativo,avatar_url,departamento_id,created_at,updated_at)
-      `).eq('id', id).maybeSingle(),
-      supabase.from('cmp_pedidos_compra_itens').select(`
-        *,
-        produto:prd_produtos(id,codigo,nome,unidade_medida_id,tipo,descricao,imagem_url,ativo,created_at,updated_at,empresa_id,codigo_origem),
-        unidade_medida:prd_unidades_medida(id,nome,sigla,ativo)
-      `).eq('pedido_id', id).order('linha'),
-      supabase.from('cmp_recebimentos').select('*').eq('pedido_id', id).order('data_recebimento'),
+    // RPC consolidada + busca complementar do vínculo Mercado Livre (campo
+    // ainda não incluído no payload da RPC para não acoplar módulos).
+    const [detalheResp, mlResp] = await Promise.all([
+      rpcCompras<RpcDetalhePed>('cmp_detalhe_pedido', { p_id: id }),
+      supabase.from('cmp_pedidos_compra').select('ml_pedido_id').eq('id', id).maybeSingle(),
     ])
-    setPed(pedResp.data as unknown as PedidoFull)
-    setItens((itensResp.data ?? []) as unknown as ItemFull[])
-    setRecebimentos((recResp.data ?? []) as unknown as CmpRecebimento[])
+    if (detalheResp.error) {
+      console.error('[PedidoDetalhePage] cmp_detalhe_pedido:', detalheResp.error)
+      toast.error('Erro ao carregar pedido.')
+      setLoading(false)
+      return
+    }
+    if (!detalheResp.data) {
+      setPed(null)
+      setLoading(false)
+      return
+    }
+    const pedido = detalheResp.data.pedido ?? null
+    if (pedido) pedido.ml_pedido_id = (mlResp.data as { ml_pedido_id: string | null } | null)?.ml_pedido_id ?? null
+    setPed(pedido)
+    setItens(detalheResp.data.itens ?? [])
+    setRecebimentos(detalheResp.data.recebimentos ?? [])
+    setScsOrigem(detalheResp.data.scs_origem ?? [])
+    setHistorico(detalheResp.data.historico ?? [])
     setLoading(false)
   }, [id])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  const gruposVinc = useMemo(
+    () => ped
+      ? gruposVinculosPedido({
+          cotacao: ped.cotacao,
+          scs: scsOrigem,
+          recebimentos,
+          mlPedidoId: ped.ml_pedido_id,
+        })
+      : [],
+    [ped, scsOrigem, recebimentos],
+  )
 
   async function marcarEnviado() {
     if (!ped) return
@@ -77,7 +145,7 @@ export function PedidoDetalhePage() {
     await supabase.from('cmp_pedidos_compra').update({
       status: 'enviado', enviado_em: new Date().toISOString(),
     }).eq('id', ped.id)
-    toast.success('Pedido marcado como enviado ao fornecedor')
+    toast.success('Compra confirmada com o fornecedor — aguardando recebimento')
     await fetchData()
     setActionLoading(null)
   }
@@ -148,243 +216,226 @@ export function PedidoDetalhePage() {
     )
   }
 
-  const meta = PEDIDO_STATUS_META[ped.status]
+  const statusMeta = metaPedido(ped.status)
+  const resumoEtapa = resumoEtapaPedido(ped.status)
   const total = itens.reduce((sum, it) => sum + Number(it.quantidade) * Number(it.preco_unitario), 0)
   const totalRecebido = itens.reduce((sum, it) => sum + Number(it.quantidade_recebida) * Number(it.preco_unitario), 0)
   const progresso = total > 0 ? (totalRecebido / total) * 100 : 0
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <Link to="/compras/pedidos" className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-emerald-600 mb-2">
-          <ChevronLeft size={14} /> Pedidos
-        </Link>
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/30">
-              <ShoppingCart size={18} className="text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl font-mono font-semibold">{ped.numero}</h1>
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${meta.badge}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-                  {meta.label}
-                </span>
-              </div>
-              <p className="text-sm text-gray-500 mt-0.5">Criado {formatDateTime(ped.created_at)}</p>
-            </div>
-          </div>
+  // ── Header full-width ──
+  const badges = (
+    <>
+      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusMeta.badge}`}>
+        <span className={`h-1.5 w-1.5 rounded-full ${statusMeta.dot}`} />
+        {statusMeta.label}
+      </span>
+    </>
+  )
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {podeAprovar && ped.status === 'aguardando_aprovacao' && (
-              <>
-                <Button isDisabled={actionLoading === 'reprovar'} onPress={reprovarPedido}
-                  className="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-2 text-sm font-medium flex items-center gap-1.5">
-                  <XCircle size={14} /> Reprovar
-                </Button>
-                <Button isDisabled={actionLoading === 'aprovar'} onPress={aprovarPedido}
-                  className="bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-2 text-sm font-medium flex items-center gap-1.5">
-                  <CheckCircle2 size={14} /> Aprovar pedido
-                </Button>
-              </>
-            )}
-            {podeEditar && ped.status === 'aprovado' && (
-              <Button isDisabled={actionLoading === 'enviar'} onPress={marcarEnviado}
-                className="bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-2 text-sm font-medium flex items-center gap-1.5">
-                <Send size={14} /> Marcar como enviado
-              </Button>
-            )}
-            {podeEditar && ['aprovado','enviado','parcialmente_recebido'].includes(ped.status) && (
-              <Button onPress={() => navigate(`/compras/recebimentos/novo?pedido=${ped.id}`)}
-                className="bg-violet-600 text-white hover:bg-violet-700 px-3 py-2 text-sm font-medium flex items-center gap-1.5">
-                <Receipt size={14} /> Registrar recebimento
-              </Button>
-            )}
-            {podeEditar && !['cancelado','recebido'].includes(ped.status) && (
-              <Button onPress={cancelar}
-                className="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-2 text-sm font-medium flex items-center gap-1.5">
-                <Ban size={14} /> Cancelar
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Linha do tempo do processo */}
-      <LinhaTempoProcesso
-        pedidoId={ped.id}
-        currentStep={
-          ['enviado','parcialmente_recebido','recebido'].includes(ped.status) ? 'recebimento' : 'pedido'
-        }
-      />
-
-      {ped.status === 'cancelado' && ped.motivo_cancelamento && (
-        <div className="flex items-start gap-2 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
-          <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          <div>
-            <p className="font-semibold">Cancelado</p>
-            <p className="mt-0.5">{ped.motivo_cancelamento}</p>
-          </div>
-        </div>
+  const acoes = (
+    <>
+      {podeAprovar && ped.status === 'aguardando_aprovacao' && (
+        <>
+          <Button isDisabled={actionLoading === 'aprovar'} onPress={aprovarPedido}
+            className="bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+            <CheckCircle2 size={13} /> Aprovar pedido
+          </Button>
+          <Button isDisabled={actionLoading === 'reprovar'} onPress={reprovarPedido}
+            className="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+            <XCircle size={13} /> Reprovar
+          </Button>
+        </>
       )}
+      {podeEditar && ped.status === 'aprovado' && (
+        <Button isDisabled={actionLoading === 'enviar'} onPress={marcarEnviado}
+          className="bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+          <Send size={13} /> Confirmar compra com fornecedor
+        </Button>
+      )}
+      {podeEditar && ['aprovado','enviado','parcialmente_recebido'].includes(ped.status) && (
+        <Button onPress={() => navigate(`/compras/recebimentos/novo?pedido=${ped.id}`)}
+          className="bg-violet-600 text-white hover:bg-violet-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+          <Receipt size={13} /> Registrar recebimento
+        </Button>
+      )}
+      {podeEditar && !['cancelado','recebido'].includes(ped.status) && (
+        <Button onPress={cancelar}
+          className="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+          <Ban size={13} /> Cancelar
+        </Button>
+      )}
+    </>
+  )
 
-      {/* Cabeçalho */}
-      <section className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-4 px-5 py-4 text-sm">
-          <InfoBlock label="Fornecedor" icon={Truck}>
-            {ped.fornecedor?.nome_fantasia ?? ped.fornecedor?.razao_social}
-            {ped.fornecedor?.cnpj_cpf && <p className="text-[11px] font-mono text-gray-500 mt-0.5">{ped.fornecedor.cnpj_cpf}</p>}
-          </InfoBlock>
-          <InfoBlock label="Empresa" icon={Building2}>
-            {ped.empresa?.nome_fantasia ?? ped.empresa?.razao_social}
-          </InfoBlock>
-          <InfoBlock label="Cotação origem">
-            {ped.cotacao
-              ? <Link to={`/compras/cotacoes/${ped.cotacao.id}`} className="font-mono text-emerald-600 dark:text-emerald-400 hover:underline">{ped.cotacao.numero}</Link>
-              : '—'}
-          </InfoBlock>
-          <InfoBlock label="Comprador">
-            {ped.comprador?.nome ?? ped.comprador?.email}
-          </InfoBlock>
-          <InfoBlock label="Prazo de entrega" icon={Calendar}>
-            {ped.prazo_entrega_dias ? `${ped.prazo_entrega_dias} dias` : '—'}
-          </InfoBlock>
-          <InfoBlock label="Condição de pagamento">
-            {ped.condicao_pagamento ?? '—'}
-          </InfoBlock>
-          <InfoBlock label="Aprovado por">
-            {ped.aprovador?.nome ?? ped.aprovador?.email ?? '—'}
-          </InfoBlock>
-          <InfoBlock label="Enviado em">
-            {formatDateTime(ped.enviado_em)}
-          </InfoBlock>
-          {ped.observacoes && (
-            <div className="col-span-2 md:col-span-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Observações</p>
-              <p className="text-sm whitespace-pre-wrap">{ped.observacoes}</p>
+  const alerta = (
+    <>
+      {resumoEtapa && (
+        <p className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-3 py-2 text-sm text-gray-700 dark:text-gray-200">
+          {resumoEtapa}
+        </p>
+      )}
+      {ped.status === 'cancelado' && ped.motivo_cancelamento && (
+        <AlertaLinha tom="red">Cancelado: {ped.motivo_cancelamento}</AlertaLinha>
+      )}
+    </>
+  )
+
+  const faixaMeta = (
+    <>
+      <MetaChip label="Fornecedor" destaque>
+        {ped.fornecedor?.nome_fantasia ?? ped.fornecedor?.razao_social ?? '—'}
+      </MetaChip>
+      <MetaSep />
+      <MetaChip label="Empresa">{ped.empresa?.nome_fantasia ?? ped.empresa?.razao_social ?? '—'}</MetaChip>
+      <MetaSep />
+      <MetaChip label="Total" destaque>{formatMoney(total)}</MetaChip>
+      {progresso > 0 && (
+        <>
+          <MetaSep />
+          <MetaChip label="Recebido">{progresso.toFixed(0)}%</MetaChip>
+        </>
+      )}
+    </>
+  )
+
+
+  const detalhes = (
+    <dl className="space-y-2 text-sm">
+      <PropLinha label="Comprador" icone={<UserIcon size={11} />}>
+        {ped.comprador?.nome ?? ped.comprador?.email ?? '—'}
+      </PropLinha>
+      <PropLinha label="Aprovador" icone={<UserIcon size={11} />}>
+        {ped.aprovador?.nome ?? ped.aprovador?.email ?? '—'}
+      </PropLinha>
+      <PropLinha label="Prazo entrega">
+        {ped.prazo_entrega_dias ? `${ped.prazo_entrega_dias} dias` : '—'}
+      </PropLinha>
+      <PropLinha label="Condição pagto">{ped.condicao_pagamento ?? '—'}</PropLinha>
+      {ped.observacoes && (
+        <PropLinha label="Observações">
+          <p className="whitespace-pre-wrap text-xs">{ped.observacoes}</p>
+        </PropLinha>
+      )}
+    </dl>
+  )
+
+  const painelVinculos = (
+    <section className="space-y-4 text-sm">
+      <VinculosLista grupos={gruposVinc} />
+      {ped.ml_pedido_id && <PainelMercadoLivre mlPedidoId={ped.ml_pedido_id} />}
+    </section>
+  )
+
+  const tabelaItens = (
+        <div>
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/40 dark:bg-gray-800/20">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              <strong className="text-gray-900 dark:text-gray-100">{itens.length}</strong> {itens.length === 1 ? 'item' : 'itens'}
+            </p>
+            <p className="text-xs text-gray-500">
+              Total: <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{formatMoney(total)}</span>
+            </p>
+          </div>
+          {itens.length === 0 ? (
+            <p className="px-4 py-10 text-center text-sm text-gray-400">Sem itens.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50/60 dark:bg-gray-800/40 border-b border-gray-100 dark:border-gray-800">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 w-10">#</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500">Produto</th>
+                    <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500">Qtd.</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500">UoM</th>
+                    <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500">Preço unit.</th>
+                    <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500">Total</th>
+                    <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500">Recebido</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {itens.map(it => {
+                    const totalLinha = Number(it.quantidade) * Number(it.preco_unitario)
+                    const stMeta = PEDIDO_ITEM_STATUS_META[it.status_item]
+                    return (
+                      <tr key={it.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
+                        <td className="px-3 py-2.5 text-gray-400 font-mono align-top text-[11px]">{it.linha}</td>
+                        <td className="px-3 py-2.5 align-top">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-tight">{it.produto?.nome ?? '—'}</p>
+                          <p className="text-[11px] font-mono text-gray-500 mt-0.5">{it.produto?.codigo}</p>
+                          {it.observacao && <p className="text-[11px] text-gray-500 mt-0.5">{it.observacao}</p>}
+                        </td>
+                        <td className="px-3 py-2.5 text-right tabular-nums align-top">{formatQty(it.quantidade)}</td>
+                        <td className="px-3 py-2.5 text-gray-500 align-top">{it.unidade_medida?.sigla}</td>
+                        <td className="px-3 py-2.5 text-right tabular-nums align-top">{formatMoney(it.preco_unitario)}</td>
+                        <td className="px-3 py-2.5 text-right tabular-nums font-semibold align-top">{formatMoney(totalLinha)}</td>
+                        <td className="px-3 py-2.5 text-right tabular-nums align-top">
+                          <span className={Number(it.quantidade_recebida) >= Number(it.quantidade) ? 'text-emerald-600 font-semibold' : ''}>
+                            {formatQty(it.quantidade_recebida)} / {formatQty(it.quantidade)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 align-top">
+                          <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${stMeta.badge}`}>
+                            <span className={`h-1 w-1 rounded-full ${stMeta.dot}`} />
+                            {stMeta.label}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
-      </section>
+  )
 
-      {/* Progresso */}
-      {progresso > 0 && (
-        <section className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm px-5 py-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Progresso do recebimento</span>
-            <span className="text-sm font-semibold tabular-nums">{progresso.toFixed(0)}%</span>
-          </div>
-          <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-            <div className="h-full bg-emerald-500 transition-all" style={{ width: `${progresso}%` }} />
-          </div>
-          <p className="mt-2 text-xs text-gray-500">
-            {formatMoney(totalRecebido)} de {formatMoney(total)}
-          </p>
-        </section>
-      )}
-
-      {/* Itens */}
-      <section className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-5 py-3">
-          <h2 className="text-sm font-semibold">Itens <span className="text-gray-400 font-normal">({itens.length})</span></h2>
-          <span className="text-xs text-gray-500">
-            Total: <span className="font-semibold text-gray-800 dark:text-gray-100">{formatMoney(total)}</span>
-          </span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50/60 dark:bg-gray-800/40 border-b border-gray-100 dark:border-gray-800">
-                <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400 w-10">#</th>
-                <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Produto</th>
-                <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-400">Qtd.</th>
-                <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">UoM</th>
-                <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-400">Preço unit.</th>
-                <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-400">Total</th>
-                <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-400">Recebido</th>
-                <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {itens.map(it => {
-                const totalLinha = Number(it.quantidade) * Number(it.preco_unitario)
-                const stMeta = PEDIDO_ITEM_STATUS_META[it.status_item]
-                return (
-                  <tr key={it.id}>
-                    <td className="px-3 py-3 text-gray-400 font-mono align-top">{it.linha}</td>
-                    <td className="px-3 py-3 align-top">
-                      <div className="flex items-start gap-2">
-                        <Package size={14} className="text-blue-600 mt-0.5 shrink-0" />
-                        <div>
-                          <p className="text-sm font-medium">{it.produto?.nome}</p>
-                          <p className="text-[11px] font-mono text-gray-500">{it.produto?.codigo}</p>
-                          {it.observacao && <p className="text-xs text-gray-500 mt-0.5">{it.observacao}</p>}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 text-right tabular-nums align-top">{formatQty(it.quantidade)}</td>
-                    <td className="px-3 py-3 text-gray-500 align-top">{it.unidade_medida?.sigla}</td>
-                    <td className="px-3 py-3 text-right tabular-nums align-top">{formatMoney(it.preco_unitario)}</td>
-                    <td className="px-3 py-3 text-right tabular-nums font-semibold align-top">{formatMoney(totalLinha)}</td>
-                    <td className="px-3 py-3 text-right tabular-nums align-top">
-                      <span className={Number(it.quantidade_recebida) >= Number(it.quantidade) ? 'text-emerald-600 font-semibold' : ''}>
-                        {formatQty(it.quantidade_recebida)} / {formatQty(it.quantidade)}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 align-top">
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${stMeta.badge}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${stMeta.dot}`} />
-                        {stMeta.label}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* Painel comparativo de cotações (aparece se estiver aguardando aprovação) */}
+  const principal = (
+    <>
       {ped.status === 'aguardando_aprovacao' && (
-        <ComparativoCotacoesDoPedido pedido={ped} itens={itens} onRefresh={fetchData} />
+        <div className="border-b border-gray-200 dark:border-gray-800">
+          <ComparativoCotacoesDoPedido pedido={ped} itens={itens} onRefresh={fetchData} />
+        </div>
       )}
-
-      {/* Recebimentos */}
-      {recebimentos.length > 0 && (
-        <section className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
-          <div className="border-b border-gray-100 dark:border-gray-800 px-5 py-3">
-            <h2 className="text-sm font-semibold">Recebimentos ({recebimentos.length})</h2>
-          </div>
-          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-            {recebimentos.map(r => (
-              <li key={r.id} className="flex items-center gap-3 px-5 py-3">
-                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-mono font-semibold">{r.numero}</p>
-                  <p className="text-xs text-gray-500">{formatDateTime(r.data_recebimento)}</p>
-                  {r.observacoes && <p className="text-xs text-gray-500 mt-0.5">{r.observacoes}</p>}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-    </div>
+      {tabelaItens}
+    </>
   )
-}
 
-function InfoBlock({ label, icon: Icon, children }: { label: string; icon?: typeof Building2; children: React.ReactNode }) {
+  const painelSecoes: PainelSecao[] = [
+    { id: 'historico', label: 'Histórico', badge: historico.length, conteudo: <HistoricoTimeline eventos={historico} /> },
+    { id: 'vinculos', label: 'Vínculos', conteudo: painelVinculos },
+    { id: 'detalhes', label: 'Detalhes', conteudo: detalhes },
+  ]
+
   return (
-    <div>
-      <p className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">
-        {Icon && <Icon size={11} />} {label}
-      </p>
-      <div className="text-sm text-gray-800 dark:text-gray-200">{children}</div>
-    </div>
+    <>
+      <LayoutDetalheFocado
+        voltar={<BotaoVoltar fallback="/compras/pedidos" label="Voltar" />}
+        titulo={ped.numero}
+        subtitulo={ped.fornecedor?.nome_fantasia ?? ped.fornecedor?.razao_social}
+        badges={badges}
+        acoes={acoes}
+        meta={faixaMeta}
+        vinculos={<VinculosBar grupos={gruposVinc} />}
+        alerta={alerta}
+        fluxo={
+          <LinhaTempoProcesso
+            pedidoId={ped.id}
+            currentStep={['enviado','parcialmente_recebido','recebido'].includes(ped.status) ? 'recebimento' : 'pedido'}
+            compacto
+          />
+        }
+        principal={principal}
+        painelSecoes={painelSecoes}
+      />
+    </>
   )
 }
+
+// ────────────────────────────────────────────────────────────────
+// PropLinha: linha de propriedade (label + valor) no estilo HubSpot
+// ────────────────────────────────────────────────────────────────
+
 
 // ────────────────────────────────────────────────────────────────
 // Painel comparativo: outras cotações disponíveis pra mesma SC
@@ -400,13 +451,12 @@ type CotacaoAlternativa = {
 }
 
 function ComparativoCotacoesDoPedido({ pedido, itens, onRefresh }: {
-  pedido: CmpPedido & { fornecedor?: CmpFornecedor }
+  pedido: PedidoFull
   itens: ItemFull[]
   onRefresh: () => void
 }) {
   const [alternativas, setAlternativas] = useState<CotacaoAlternativa[]>([])
   const [loading, setLoading] = useState(true)
-  const [expandido, setExpandido] = useState(true)
   const [trocando, setTrocando] = useState<string | null>(null)
 
   useEffect(() => {
@@ -581,87 +631,70 @@ function ComparativoCotacoesDoPedido({ pedido, itens, onRefresh }: {
   }
 
   return (
-    <section className="rounded-2xl border border-violet-200 dark:border-violet-800/60 bg-violet-50/40 dark:bg-violet-950/20 shadow-sm overflow-hidden">
-      <button onClick={() => setExpandido(v => !v)}
-        className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-violet-100/40 dark:hover:bg-violet-950/40">
-        <Scale size={16} className="text-violet-600 dark:text-violet-400 shrink-0" />
-        <div className="flex-1">
-          <h2 className="text-sm font-semibold text-violet-900 dark:text-violet-100">
-            Comparar com outras cotações
-            {!loading && alternativas.length > 0 && (
-              <span className="ml-2 text-xs font-normal text-violet-700 dark:text-violet-300">
-                ({alternativas.length} {alternativas.length === 1 ? 'opção disponível' : 'opções disponíveis'})
-              </span>
-            )}
-          </h2>
-          <p className="text-xs text-violet-700/80 dark:text-violet-300/80 mt-0.5">
-            O aprovador pode rever todas as cotações desta SC e, se quiser, trocar o fornecedor antes de aprovar.
-          </p>
-        </div>
-        {expandido ? <ChevronUp size={16} className="text-violet-600" /> : <ChevronDown size={16} className="text-violet-600" />}
-      </button>
+    <div>
+      <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 bg-violet-50/40 dark:bg-violet-950/20">
+        <p className="text-xs text-violet-800 dark:text-violet-300">
+          O aprovador pode rever todas as cotações desta SC e, se quiser, trocar o fornecedor antes de aprovar.
+        </p>
+      </div>
 
-      {expandido && (
-        <div className="px-5 py-4 border-t border-violet-200/60 dark:border-violet-800/40 bg-white/40 dark:bg-gray-900/20">
-          {loading ? (
-            <div className="flex justify-center py-6">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-violet-600 border-t-transparent" />
-            </div>
-          ) : alternativas.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-4">
-              Sem outras cotações disponíveis para esta SC.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {alternativas.map(alt => {
-                const ehAtual = alt.fornecedor.id === pedido.fornecedor_id && alt.cotacao.id === pedido.cotacao_id
-                return (
-                  <div key={alt.cotacaoFornecedorId}
-                    className={`rounded-xl border px-4 py-3 ${
-                      ehAtual
-                        ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/60 dark:bg-emerald-950/30'
-                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
-                    }`}>
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Truck size={14} className="text-gray-400" />
-                          <span className="font-semibold text-sm">{alt.fornecedor.nome}</span>
-                          {ehAtual && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 text-white px-2 py-0.5 text-[10px] font-semibold">
-                              <CheckCircle2 size={10} /> ATUAL
-                            </span>
-                          )}
-                          {!alt.cobreTodosItens && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-2 py-0.5 text-[10px] font-semibold">
-                              parcial
-                            </span>
-                          )}
-                        </div>
-                        <Link to={`/compras/cotacoes/${alt.cotacao.id}`} className="text-[11px] font-mono text-violet-600 hover:underline">
-                          {alt.cotacao.numero} · {alt.cotacao.titulo}
-                        </Link>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold tabular-nums">{formatMoney(alt.total)}</p>
-                        <p className="text-[10px] text-gray-500">{alt.itens.length} item(ns)</p>
-                      </div>
-                      {!ehAtual && alt.cobreTodosItens && (
-                        <Button isDisabled={trocando === alt.cotacaoFornecedorId} onPress={() => trocarPara(alt)}
-                          className="bg-violet-600 text-white hover:bg-violet-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5">
-                          {trocando === alt.cotacaoFornecedorId
-                            ? <><RefreshCw size={11} className="animate-spin" /> Trocando…</>
-                            : <><ArrowRightLeft size={11} /> Trocar para este</>}
-                        </Button>
+      {loading ? (
+        <div className="flex justify-center py-10">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-violet-600 border-t-transparent" />
+        </div>
+      ) : alternativas.length === 0 ? (
+        <p className="px-4 py-10 text-center text-sm text-gray-400">
+          Sem outras cotações disponíveis para esta SC.
+        </p>
+      ) : (
+        <div className="p-4 space-y-2">
+          {alternativas.map(alt => {
+            const ehAtual = alt.fornecedor.id === pedido.fornecedor_id && alt.cotacao.id === pedido.cotacao_id
+            return (
+              <div key={alt.cotacaoFornecedorId}
+                className={`rounded-xl border px-4 py-3 ${
+                  ehAtual
+                    ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/60 dark:bg-emerald-950/30'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+                }`}>
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Truck size={14} className="text-gray-400" />
+                      <span className="font-semibold text-sm">{alt.fornecedor.nome}</span>
+                      {ehAtual && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 text-white px-2 py-0.5 text-[10px] font-semibold">
+                          <CheckCircle2 size={10} /> ATUAL
+                        </span>
+                      )}
+                      {!alt.cobreTodosItens && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-2 py-0.5 text-[10px] font-semibold">
+                          parcial
+                        </span>
                       )}
                     </div>
+                    <Link to={`/compras/cotacoes/${alt.cotacao.id}`} className="text-[11px] font-mono text-violet-600 hover:underline">
+                      {alt.cotacao.numero} · {alt.cotacao.titulo}
+                    </Link>
                   </div>
-                )
-              })}
-            </div>
-          )}
+                  <div className="text-right">
+                    <p className="text-lg font-bold tabular-nums">{formatMoney(alt.total)}</p>
+                    <p className="text-[10px] text-gray-500">{alt.itens.length} item(ns)</p>
+                  </div>
+                  {!ehAtual && alt.cobreTodosItens && (
+                    <Button isDisabled={trocando === alt.cotacaoFornecedorId} onPress={() => trocarPara(alt)}
+                      className="bg-violet-600 text-white hover:bg-violet-700 px-3 py-1.5 text-xs font-medium inline-flex items-center gap-1.5 rounded-lg">
+                      {trocando === alt.cotacaoFornecedorId
+                        ? <><RefreshCw size={11} className="animate-spin" /> Trocando…</>
+                        : <><ArrowRightLeft size={11} /> Trocar para este</>}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
-    </section>
+    </div>
   )
 }

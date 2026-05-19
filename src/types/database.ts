@@ -315,6 +315,8 @@ export type CmpPedidoItemStatus =
   | 'recebido'
   | 'cancelado'
 
+export type CmpPedidoOrigem = 'manual' | 'cotacao' | 'mercadolivre'
+
 export type CmpPedido = {
   id: string
   numero: string
@@ -332,6 +334,8 @@ export type CmpPedido = {
   enviado_em: string | null
   cancelada_em: string | null
   motivo_cancelamento: string | null
+  ml_pedido_id: string | null
+  origem: CmpPedidoOrigem
   created_at: string
   updated_at: string
   empresa?: CoreEmpresa
@@ -341,6 +345,7 @@ export type CmpPedido = {
   aprovador?: Profile
   alcada?: CmpAlcadaAprovacao
   itens?: CmpPedidoItem[]
+  ml_pedido?: MlPedido
 }
 
 export type CmpPedidoItem = {
@@ -409,6 +414,120 @@ export type CmpNotaFiscal = {
   pedidos?: CmpPedido[]
 }
 
+// ── Módulo Mercado Livre ─────────────────────────────────────
+
+export type MlCredencial = {
+  id: string
+  empresa_id: string
+  ml_user_id: number
+  nickname: string | null
+  email: string | null
+  site_id: string | null
+  access_token: string
+  refresh_token: string
+  token_obtido_em: string
+  token_expira_em: string
+  scopes: string[] | null
+  ativo: boolean
+  ultima_sync: string | null
+  created_at: string
+  updated_at: string
+  empresa?: CoreEmpresa
+}
+
+export type MlPedido = {
+  id: string
+  credencial_id: string
+  ml_order_id: number
+  ml_pack_id: number | null
+  ml_shipment_id: number | null
+  status: string | null
+  status_detail: string | null
+  data_criacao: string | null
+  data_fechamento: string | null
+  total: number | null
+  moeda: string | null
+  vendedor_id: number | null
+  vendedor_nickname: string | null
+  raw_json: Record<string, unknown>
+  pedido_compra_id: string | null
+  created_at: string
+  updated_at: string
+  itens?: MlPedidoItem[]
+  envio?: MlEnvio
+  notas_fiscais?: MlNotaFiscal[]
+  pedido_compra?: CmpPedido
+}
+
+export type MlPedidoItem = {
+  id: string
+  ml_pedido_id: string
+  ml_item_id: string
+  variation_id: number | null
+  titulo: string | null
+  quantidade: number | null
+  preco_unitario: number | null
+  thumbnail: string | null
+  raw_json: Record<string, unknown>
+  created_at: string
+}
+
+export type MlEnvio = {
+  id: string
+  credencial_id: string
+  ml_shipment_id: number
+  status: string | null
+  substatus: string | null
+  tracking_number: string | null
+  tracking_method: string | null
+  logistic_type: string | null
+  service_id: number | null
+  data_estimada: string | null
+  data_entrega: string | null
+  status_history: Record<string, unknown> | null
+  raw_json: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export type MlNotaFiscal = {
+  id: string
+  credencial_id: string
+  ml_pack_id: number
+  ml_doc_id: string
+  filename: string | null
+  file_type: 'xml' | 'pdf' | null
+  data_emissao: string | null
+  storage_path: string | null
+  numero_nf: string | null
+  serie: string | null
+  chave_acesso: string | null
+  cnpj_emitente: string | null
+  valor_total: number | null
+  nf_interna_id: string | null
+  raw_metadata: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
+  nf_interna?: CmpNotaFiscal
+}
+
+export type MlWebhookStatus = 'pending' | 'processing' | 'done' | 'error' | 'ignored'
+
+export type MlWebhookEvento = {
+  id: string
+  topic: string
+  resource: string
+  ml_user_id: number | null
+  application_id: number | null
+  attempts: number | null
+  sent_at: string | null
+  received_at: string
+  processed_at: string | null
+  status: MlWebhookStatus
+  error_message: string | null
+  raw_payload: Record<string, unknown>
+}
+
 // ── Tipagem do cliente Supabase ───────────────────────────────
 
 // Linhas "puras" do banco (sem campos relacionais opcionais), usadas pelo cliente Supabase.
@@ -449,6 +568,13 @@ type CmpPedidoItemRow            = Omit<CmpPedidoItem, 'produto' | 'variante' | 
 type CmpRecebimentoRow           = Omit<CmpRecebimento, 'pedido' | 'recebedor' | 'nf' | 'itens'>
 type CmpRecebimentoItemRow       = Omit<CmpRecebimentoItem, 'pedido_item'>
 type CmpNotaFiscalRow            = Omit<CmpNotaFiscal, 'fornecedor' | 'pedidos'>
+
+type MlCredencialRow             = Omit<MlCredencial, 'empresa'>
+type MlPedidoRow                 = Omit<MlPedido, 'itens' | 'envio' | 'notas_fiscais' | 'pedido_compra'>
+type MlPedidoItemRow             = MlPedidoItem
+type MlEnvioRow                  = MlEnvio
+type MlNotaFiscalRow             = Omit<MlNotaFiscal, 'nf_interna'>
+type MlWebhookEventoRow          = MlWebhookEvento
 
 // Torna opcionais as chaves cujo valor admite null (colunas com default no banco).
 type NullableKeys<T> = { [K in keyof T]-?: null extends T[K] ? K : never }[keyof T]
@@ -790,6 +916,69 @@ export type Database = {
         { nf_id: string; pedido_id: string },
         Partial<{ nf_id: string; pedido_id: string }>
       >
+      ml_credenciais: TableDef<
+        MlCredencialRow,
+        Omit<MlCredencialRow,
+          'id' | 'token_obtido_em' | 'ativo' | 'ultima_sync' | 'created_at' | 'updated_at'> &
+          Partial<Pick<MlCredencialRow,
+            'id' | 'token_obtido_em' | 'ativo' | 'ultima_sync' | 'created_at' | 'updated_at'>>,
+        Partial<Omit<MlCredencialRow, 'id' | 'created_at' | 'updated_at'>>,
+        [
+          {
+            foreignKeyName: 'ml_credenciais_empresa_id_fkey'
+            columns: ['empresa_id']
+            isOneToOne: false
+            referencedRelation: 'core_empresas'
+            referencedColumns: ['id']
+          },
+        ]
+      >
+      ml_pedidos: TableDef<
+        MlPedidoRow,
+        Omit<MlPedidoRow, 'id' | 'created_at' | 'updated_at'> &
+          Partial<Pick<MlPedidoRow, 'id' | 'created_at' | 'updated_at'>>,
+        Partial<Omit<MlPedidoRow, 'id' | 'created_at' | 'updated_at'>>,
+        [
+          {
+            foreignKeyName: 'ml_pedidos_credencial_id_fkey'
+            columns: ['credencial_id']
+            isOneToOne: false
+            referencedRelation: 'ml_credenciais'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'ml_pedidos_pedido_compra_id_fkey'
+            columns: ['pedido_compra_id']
+            isOneToOne: false
+            referencedRelation: 'cmp_pedidos_compra'
+            referencedColumns: ['id']
+          },
+        ]
+      >
+      ml_pedidos_itens: TableDef<
+        MlPedidoItemRow,
+        Omit<MlPedidoItemRow, 'id' | 'created_at'> &
+          Partial<Pick<MlPedidoItemRow, 'id' | 'created_at'>>,
+        Partial<Omit<MlPedidoItemRow, 'id' | 'created_at'>>
+      >
+      ml_envios: TableDef<
+        MlEnvioRow,
+        Omit<MlEnvioRow, 'id' | 'created_at' | 'updated_at'> &
+          Partial<Pick<MlEnvioRow, 'id' | 'created_at' | 'updated_at'>>,
+        Partial<Omit<MlEnvioRow, 'id' | 'created_at' | 'updated_at'>>
+      >
+      ml_notas_fiscais: TableDef<
+        MlNotaFiscalRow,
+        Omit<MlNotaFiscalRow, 'id' | 'created_at' | 'updated_at'> &
+          Partial<Pick<MlNotaFiscalRow, 'id' | 'created_at' | 'updated_at'>>,
+        Partial<Omit<MlNotaFiscalRow, 'id' | 'created_at' | 'updated_at'>>
+      >
+      ml_webhook_eventos: TableDef<
+        MlWebhookEventoRow,
+        Omit<MlWebhookEventoRow, 'id' | 'received_at' | 'status'> &
+          Partial<Pick<MlWebhookEventoRow, 'id' | 'received_at' | 'status'>>,
+        Partial<Omit<MlWebhookEventoRow, 'id' | 'received_at'>>
+      >
     }
     Views: Record<string, never>
     Functions: {
@@ -800,6 +989,49 @@ export type Database = {
       get_my_role: {
         Args: Record<string, never>
         Returns: UserRole
+      }
+      ml_vincular_pedido_compra: {
+        Args: { p_ml_pedido_id: string; p_pedido_compra_id: string }
+        Returns: void
+      }
+      ml_desvincular_pedido_compra: {
+        Args: { p_ml_pedido_id: string }
+        Returns: void
+      }
+
+      // ── Compras: RPCs de performance (migration 017) ──
+      // Todas retornam jsonb; o frontend tipa cada payload localmente.
+      cmp_historico: {
+        Args: { p_tipo: 'solicitacao' | 'cotacao' | 'pedido'; p_id: string }
+        Returns: unknown
+      }
+      cmp_detalhe_solicitacao: {
+        Args: { p_id: string }
+        Returns: unknown
+      }
+      cmp_detalhe_cotacao: {
+        Args: { p_id: string }
+        Returns: unknown
+      }
+      cmp_detalhe_pedido: {
+        Args: { p_id: string }
+        Returns: unknown
+      }
+      cmp_painel_solicitacao: {
+        Args: { p_id: string }
+        Returns: unknown
+      }
+      cmp_painel_cotacao: {
+        Args: { p_id: string }
+        Returns: unknown
+      }
+      cmp_painel_pedido: {
+        Args: { p_id: string }
+        Returns: unknown
+      }
+      cmp_linha_tempo: {
+        Args: { p_sc_id?: string | null; p_cot_id?: string | null; p_pedido_id?: string | null }
+        Returns: unknown
       }
     }
     Enums: {

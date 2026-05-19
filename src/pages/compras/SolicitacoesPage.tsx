@@ -1,30 +1,42 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  Plus, Search, FileText, ChevronRight, Calendar, Building2, User as UserIcon, Hash, Network,
+  Plus, Search, FileText, Calendar, Building2, User as UserIcon, Hash, Network,
 } from 'lucide-react'
 import { Button, Card, CardContent } from '@heroui/react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
-import type { CmpSolicitacao, CmpSolicitacaoStatus, CoreDepartamento, CoreEmpresa, Profile } from '@/types/database'
-import { PRIORIDADE_META, STATUS_META, formatDate } from './_shared'
+import type {
+  CmpCotacaoStatus, CmpItemStatus, CmpPedidoStatus, CmpSolicitacao,
+  CoreDepartamento, CoreEmpresa, Profile,
+} from '@/types/database'
+import { PRIORIDADE_META, formatDate } from './_shared'
+import {
+  ETAPAS_PROCESSO_SC, metaEtapaProcessoSC, metaSolicitacao, type EtapaProcessoSC,
+} from './_fluxoEtapas'
+import { StatusBadge } from './_StatusBadge'
+import { LinhaExpansivel } from './_LinhaExpansivel'
+import { PainelSolicitacao } from './_PainelSolicitacao'
+import { AcoesAprovacaoSC } from './_AcoesAprovacaoLista'
+import { FaixaEtapasToolbar } from './_FaixaEtapasToolbar'
+import { useContagensProcessoSC } from './_useContagensProcessoSC'
+import {
+  etapaAtualProcessoSC, itensResumoPorScIds, pedidosResumoPorScIds,
+  resumoProcessoSC, scIdsParaEtapa,
+} from './_processoSC'
 
 const PAGE_SIZE = 25
 
-const FILTROS_STATUS: { key: CmpSolicitacaoStatus | 'todas'; label: string }[] = [
-  { key: 'todas',                label: 'Todas'        },
-  { key: 'aguardando_aprovacao', label: 'Aguardando'   },
-  { key: 'aprovada',             label: 'Aprovada'     },
-  { key: 'reprovada',            label: 'Reprovada'    },
-  { key: 'atendida',             label: 'Atendida'     },
-  { key: 'cancelada',            label: 'Cancelada'    },
-]
+type CotacaoVinculadaMin = { id: string; numero: string; status: CmpCotacaoStatus }
 
 type SolicitacaoEnriquecida = CmpSolicitacao & {
   solicitante?: Profile
   departamento?: CoreDepartamento
   empresa?: CoreEmpresa
   total_itens?: number
+  cotacoes_vinculadas?: CotacaoVinculadaMin[]
+  itens_resumo?: { status_item: CmpItemStatus }[]
+  pedidos_resumo?: { status: CmpPedidoStatus }[]
 }
 
 export function SolicitacoesPage() {
@@ -36,11 +48,18 @@ export function SolicitacoesPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [filtro, setFiltro] = useState<typeof FILTROS_STATUS[number]['key']>('todas')
+  const [filtro, setFiltro] = useState<EtapaProcessoSC | 'todas'>('todas')
   const [page, setPage] = useState(0)
   const [total, setTotal] = useState(0)
+  const [abertos, setAbertos] = useState<Set<string>>(new Set())
+  const toggleAberto = (id: string) => setAbertos(prev => {
+    const n = new Set(prev)
+    if (n.has(id)) n.delete(id); else n.add(id)
+    return n
+  })
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const { contagens, recarregarContagens } = useContagensProcessoSC()
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 300)
@@ -57,31 +76,75 @@ export function SolicitacoesPage() {
       .select(`
         *,
         solicitante:profiles!cmp_solicitacoes_compra_solicitante_id_fkey(id,nome,email),
-        departamento:core_departamentos(id,codigo,nome),
-        empresa:core_empresas(id,razao_social,nome_fantasia)
+        departamento:core_departamentos(id,codigo,nome,gestor_id),
+        empresa:core_empresas(id,razao_social,nome_fantasia),
+        itens:cmp_solicitacoes_compra_itens(status_item)
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(from, from + PAGE_SIZE - 1)
 
-    if (filtro !== 'todas') query = query.eq('status', filtro)
+    if (filtro !== 'todas') {
+      const ids = await scIdsParaEtapa(filtro)
+      if (ids.length === 0) {
+        setSolicitacoes([])
+        setTotal(0)
+        setLoading(false)
+        recarregarContagens()
+        return
+      }
+      query = query.in('id', ids)
+    }
 
     const q = debouncedSearch.replace(/[,()%]/g, ' ').trim()
     if (q) query = query.or(`numero.ilike.%${q}%,justificativa.ilike.%${q}%`)
 
     const { data, count } = await query
-    setSolicitacoes((data ?? []) as SolicitacaoEnriquecida[])
+    const base = (data ?? []) as SolicitacaoEnriquecida[]
+
+    const cotacoesPorSc: Record<string, CotacaoVinculadaMin[]> = {}
+    if (base.length > 0) {
+      const scIds = base.map(s => s.id)
+      const { data: vincs } = await supabase
+        .from('cmp_cotacoes_solicitacoes')
+        .select('solicitacao_id, cotacao:cmp_cotacoes(id, numero, status)')
+        .in('solicitacao_id', scIds)
+
+      for (const row of vincs ?? []) {
+        const cot = row.cotacao as CotacaoVinculadaMin | null
+        if (!cot?.id) continue
+        const sid = row.solicitacao_id as string
+        if (!cotacoesPorSc[sid]) cotacoesPorSc[sid] = []
+        cotacoesPorSc[sid].push(cot)
+      }
+      for (const sid of Object.keys(cotacoesPorSc)) {
+        cotacoesPorSc[sid].sort((a, b) => a.numero.localeCompare(b.numero))
+      }
+    }
+
+    const scIds = base.map(s => s.id)
+    const [pedidosPorSc, itensPorSc] = base.length > 0
+      ? await Promise.all([
+          pedidosResumoPorScIds(scIds),
+          itensResumoPorScIds(scIds),
+        ])
+      : [{}, {}]
+
+    setSolicitacoes(base.map(s => {
+      const embedItens = (s as { itens?: { status_item: CmpItemStatus }[] }).itens ?? []
+      const itens_resumo = embedItens.length > 0 ? embedItens : (itensPorSc[s.id] ?? [])
+      return {
+        ...s,
+        cotacoes_vinculadas: cotacoesPorSc[s.id] ?? [],
+        itens_resumo,
+        pedidos_resumo: pedidosPorSc[s.id] ?? [],
+      }
+    }))
     setTotal(count ?? 0)
     setLoading(false)
-  }, [page, filtro, debouncedSearch])
+    recarregarContagens()
+  }, [page, filtro, debouncedSearch, recarregarContagens])
 
   useEffect(() => { fetchData() }, [fetchData])
-
-  // Contadores para o resumo do topo (com base no que veio na página atual)
-  const resumo = useMemo(() => {
-    const grupos: Record<string, number> = {}
-    solicitacoes.forEach(s => { grupos[s.status] = (grupos[s.status] ?? 0) + 1 })
-    return grupos
-  }, [solicitacoes])
 
   return (
     <div className="space-y-5">
@@ -90,7 +153,7 @@ export function SolicitacoesPage() {
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Solicitações de Compra</h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Inicie aqui o fluxo de compra. Cada SC passa por aprovação do gestor antes de virar cotação.
+            Visão completa do processo: aprovação, itens, cotação, pedido e recebimento.
           </p>
         </div>
         {podeCriar && (
@@ -103,69 +166,26 @@ export function SolicitacoesPage() {
         )}
       </div>
 
-      {/* Resumo rápido (chevron) */}
-      <div className="flex items-stretch overflow-x-auto py-1">
-        {FILTROS_STATUS
-          .filter(f => f.key !== 'todas' && f.key !== 'cancelada')
-          .map((f, idx, arr) => {
-            const meta    = STATUS_META[f.key as CmpSolicitacaoStatus]
-            const count   = resumo[f.key] ?? 0
-            const isFirst = idx === 0
-            const isLast  = idx === arr.length - 1
-            const TIP     = 22 // px da "ponta" V
-            const clipPath = isFirst
-              ? `polygon(0 0, calc(100% - ${TIP}px) 0, 100% 50%, calc(100% - ${TIP}px) 100%, 0 100%)`
-              : isLast
-                ? `polygon(0 0, 100% 0, 100% 100%, 0 100%, ${TIP}px 50%)`
-                : `polygon(0 0, calc(100% - ${TIP}px) 0, 100% 50%, calc(100% - ${TIP}px) 100%, 0 100%, ${TIP}px 50%)`
-            const isActive = filtro === f.key
-            return (
-              <button
-                key={f.key}
-                onClick={() => setFiltro(prev => (prev === f.key ? 'todas' : f.key))}
-                style={{
-                  clipPath,
-                  marginLeft:   isFirst ? 0 : -(TIP - 3),
-                  paddingLeft:  isFirst ? 18 : 18 + TIP,
-                  paddingRight: isLast  ? 18 : 18 + TIP,
-                }}
-                className={`relative flex-1 min-w-[180px] py-5 text-left whitespace-nowrap transition-colors ${
-                  isActive
-                    ? 'bg-emerald-100 dark:bg-emerald-900/40 z-10'
-                    : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-                  <span className="text-[11px] uppercase tracking-wider font-semibold text-gray-600 dark:text-gray-300">
-                    {meta.label}
-                  </span>
-                </div>
-                <p className={`mt-1 text-2xl font-semibold ${
-                  isActive
-                    ? 'text-emerald-700 dark:text-emerald-300'
-                    : 'text-gray-900 dark:text-gray-100'
-                }`}>
-                  {count}
-                </p>
-              </button>
-            )
-          })}
+      <FaixaEtapasToolbar
+        etapas={ETAPAS_PROCESSO_SC}
+        filtroAtivo={filtro}
+        onFiltro={k => setFiltro(k as EtapaProcessoSC | 'todas')}
+        contagens={contagens}
+        meta={metaEtapaProcessoSC}
+        chaveTodas="todas"
+      />
+
+      <div className="relative max-w-md">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="search"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar por número ou justificativa…"
+          className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 pl-8 pr-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+        />
       </div>
 
-      {/* Toolbar */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="search"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar por número ou justificativa…"
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 pl-8 pr-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-          />
-        </div>
-      </div>
 
       {/* Lista */}
       <Card className="shadow-sm border border-gray-100 dark:border-gray-800 dark:bg-gray-900">
@@ -192,64 +212,101 @@ export function SolicitacoesPage() {
           ) : (
             <ul className="divide-y divide-gray-100 dark:divide-gray-800">
               {solicitacoes.map(sc => {
-                const meta = STATUS_META[sc.status]
+                const etapaAtual = etapaAtualProcessoSC(
+                  sc,
+                  sc.itens_resumo ?? [],
+                  sc.pedidos_resumo ?? [],
+                )
                 const prio = PRIORIDADE_META[sc.prioridade]
+                const resumo = resumoProcessoSC(
+                  sc,
+                  sc.itens_resumo ?? [],
+                  sc.pedidos_resumo ?? [],
+                )
+                const meta = etapaAtual
+                  ? metaEtapaProcessoSC(etapaAtual)
+                  : metaSolicitacao(sc.status)
+                const resumoFallback = !resumo && sc.status === 'aprovada' && (sc.pedidos_resumo?.length ?? 0) > 0
+                  ? 'Processo em andamento — ver pedidos e itens vinculados'
+                  : null
+                const aberto = abertos.has(sc.id)
+                const cotPrincipal = sc.cotacoes_vinculadas?.[0]
                 return (
-                  <li key={sc.id}>
-                    <Link
-                      to={`/compras/solicitacoes/${sc.id}`}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50/60 dark:hover:bg-gray-800/60 transition-colors"
-                    >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
-                        <FileText size={16} className="text-emerald-600 dark:text-emerald-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-mono font-semibold text-gray-800 dark:text-gray-200">
-                            {sc.numero}
-                          </span>
-                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${meta.badge}`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-                            {meta.label}
-                          </span>
-                          {sc.prioridade !== 'normal' && (
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.badge}`}>
-                              {prio.label}
+                  <LinhaExpansivel
+                    key={sc.id}
+                    aberto={aberto}
+                    onToggle={() => toggleAberto(sc.id)}
+                    cabecalho={
+                      <>
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
+                          <FileText size={16} className="text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Link
+                              to={`/compras/solicitacoes/${sc.id}`}
+                              onClick={e => e.stopPropagation()}
+                              className="text-sm font-mono font-semibold text-emerald-700 dark:text-emerald-300 hover:underline"
+                              title="Abrir solicitação"
+                            >
+                              {sc.numero}
+                            </Link>
+                            <StatusBadge meta={meta} size="md" />
+                            {cotPrincipal && (
+                              <Link
+                                to={`/compras/cotacoes/${cotPrincipal.id}`}
+                                onClick={e => e.stopPropagation()}
+                                className="text-[11px] font-mono text-violet-700 dark:text-violet-300 hover:underline"
+                                title="Cotação vinculada"
+                              >
+                                {cotPrincipal.numero}
+                              </Link>
+                            )}
+                            {sc.prioridade !== 'normal' && (
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.badge}`}>
+                                {prio.label}
+                              </span>
+                            )}
+                          </div>
+                          {(resumo ?? resumoFallback) && (
+                            <p className="mt-0.5 text-[11px] text-gray-600 dark:text-gray-400">
+                              {resumo ?? resumoFallback}
+                            </p>
+                          )}
+                          <div className="mt-1 flex items-center gap-3 flex-wrap text-xs text-gray-500 dark:text-gray-400">
+                            <span className="inline-flex items-center gap-1">
+                              <UserIcon size={11} />
+                              {sc.solicitante?.nome ?? sc.solicitante?.email ?? '—'}
                             </span>
+                            <span className="inline-flex items-center gap-1">
+                              <Network size={11} />
+                              {sc.departamento?.nome ?? '—'}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <Building2 size={11} />
+                              {sc.empresa?.nome_fantasia ?? sc.empresa?.razao_social ?? '—'}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <Calendar size={11} />
+                              {formatDate(sc.created_at)}
+                            </span>
+                            {sc.data_necessaria && (
+                              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                                <Hash size={11} /> precisa em {formatDate(sc.data_necessaria)}
+                              </span>
+                            )}
+                          </div>
+                          {sc.justificativa && (
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {sc.justificativa}
+                            </p>
                           )}
                         </div>
-                        <div className="mt-1 flex items-center gap-3 flex-wrap text-xs text-gray-500 dark:text-gray-400">
-                          <span className="inline-flex items-center gap-1">
-                            <UserIcon size={11} />
-                            {sc.solicitante?.nome ?? sc.solicitante?.email ?? '—'}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Network size={11} />
-                            {sc.departamento?.nome ?? '—'}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Building2 size={11} />
-                            {sc.empresa?.nome_fantasia ?? sc.empresa?.razao_social ?? '—'}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Calendar size={11} />
-                            {formatDate(sc.created_at)}
-                          </span>
-                          {sc.data_necessaria && (
-                            <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                              <Hash size={11} /> precisa em {formatDate(sc.data_necessaria)}
-                            </span>
-                          )}
-                        </div>
-                        {sc.justificativa && (
-                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {sc.justificativa}
-                          </p>
-                        )}
-                      </div>
-                      <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 shrink-0" />
-                    </Link>
-                  </li>
+                      </>
+                    }
+                    painel={aberto ? <PainelSolicitacao scId={sc.id} /> : null}
+                    acoes={<AcoesAprovacaoSC sc={sc} onAtualizado={fetchData} />}
+                  />
                 )
               })}
             </ul>
